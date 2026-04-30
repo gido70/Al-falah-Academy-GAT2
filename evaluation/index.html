@@ -1354,7 +1354,42 @@ function uRep(){
   data.map((r,i)=>buildSchoolReport(r,i+1)).join('')+ 
   '<div class="card"><div class="cardh"><div class="cnum">✅</div><div><div class="ctitle">الخلاصة الإدارية</div></div></div><p style="font-size:14px;line-height:2">يوصى باعتماد هذا التقرير كمرجع أولي لخطة تطوير مكتبات الأكاديمية، مع متابعة المحاور الأقل من 4/6، وتوثيق ممارسات الفروع الأعلى أداءً، وتحديد جدول زمني واضح لمعالجة الأولويات العاجلة.</p></div>';
 }
-function wordShell(content,title){return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>'+title+'</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#0c2a4a;line-height:1.8}.card{border:1px solid #b8d4f0;border-radius:12px;padding:16px;margin:14px 0}.cardh{display:flex;gap:10px;border-bottom:1px solid #e8f0fa;margin-bottom:12px;padding-bottom:8px}.cnum{font-weight:bold;color:#0c447c}.ctitle{font-size:18px;font-weight:bold;color:#0c447c}.csub{font-size:12px;color:#5a7fa8}.s4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.sc{background:#f5faff;border:1px solid #b8d4f0;border-radius:10px;padding:10px;text-align:center}.sn{font-size:20px;font-weight:bold;color:#0c447c}.sl{font-size:11px;color:#5a7fa8}.ctbl{width:100%;border-collapse:collapse}.ctbl th{background:#0c447c;color:#fff;padding:8px}.ctbl td{border-bottom:1px solid #ddd;padding:7px}.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.analysis-box{background:#f8fbff;border:1px solid #b8d4f0;border-radius:10px;padding:10px}.pbt{height:8px;background:#dceefb;border-radius:5px;overflow:hidden}.pbf{height:100%}.bdg{display:inline-block;padding:3px 9px;border-radius:12px;background:#e6f1fb;color:#0c447c;font-weight:bold}</style></head><body>'+content+'</body></html>';}
+function wordShell(content,title){return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>'+title+'</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#0c2a4a;line-height:1.8}.card{border:1px solid #b8d4f0;border-radius:12px;padding:16px;margin:14px 0}.cardh{display:flex;gap:10px;border-bottom:1px solid #e8f0fa;margin-bottom:12px;padding-bottom:8px}.cnum{font-weight:bold;color:#0c447c}.ctitle{font-size:18px;font-weight:bold;color:#0c447c}.csub{font-size:12px;color:#5a7fa8}.s4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.sc{background:#f5faff;border:1px solid #b8d4f0;border-radius:10px;padding:10px;text-align:center}.sn{font-size:20px;font-weight:bold;color:#0c447c}.sl{font-size:11px;color:#5a7fa8}.ctbl{width:100%;border-collapse:collapse}.ctbl th{background:#0c447c;color:#fff;padding:8px}.ctbl td{border-bottom:1px solid #ddd;padding:7px}.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.analysis-box{background:#f8fbff;border:1px solid #b8d4f0;border-radius:10px;padding:10px}.pbt{height:8px;background:#dceefb;border-radius:5px;overflow:hidden}.pbf{height:100%}.bdg{display:inline-block;padding:3px 9px;border-radius:12px;background:#e6f1fb;color:#0c447c;font-weight:bold}</style></head><body>'+content+'
+<script>
+/* === Central Supabase Sync Override: evaluations are shared across devices === */
+(function(){
+  function ready(){return !!(window.alfalahSupabase && window.ALFALAH_SUPABASE_KEY && String(window.ALFALAH_SUPABASE_KEY).startsWith('sb_publishable_'));}
+  window.supaReady = ready;
+  window.saveEvaluationToSupabase = async function(sid,d){
+    if(!ready())return {ok:false,skipped:true};
+    try{
+      var SCHOOL_DB_IDS={dan:1,mzd:2,bny:3,khb:4,jmi:5,shj:6};
+      var s=(typeof SCH!=='undefined'?SCH:[]).find(function(x){return x.id===sid})||{};
+      var sc=(typeof calcSc==='function')?calcSc(d):{};
+      var ov=(typeof tot==='function')?tot(sc):null;
+      var lvl=d.overall || ((typeof scoreLevel==='function' && ov!==null)?scoreLevel(ov).txt:null);
+      var payload={
+        school_id:SCHOOL_DB_IDS[sid]||null,
+        school_code:sid,
+        visit_date:d.date||null,
+        librarian_name:d.lib||null,
+        total_score:ov||null,
+        final_level:lvl||null,
+        strengths:d.str||null,
+        weaknesses:d.wk||null,
+        recommendations:d.rec||null,
+        full_data:{local_school_id:sid,school_name:s.name||sid,city:s.city||'',data:d,scores:sc,saved_from:'github_pages',saved_at:new Date().toISOString()},
+        updated_at:new Date().toISOString()
+      };
+      var res=await window.alfalahSupabase.from('library_evaluations').upsert(payload,{onConflict:'school_id'});
+      if(res.error){console.error(res.error);return {ok:false,error:res.error};}
+      return {ok:true};
+    }catch(e){console.error(e);return {ok:false,error:e};}
+  };
+})();
+</script>
+
+</body></html>';}
 function expWord(){uRep();const c=document.getElementById("repC").innerHTML;dl(new Blob(["\ufeff"+wordShell(c,"التقرير النهائي لتقييم مكتبات أكاديمية الفلاح")],{type:"application/msword;charset=utf-8"}),"التقرير_النهائي_لتقييم_مكتبات_أكاديمية_الفلاح_2026.doc");}
 function expSchoolWord(){let sid=document.getElementById("email-school")?.value||document.getElementById("esch")?.value; if(!sid){alert("اختر مدرسة أولاً من صفحة البريد أو نموذج التقييم.");return;} const row=allD().find(r=>r.s.id===sid); if(!row){alert("لا توجد بيانات محفوظة لهذه المدرسة.");return;} const html='<div style="text-align:center"><img src="'+AF_LOGO_DATA+'" style="max-width:180px"><h2>تقرير تقييم مكتبة '+escHtml(row.s.name)+'</h2></div>'+buildSchoolReport(row,1); dl(new Blob(["\ufeff"+wordShell(html,"تقرير "+row.s.short)],{type:"application/msword;charset=utf-8"}),"تقرير_مكتبة_"+row.s.short.replace(/\s+/g,"_")+".doc");}
 function dl(blob,fn){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();document.body.removeChild(a);}
