@@ -712,7 +712,7 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 
 <!-- SAVE BAR -->
 <div class="save-bar">
-  <button type="button" class="btn btn-navy bsm" id="btn-save">📌 حفظ مؤقت</button>
+  <button type="button" class="btn btn-navy bsm" id="btn-save">📌 حفظ الأسبوع كمسودة</button>
   <button type="button" class="btn btn-soft bsm" id="btn-load">🔄 استرجاع</button>
   <button type="button" class="btn btn-gold bsm" id="btn-gen">📄 التقرير الكامل</button>
   <button type="button" class="btn bsm" style="background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;" id="btn-mgr">👔 عرض المدير</button>
@@ -835,6 +835,40 @@ var PILL_GROUPS = [
 ];
 var PILL_IDS = [];
 var LSK = "falah_wp_final";
+var WEEK_INDEX_KEY = LSK + "_weeks_index";
+
+function safeKeyPart(v){
+  return String(v || "").trim().replace(/[^؀-ۿw-]/g,"_") || "none";
+}
+function getWeekStorageKey(d){
+  d = d || getFormData();
+  var wn = d.wnum || "";
+  var ws = d.wstart || "";
+  var we = d.wend || "";
+  if(!wn && !ws && !we) return LSK;
+  return LSK + "_week_" + safeKeyPart(wn) + "_" + safeKeyPart(ws) + "_" + safeKeyPart(we);
+}
+function rememberWeekDraft(key, d){
+  try{
+    var list = JSON.parse(localStorage.getItem(WEEK_INDEX_KEY) || "[]");
+    list = list.filter(function(x){ return x.key !== key; });
+    list.unshift({key:key, week:d.wnum||"—", from:d.wstart||"—", to:d.wend||"—", savedAt:new Date().toISOString()});
+    localStorage.setItem(WEEK_INDEX_KEY, JSON.stringify(list.slice(0,80)));
+  }catch(e){}
+}
+function loadCurrentWeekDraftIfAvailable(){
+  try{
+    var d = getFormData();
+    var key = getWeekStorageKey(d);
+    if(key === LSK) return;
+    var s = localStorage.getItem(key);
+    if(s){
+      setFormData(JSON.parse(s));
+      setTimeout(syncToReport,100);
+      toast("✅ تم فتح مسودة هذا الأسبوع");
+    }
+  }catch(e){}
+}
 var charts = {};
 
 // ══════════════════════════════════════════════════
@@ -1081,7 +1115,7 @@ async function saveDailyWorkToSupabase(d){
       check_in:d.ain0||null,
       check_out:d.aout0||null,
       tasks:JSON.stringify(d._pills||[],null,0),
-      notes:d.notes||d.summary||null,
+      notes:("الأسبوع: "+(d.wnum||"—")+" | من "+(d.wstart||"—")+" إلى "+(d.wend||"—")+(d.notes||d.summary ? " | "+(d.notes||d.summary) : "")),
       full_data:d
     };
     const {error}=await window.alfalahSupabase.from('daily_work_logs').insert([payload]);
@@ -1096,19 +1130,28 @@ async function saveDailyWorkToSupabase(d){
 async function saveDraft() {
   try{
     const d=getFormData();
-    localStorage.setItem(LSK, JSON.stringify(d));
+    const weekKey = getWeekStorageKey(d);
+
+    // حفظ محلي منفصل لكل أسبوع حتى لا تُستبدل بيانات الأسبوع السابق
+    localStorage.setItem(weekKey, JSON.stringify(d));
+    localStorage.setItem(LSK, JSON.stringify(d)); // آخر مسودة فقط للفتح السريع
+    rememberWeekDraft(weekKey, d);
+
     const r=await saveDailyWorkToSupabase(d);
-    if(r.ok) toast("📌 تم الحفظ محلياً وفي Supabase");
-    else if(r.skipped) toast("📌 تم الحفظ محلياً — مفتاح Supabase غير مفعّل بعد");
-    else toast("📌 تم الحفظ محلياً — لم ينجح حفظ Supabase");
+    if(r.ok) toast("📌 تم حفظ هذا الأسبوع كسجل مستقل في Supabase");
+    else if(r.skipped) toast("📌 تم حفظ مسودة هذا الأسبوع محلياً");
+    else toast("📌 تم حفظ المسودة محلياً — لم ينجح حفظ Supabase");
   }
   catch(e){ alert("خطأ في الحفظ!"); }
 }
 function loadDraft() {
   try{
-    var s = localStorage.getItem(LSK);
-    if(!s){ toast("⚠️ لا يوجد حفظ مؤقت"); return; }
-    setFormData(JSON.parse(s)); setTimeout(syncToReport, 100); toast("✅ تم استرجاع البيانات");
+    var d = getFormData();
+    var key = getWeekStorageKey(d);
+    var s = (key !== LSK) ? localStorage.getItem(key) : null;
+    if(!s) s = localStorage.getItem(LSK);
+    if(!s){ toast("⚠️ لا توجد مسودة محفوظة"); return; }
+    setFormData(JSON.parse(s)); setTimeout(syncToReport, 100); toast("✅ تم استرجاع المسودة");
   }catch(e){ alert("خطأ في الاسترجاع!"); }
 }
 function resetAll() {
@@ -1752,6 +1795,12 @@ function attachSync() {
       if(el) { el.addEventListener("input", syncToReport); el.addEventListener("change", syncToReport); }
     });
   });
+  // عند تغيير رقم الأسبوع أو تاريخ البداية/النهاية: افتح مسودة هذا الأسبوع إن كانت محفوظة
+  ["wnum","wstart","wend"].forEach(function(idOrName){
+    var el = document.getElementById(idOrName) || document.querySelector('[name="'+idOrName+'"]');
+    if(el) el.addEventListener("change", function(){ setTimeout(loadCurrentWeekDraftIfAvailable, 80); });
+  });
+
   // Sync after pill clicks
   document.querySelectorAll(".pill").forEach(function(p){
     p.addEventListener("click", function(){ setTimeout(syncToReport, 50); });
