@@ -323,10 +323,32 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
   margin-top:2px;
 }
 
+
+/* ════ WEEK MANAGER ════ */
+#wkm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;}
+#wkm-modal{background:#fff;border-radius:22px;padding:24px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.wkm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #f0f4f8;}
+.wkm-title{font-size:18px;font-weight:900;color:#0c447c;}
+.wkm-close{background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;padding:4px;}
+.wkm-body{overflow-y:auto;flex:1;}
+.wkm-empty{text-align:center;padding:32px;color:#64748b;font-size:14px;}
+.wkm-week-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:14px;margin-bottom:8px;cursor:pointer;transition:all .18s;}
+.wkm-week-row:hover{border-color:#1a5f9e;background:#f0f6ff;}
+.wkm-week-row.current-wk{border-color:#0e7f70;background:#f0fbf8;}
+.wkm-wnum{font-size:20px;font-weight:900;color:#0c447c;min-width:32px;text-align:center;}
+.wkm-winfo{flex:1;}
+.wkm-dates{font-size:13px;font-weight:700;color:#1a5f9e;}
+.wkm-wstatus{font-size:11px;color:#64748b;margin-top:2px;}
+.wkm-wactions{display:flex;gap:6px;}
+.wkm-load-btn{background:#0c447c;color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.wkm-del-btn{background:#fee2e2;color:#991b1b;border:none;border-radius:9px;padding:7px 10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.wkm-topbar{background:linear-gradient(135deg,#0c447c,#185fa5);border-radius:12px;padding:10px 16px;margin-bottom:14px;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.wkm-toplabel{opacity:.85;}
+.wkm-topval{color:#ffe97a;font-size:14px;}
+
 </style>
 </head>
 <body>
-<a class="home-return-btn" href="../index.html" aria-label="الرجوع للصفحة الرئيسية">🏠 الرئيسية</a><style>.home-return-btn{position:fixed;top:14px;right:14px;z-index:99999;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:999px;background:linear-gradient(135deg,#0c447c,#185fa5,#0f9d8a);color:#fff!important;text-decoration:none;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;font-size:13px;box-shadow:0 6px 18px rgba(12,68,124,.28);border:1px solid rgba(255,255,255,.45)}.home-return-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(12,68,124,.36)}@media(max-width:700px){.home-return-btn{top:auto;bottom:16px;right:16px;padding:10px 16px;font-size:13px}}@media print{.home-return-btn{display:none!important}}</style>
 <div id="toast"></div>
 
 <div class="email-panel" id="emailPanel">
@@ -364,6 +386,8 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
     <button class="ha" id="ha-csv">📊 CSV</button>
     <button class="ha" id="ha-imp">📥 استيراد</button>
     <button class="ha" id="ha-print">🖨️ طباعة</button>
+    <button class="ha" id="ha-new-week" style="background:rgba(240,165,0,.35);border-color:#f0a500;font-weight:900;" onclick="WKM.newWeek()">➕ أسبوع جديد</button>
+    <button class="ha" id="ha-weeks-btn" style="border-color:rgba(255,255,255,.6);" onclick="WKM.showList()">📅 الأسابيع</button>
     <button class="ha ha-red" id="ha-reset">🔄 تصفير</button>
   </div>
 </header>
@@ -799,8 +823,6 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../supabase-config.js"></script>
 <script>
 // ══════════════════════════════════════════════════
 // DATA
@@ -1070,38 +1092,10 @@ function setFormData(d) {
 }
 
 // ══════════════════════════════════════════════════
-// SUPABASE SAVE
-// ══════════════════════════════════════════════════
-function supaReady(){return !!(window.alfalahSupabase && window.ALFALAH_SUPABASE_KEY && !String(window.ALFALAH_SUPABASE_KEY).includes("PUT_PUBLISHABLE_KEY_HERE"));}
-async function saveDailyWorkToSupabase(d){
-  if(!supaReady())return {ok:false,skipped:true};
-  try{
-    const payload={
-      work_date:d.wstart||new Date().toISOString().split('T')[0],
-      check_in:d.ain0||null,
-      check_out:d.aout0||null,
-      tasks:JSON.stringify(d._pills||[],null,0),
-      notes:d.notes||d.summary||null,
-      full_data:d
-    };
-    const {error}=await window.alfalahSupabase.from('daily_work_logs').insert([payload]);
-    if(error)return {ok:false,error};
-    return {ok:true};
-  }catch(e){return {ok:false,error:e};}
-}
-
-// ══════════════════════════════════════════════════
 // SAVE / LOAD
 // ══════════════════════════════════════════════════
-async function saveDraft() {
-  try{
-    const d=getFormData();
-    localStorage.setItem(LSK, JSON.stringify(d));
-    const r=await saveDailyWorkToSupabase(d);
-    if(r.ok) toast("📌 تم الحفظ محلياً وفي Supabase");
-    else if(r.skipped) toast("📌 تم الحفظ محلياً — مفتاح Supabase غير مفعّل بعد");
-    else toast("📌 تم الحفظ محلياً — لم ينجح حفظ Supabase");
-  }
+function saveDraft() {
+  try{ localStorage.setItem(LSK, JSON.stringify(getFormData())); toast("📌 تم الحفظ المؤقت"); }
   catch(e){ alert("خطأ في الحفظ!"); }
 }
 function loadDraft() {
@@ -1845,103 +1839,7 @@ function exportElementWordFinal(elId, fileName){
   var el=document.getElementById(elId);
   if(!el){ alert("لا يوجد محتوى للتصدير"); return; }
   var style=document.querySelector("style") ? document.querySelector("style").innerHTML : "";
-  var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>'+style+' body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;background:#fff}.site-header,.save-bar,button{display:none!important}</style></head><body>'+el.outerHTML+'
-<script>
-/* === Central Supabase Sync Override: weeks are shared across all devices === */
-(function(){
-  function ready(){return !!(window.alfalahSupabase && window.ALFALAH_SUPABASE_KEY && String(window.ALFALAH_SUPABASE_KEY).startsWith('sb_publishable_'));}
-  window.supaReady = ready;
-  function currentWeek(){
-    var el=document.getElementById('wnum');
-    var n=parseInt(el && el.value ? el.value : '1',10);
-    return isNaN(n) ? 1 : n;
-  }
-  function blankWeekKeepNumber(){
-    var week=currentWeek();
-    try{ document.getElementById('wForm').reset(); }catch(e){}
-    var w=document.getElementById('wnum'); if(w) w.value=week;
-    try{
-      document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('sel')});
-      if(typeof PILL_GROUPS!=='undefined') PILL_GROUPS.forEach(function(_,gi){var res=document.getElementById('pr'+gi); if(res){res.textContent='— لم يُختر بعد —';res.style.color='#94a3b8';res.style.fontStyle='italic';}});
-      if(typeof DAYS!=='undefined') DAYS.forEach(function(_,i){ if(typeof calcHrs==='function') calcHrs(i); if(typeof styleRow==='function') styleRow(i); });
-      if(typeof updateAttSumm==='function') updateAttSumm();
-    }catch(e){}
-  }
-  async function fetchWeek(week){
-    if(!ready()) return null;
-    var r=await window.alfalahSupabase.from('daily_work_logs').select('*').eq('week_number', week).maybeSingle();
-    if(r.error){console.warn('تعذر جلب الأسبوع', r.error); return null;}
-    return r.data || null;
-  }
-  window.saveDailyWorkToSupabase = async function(d){
-    if(!ready())return {ok:false,skipped:true};
-    try{
-      var week = parseInt(d.wnum || currentWeek(),10) || currentWeek();
-      var payload={
-        week_number: week,
-        week_title: 'الأسبوع ' + week,
-        work_date: d.wstart || new Date().toISOString().split('T')[0],
-        check_in: d.ain0 || null,
-        check_out: d.aout0 || null,
-        tasks: JSON.stringify(d._pills||[], null, 0),
-        notes: d.notes || d.summary || null,
-        full_data: d,
-        updated_at: new Date().toISOString()
-      };
-      var res=await window.alfalahSupabase.from('daily_work_logs').upsert(payload,{onConflict:'week_number'});
-      if(res.error)return {ok:false,error:res.error};
-      return {ok:true};
-    }catch(e){return {ok:false,error:e};}
-  };
-  window.saveDraft = async function(){
-    try{
-      var d=(typeof getFormData==='function') ? getFormData() : {};
-      d.wnum = String(currentWeek());
-      localStorage.setItem(typeof LSK!=='undefined'?LSK:'alfalah_week_backup', JSON.stringify(d));
-      var r=await window.saveDailyWorkToSupabase(d);
-      if(r.ok && typeof toast==='function') toast('✅ تم الحفظ في Supabase — سيظهر من أي جهاز');
-      else if(r.skipped && typeof toast==='function') toast('⚠️ تم الحفظ محلياً فقط — اتصال Supabase غير مفعل');
-      else {console.warn(r.error); if(typeof toast==='function') toast('⚠️ لم ينجح حفظ Supabase');}
-    }catch(e){console.error(e); alert('خطأ في الحفظ');}
-  };
-  window.loadWeekFromSupabase = async function(week, keepBlankIfMissing){
-    week = parseInt(week||currentWeek(),10) || 1;
-    var row=await fetchWeek(week);
-    if(row && row.full_data){
-      if(typeof setFormData==='function') setFormData(row.full_data);
-      var w=document.getElementById('wnum'); if(w) w.value=week;
-      if(typeof syncToReport==='function') setTimeout(syncToReport,100);
-      if(typeof toast==='function') toast('✅ تم فتح بيانات الأسبوع '+week+' من القاعدة');
-      return true;
-    }
-    if(keepBlankIfMissing){
-      blankWeekKeepNumber();
-      if(typeof toast==='function') toast('➕ أسبوع جديد فارغ: '+week);
-    } else if(typeof toast==='function') toast('⚠️ لا يوجد سجل لهذا الأسبوع في القاعدة');
-    return false;
-  };
-  window.loadDraft = async function(){
-    var ok=await window.loadWeekFromSupabase(currentWeek(), false);
-    if(ok) return;
-    try{
-      var s=localStorage.getItem(typeof LSK!=='undefined'?LSK:'alfalah_week_backup');
-      if(!s){ if(typeof toast==='function') toast('⚠️ لا يوجد حفظ محلي'); return; }
-      if(typeof setFormData==='function') setFormData(JSON.parse(s));
-      if(typeof syncToReport==='function') setTimeout(syncToReport,100);
-      if(typeof toast==='function') toast('✅ تم استرجاع النسخة المحلية');
-    }catch(e){alert('خطأ في الاسترجاع')}
-  };
-  document.addEventListener('DOMContentLoaded', function(){
-    var w=document.getElementById('wnum');
-    if(w){
-      w.addEventListener('change', function(){ window.loadWeekFromSupabase(currentWeek(), true); });
-      setTimeout(function(){ window.loadWeekFromSupabase(currentWeek(), false); }, 900);
-    }
-  });
-})();
-</script>
-
-</body></html>';
+  var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>'+style+' body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;background:#fff}.site-header,.save-bar,button{display:none!important}</style><\/head><body>'+el.outerHTML+'<\/body><\/html>';
   var blob=new Blob(["\ufeff",html],{type:"application/msword;charset=utf-8"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
 }
@@ -2100,6 +1998,158 @@ document.addEventListener("click", function(e){
 });
 setTimeout(function(){ applyDateDirection(); refreshDateTextsDMY(); }, 1000);
 
+</script>
+
+<!-- ════ WEEK MANAGER MODAL ════ -->
+<div id="wkm-overlay" style="display:none" onclick="if(event.target===this)WKM.close()">
+  <div id="wkm-modal">
+    <div class="wkm-header">
+      <div class="wkm-title">📅 سجل الأسابيع</div>
+      <button class="wkm-close" onclick="WKM.close()">✕</button>
+    </div>
+    <div class="wkm-topbar">
+      <span class="wkm-toplabel">الأسبوع المحمَّل حالياً:</span>
+      <span class="wkm-topval" id="wkm-cur-label">اضغط ➕ لإنشاء أسبوع</span>
+    </div>
+    <div class="wkm-body" id="wkm-list-body">
+      <div class="wkm-empty">📭 لا توجد أسابيع — اضغط ➕ أسبوع جديد</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   WEEK MANAGER — كل أسبوع يُحفظ منفصلاً
+   يعمل فوق الكود الأصلي بدون تعديله
+════════════════════════════════════════════════════ */
+var WKM=(function(){
+  var PFX='falah_week_';
+  var _cur=null;
+
+  function _keys(){
+    var a=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf(PFX)===0)a.push(k);
+    }
+    return a.sort(function(a,b){return parseInt(a.replace(PFX,''))-parseInt(b.replace(PFX,''));});
+  }
+
+  function _get(k){ try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;} }
+
+  function _toast(msg,color){
+    var el=document.getElementById('wkm-toast');
+    if(!el){el=document.createElement('div');el.id='wkm-toast';
+      el.style.cssText='position:fixed;bottom:72px;left:50%;transform:translateX(-50%);padding:9px 22px;border-radius:22px;font-family:Cairo,sans-serif;font-size:13px;font-weight:700;z-index:99999;direction:rtl;box-shadow:0 4px 18px rgba(0,0,0,.2);transition:opacity .3s;';
+      document.body.appendChild(el);
+    }
+    el.style.background=color||'#0c447c';el.style.color='#fff';el.style.opacity='1';el.textContent=msg;
+    clearTimeout(el._t);el._t=setTimeout(function(){el.style.opacity='0';},3000);
+  }
+
+  function _updateLabel(){
+    var lbl=document.getElementById('wkm-cur-label');if(!lbl)return;
+    if(_cur){var d=_get(_cur);var wn=d&&d.wnum?d.wnum:_cur.replace(PFX,'');var s=d&&d.wstart?d.wstart:'—';var e=d&&d.wend?d.wend:'—';lbl.textContent='الأسبوع '+wn+' | '+s+' ← '+e;}
+    else{lbl.textContent='لم يُختر أسبوع — اضغط ➕';}
+  }
+
+  function _save(){
+    if(typeof getFormData!=='function'){_toast('⚠️ الدالة getFormData غير موجودة','#991b1b');return false;}
+    var d=getFormData();
+    var wn=(d.wnum||'').toString().replace(/[^0-9]/g,'');
+    if(!wn){_toast('⚠️ أدخل رقم الأسبوع أولاً','#b8860b');return false;}
+    var k=PFX+wn;
+    d._savedAt=new Date().toISOString();
+    d._savedAtAr=new Date().toLocaleString('ar-AE');
+    localStorage.setItem(k,JSON.stringify(d));
+    localStorage.setItem('falah_wp_final',JSON.stringify(d));
+    _cur=k;_updateLabel();
+    _toast('✅ الأسبوع '+wn+' محفوظ','#0e7f70');
+    return true;
+  }
+
+  function _load(k){
+    var d=_get(k);if(!d){_toast('⚠️ لا توجد بيانات','#991b1b');return;}
+    if(typeof setFormData==='function')setFormData(d);
+    if(typeof syncToReport==='function')setTimeout(syncToReport,150);
+    _cur=k;_updateLabel();
+    var wn=d.wnum||k.replace(PFX,'');
+    _toast('📂 تم تحميل الأسبوع '+wn,'#0c447c');
+    WKM.close();
+    if(typeof showPage==='function')showPage('pg-week','📋 الأسبوع والحضور','nav-week');
+  }
+
+  function _render(){
+    var body=document.getElementById('wkm-list-body');if(!body)return;
+    var keys=_keys();
+    if(!keys.length){body.innerHTML='<div class="wkm-empty">📭 لا توجد أسابيع<br><br>اضغط <strong>➕ أسبوع جديد</strong></div>';return;}
+    body.innerHTML=keys.slice().reverse().map(function(k){
+      var d=_get(k);
+      var wn=d&&d.wnum?d.wnum:k.replace(PFX,'');
+      var s=d&&d.wstart?d.wstart:'—';var e=d&&d.wend?d.wend:'—';
+      var st=d&&d.wstatus?d.wstatus:'—';
+      var sv=d&&d._savedAtAr?'حُفظ: '+d._savedAtAr:'';
+      var isCur=(k===_cur);
+      return '<div class="wkm-week-row'+(isCur?' current-wk':'')+'">'
+        +'<div class="wkm-wnum">'+wn+'</div>'
+        +'<div class="wkm-winfo"><div class="wkm-dates">'+s+' ← '+e+'</div><div class="wkm-wstatus">'+st+(sv?' | '+sv:'')+'</div></div>'
+        +'<div class="wkm-wactions">'
+        +'<button class="wkm-load-btn" onclick="WKM._load(''+k+'')">📂 فتح</button>'
+        +'<button class="wkm-del-btn" onclick="WKM._del(''+k+'',event)">🗑️</button>'
+        +'</div></div>';
+    }).join('');
+    _updateLabel();
+  }
+
+  function _del(k,e){
+    if(e)e.stopPropagation();
+    var wn=k.replace(PFX,'');
+    if(!confirm('حذف الأسبوع '+wn+'؟'))return;
+    localStorage.removeItem(k);
+    if(_cur===k)_cur=null;
+    _render();_toast('🗑️ تم الحذف','#991b1b');
+  }
+
+  return {
+    _load:_load,_del:_del,
+    newWeek:function(){
+      var wnEl=document.getElementById('wnum');
+      var curWn=wnEl?wnEl.value||'':'';
+      if(curWn&&!confirm('هل تريد حفظ الأسبوع الحالي ('+curWn+') قبل إنشاء جديد?')){}
+      else if(curWn)_save();
+      var keys=_keys();var mx=0;
+      keys.forEach(function(k){var n=parseInt(k.replace(PFX,''));if(!isNaN(n)&&n>mx)mx=n;});
+      var nw=mx+1;
+      var form=document.getElementById('wForm');if(form)form.reset();
+      document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('sel');});
+      if(typeof DAYS!=='undefined')DAYS.forEach(function(_,i){if(typeof calcHrs==='function')calcHrs(i);if(typeof styleRow==='function')styleRow(i);});
+      if(typeof updateAttSumm==='function')updateAttSumm();
+      if(wnEl)wnEl.value=nw;
+      if(mx>0){var pd=_get(PFX+mx);if(pd&&pd.wend){try{var pe=new Date(pd.wend);var ns=new Date(pe);ns.setDate(ns.getDate()+3);var ne=new Date(ns);ne.setDate(ne.getDate()+4);var fmt=function(d){return d.toISOString().split('T')[0];};var sEl=document.getElementById('wstart');var eEl=document.getElementById('wend');if(sEl)sEl.value=fmt(ns);if(eEl)eEl.value=fmt(ne);}catch(er){}}}
+      _cur=PFX+nw;_updateLabel();
+      _toast('📝 أسبوع جديد: '+nw+' — ابدأ التعبئة','#0e7f70');
+      if(typeof showPage==='function')showPage('pg-week','📋 الأسبوع والحضور','nav-week');
+    },
+    showList:function(){_render();var ov=document.getElementById('wkm-overlay');if(ov)ov.style.display='flex';},
+    close:function(){var ov=document.getElementById('wkm-overlay');if(ov)ov.style.display='none';},
+    save:_save,
+    init:function(){
+      var old=localStorage.getItem('falah_wp_final');
+      if(old){try{var d=JSON.parse(old);var wn=(d.wnum||'1').toString().replace(/[^0-9]/g,'')||'1';var k=PFX+wn;if(!localStorage.getItem(k))localStorage.setItem(k,old);_cur=k;if(typeof setFormData==='function')setFormData(d);if(typeof syncToReport==='function')setTimeout(syncToReport,300);}catch(er){}}
+      _updateLabel();
+    }
+  };
+})();
+
+saveDraft=function(){WKM.save();};
+loadDraft=function(){
+  var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('falah_week_')===0)keys.push(k);}
+  if(!keys.length){if(typeof toast==='function')toast('لا يوجد حفظ — اضغط ➕ أسبوع جديد');return;}
+  WKM.showList();
+};
+
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',WKM.init);}
+else{setTimeout(WKM.init,600);}
 </script>
 </body>
 </html>
