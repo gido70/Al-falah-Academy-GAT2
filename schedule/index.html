@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>جدول أعمال مراكز مصادر التعلم | أكاديمية الفلاح 2026</title>
@@ -378,10 +381,10 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 }
 @media print { .platform-home-btn { display: none !important; } }
 
-</style>
+.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}</style>
 </head>
-<body>
-<a class="platform-home-btn" href="/Al-falah-Academy-GAT2/index.html">🏠 الرئيسية</a>
+<body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
+<a class="platform-home-btn" href="../index.html">🏠 الرئيسية</a>
 
 <div id="toast"></div>
 
@@ -1129,7 +1132,7 @@ function setFormData(d) {
 // SAVE / LOAD
 // ══════════════════════════════════════════════════
 function saveDraft() {
-  try{ localStorage.setItem(LSK, JSON.stringify(getFormData())); toast("📌 تم الحفظ المؤقت"); }
+  try{ localStorage.setItem(LSK, JSON.stringify(getFormData())); toast("📌 تم الحفظ على الجهاز"); }
   catch(e){ alert("خطأ في الحفظ!"); }
 }
 function loadDraft() {
@@ -2185,5 +2188,8 @@ loadDraft=function(){
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',WKM.init);}
 else{setTimeout(WKM.init,600);}
 </script>
-<script src="../assets/db-sync.js?v=20260502"></script></body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
+<script src="../supabase-config.js?v=20260502b"></script>
+<script src="../assets/db-sync.js?v=20260502b"></script>
+</body>
 </html>
