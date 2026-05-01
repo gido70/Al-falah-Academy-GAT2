@@ -2191,5 +2191,42 @@ else{setTimeout(WKM.init,600);}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
+  <script>
+// زر أسبوع جديد
+document.addEventListener("DOMContentLoaded", function () {
+  const newWeekBtn = document.querySelector(".btn-gold"); // زر "أسبوع جديد"
+
+  if (newWeekBtn) {
+    newWeekBtn.addEventListener("click", function () {
+
+      // 1. تفريغ كل الحقول
+      document.querySelectorAll("input, textarea").forEach(el => {
+        if (el.type !== "button" && el.type !== "submit") {
+          el.value = "";
+        }
+      });
+
+      document.querySelectorAll("select").forEach(el => {
+        el.selectedIndex = 0;
+      });
+
+      // 2. زيادة رقم الأسبوع تلقائيًا
+      const weekInput = document.querySelector('input[placeholder*="رقم"]');
+      if (weekInput && weekInput.value) {
+        weekInput.value = parseInt(weekInput.value) + 1;
+      }
+
+      // 3. رسالة تأكيد
+      const toast = document.getElementById("toast");
+      if (toast) {
+        toast.innerText = "تم تجهيز أسبوع جديد";
+        toast.style.display = "block";
+        setTimeout(() => toast.style.display = "none", 2000);
+      }
+
+    });
+  }
+});
+</script>
 </body>
 </html>
