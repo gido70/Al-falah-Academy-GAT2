@@ -505,7 +505,6 @@ body {
 
   <!-- Action Bar -->
   <div class="action-bar">
-    <button class="abtn abtn-gold" onclick="generateAIReport()">🤖 تقرير تنفيذي AI</button>
     <button class="abtn" onclick="window.print()">🖨️ طباعة / PDF</button>
     <button class="abtn abtn-teal" onclick="copyLink()">🔗 نسخ رابط المشاركة</button>
     <button class="abtn" onclick="shareWhatsApp()">📱 مشاركة واتساب</button>
@@ -602,26 +601,24 @@ body {
   </div>
 
   <!-- AI EXECUTIVE REPORT -->
-  <div class="ai-report-card">
-    <div class="ai-header">
-      <div class="ai-icon">🤖</div>
+  <div class="sec-title">📋 التقرير التنفيذي الشامل</div>
+  <div class="ai-report-card" id="aiReportCard">
+    <div class="ai-header" id="aiHeader">
+      <div class="ai-icon">📄</div>
       <div class="ai-title-text">
-        <div class="at">التقرير التنفيذي — بالذكاء الاصطناعي</div>
-        <div class="as">تحليل شامل يُولَّد تلقائياً من البيانات الفعلية المُدخلة — جاهز للرفع للإدارة</div>
+        <div class="at">التقرير التنفيذي — مهمة تطوير مكتبات أكاديمية الفلاح</div>
+        <div class="as" id="aiReportDate">جاري الإعداد...</div>
       </div>
-      <button class="ai-gen-btn" id="aiBtn" onclick="generateAIReport()">
-        🤖 إنشاء التقرير التنفيذي
-      </button>
+      <button class="ai-gen-btn" id="aiBtnInternal" onclick="generateSmartReport()" style="display:none">🔄 تحديث التقرير</button>
     </div>
-    <div class="ai-loading" id="aiLoading">
+    <div class="ai-loading" id="aiLoading" style="display:block">
       <div class="spin">⏳</div>
-      <div style="margin-top:12px;font-size:15px;font-weight:700;color:var(--navy)">جاري إعداد التقرير التنفيذي الشامل...</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:5px">يستغرق عادةً 15-30 ثانية</div>
+      <div style="margin-top:12px;font-size:15px;font-weight:700;color:var(--navy)">جاري إعداد التقرير التنفيذي...</div>
     </div>
     <div class="ai-output" id="aiOutput"></div>
   </div>
 
-  <!-- SHARE BOX -->
+<!-- SHARE BOX -->
   <div class="share-box">
     <div class="share-title">🔗 مشاركة لوحة المتابعة مع الإدارة</div>
     <div class="share-sub">أرسل هذا الرابط للمدير المباشر أو مدير الإدارة — يفتح من أي جهاز ويعرض كل شيء تلقائياً</div>
@@ -912,75 +909,205 @@ function renderTimeline() {
 }
 
 // ═══════════════════════════════════════════════
-//  AI EXECUTIVE REPORT
+//  SMART REPORT GENERATOR — يعمل بدون API
 // ═══════════════════════════════════════════════
-async function generateAIReport() {
-  const btn     = document.getElementById('aiBtn');
+function generateSmartReport() {
   const loading = document.getElementById('aiLoading');
   const output  = document.getElementById('aiOutput');
+  const dateEl  = document.getElementById('aiReportDate');
 
-  const allData   = SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
-  const withData  = allData.filter(x => x.d?.totalScore);
-  const weeks     = localLoad('week_list') || [];
-  const mission   = calcMission();
-
-  btn.disabled = true; btn.textContent = '⏳ جاري الإعداد...';
   loading.style.display = 'block';
   output.style.display  = 'none';
 
-  const evalSummary = withData.length > 0
-    ? withData.map(x => `\n• ${x.s.name} (${x.s.city}): ${x.d.totalScore}/100 [مجموعات ${x.d.scores?.col||'—'} | بيئة ${x.d.scores?.env||'—'} | تقنية ${x.d.scores?.tech||'—'} | كادر ${x.d.scores?.staff||'—'} | خدمات ${x.d.scores?.svc||'—'}] — ${x.d.fields?.lib||'غير محدد'}`).join('')
-    : '\n• لا توجد تقييمات مكتملة بعد';
+  setTimeout(() => {
+    try {
+      const report = buildReport();
+      loading.style.display = 'none';
+      output.style.display  = 'block';
+      output.innerHTML = report;
+      if(dateEl) dateEl.textContent = 'أُعدَّ بتاريخ: ' + new Date().toLocaleString('ar-AE');
+    } catch(e) {
+      loading.style.display = 'none';
+      output.style.display  = 'block';
+      output.textContent = 'تعذّر إعداد التقرير — تأكد من وجود بيانات مُدخلة.';
+    }
+  }, 800);
+}
 
-  const schedSummary = weeks.length > 0
-    ? `${weeks.length} أسابيع مسجّلة من ${weeks[0]?.start||'—'} إلى ${weeks[weeks.length-1]?.end||'—'}`
-    : 'لا توجد أسابيع مسجّلة بعد';
+function buildReport() {
+  const now     = new Date();
+  const mission = calcMission();
+  const allData = SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
+  const withData = allData.filter(x => x.d?.totalScore);
+  const weeks   = localLoad('week_list') || [];
+  const sorted  = [...withData].sort((a,b)=>(b.d.totalScore||0)-(a.d.totalScore||0));
 
-  const prompt = `أنت مستشار متخصص في تطوير المكتبات المدرسية. أعدّ تقريراً تنفيذياً احترافياً رسمياً مُقدَّماً لمدير المؤسسة التعليمية يوضح مجريات مهمة تطوير المكتبات المدرسية في أكاديمية الفلاح:
+  const scores  = withData.map(x => x.d.totalScore);
+  const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const bestSchool = sorted[0];
+  const worstSchool = sorted[sorted.length-1];
 
-**بيانات المهمة:**
-- المدة المنقضية: ${mission.elapsed} يوماً (${mission.pct}% من المهمة)
-- المرحلة الحالية: ${mission.phase}
-- المدارس المُقيَّمة: ${withData.length} من أصل 6
-
-**نتائج التقييم الميداني:**${evalSummary}
-
-**سجل الدوام:** ${schedSummary}
-
-أنشئ تقريراً تنفيذياً رسمياً شاملاً يتضمن:
-1. **ملخص تنفيذي** (3 أسطر للمدير الأعلى)
-2. **الإنجازات المُحقَّقة** — نقاط ملموسة مع أرقام
-3. **نتائج التقييم الميداني** — تحليل موجز للمكتبات المُقيَّمة مع ترتيبها
-4. **أبرز المشاهدات والنتائج الميدانية**
-5. **توصيات عاجلة تحتاج قراراً إدارياً** (3 توصيات)
-6. **خطة الأسابيع القادمة**
-7. **مؤشر التقدم العام للمهمة**
-
-اجعل اللغة رسمية احترافية تليق بالتقارير المرفوعة للإدارة التعليمية. أبرز الإنجازات بصورة تعكس الدقة والمهنية العالية.`;
-
-  try {
-    const res  = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role:'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.map(c => c.text||'').join('') || 'تعذّر إنشاء التقرير';
-    loading.style.display = 'none';
-    output.style.display  = 'block';
-    output.textContent    = text;
-  } catch(e) {
-    loading.style.display = 'none';
-    output.style.display  = 'block';
-    output.textContent    = '⚠️ تعذّر الاتصال. تحقق من الإنترنت وحاول مجدداً.';
+  // Grade system
+  function grade(s) {
+    if(!s) return '—';
+    if(s>=90) return 'ممتاز';
+    if(s>=80) return 'جيد جداً';
+    if(s>=70) return 'جيد';
+    if(s>=60) return 'مقبول';
+    return 'يحتاج تطوير';
   }
 
-  btn.disabled = false;
-  btn.innerHTML = '🤖 إنشاء تقرير جديد';
+  // Find weakest axis across all evaluated schools
+  const axisScores = { col:[], env:[], tech:[], staff:[], svc:[] };
+  withData.forEach(x => {
+    const sc = x.d.scores || {};
+    if(sc.col)   axisScores.col.push(sc.col/25*100);
+    if(sc.env)   axisScores.env.push(sc.env/20*100);
+    if(sc.tech)  axisScores.tech.push(sc.tech/20*100);
+    if(sc.staff) axisScores.staff.push(sc.staff/20*100);
+    if(sc.svc)   axisScores.svc.push(sc.svc/15*100);
+  });
+  const axisAvg = name => axisScores[name].length
+    ? Math.round(axisScores[name].reduce((a,b)=>a+b,0)/axisScores[name].length)
+    : 0;
+  const axisNames = { col:'المجموعات والمصادر', env:'البيئة والمرافق', tech:'التقنية والرقمنة', staff:'الكادر المهني', svc:'الخدمات والأنشطة' };
+  const axisAvgs  = Object.keys(axisNames).map(k => ({ k, name:axisNames[k], avg:axisAvg(k) }));
+  axisAvgs.sort((a,b)=>a.avg-b.avg);
+  const weakestAxis  = axisAvgs[0];
+  const strongestAxis = axisAvgs[axisAvgs.length-1];
+
+  // Schools evaluation text
+  const schoolsText = withData.length === 0
+    ? '<p style="color:var(--muted)">لم يتم إدخال تقييمات بعد.</p>'
+    : sorted.map((x,i) => {
+        const sc = x.d.scores||{};
+        const strengths = x.d.fields?.ovStr || '—';
+        const gaps      = x.d.fields?.ovGap || '—';
+        return `
+        <div style="border-right:4px solid ${x.s.color};padding:12px 14px;margin-bottom:12px;background:#f8fbff;border-radius:0 10px 10px 0">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <strong style="color:${x.s.color};font-size:15px">${['🥇','🥈','🥉','٤','٥','٦'][i]} ${x.s.name}</strong>
+            <span style="background:${x.s.color}22;color:${x.s.color};font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px">${x.d.totalScore}/100 — ${grade(x.d.totalScore)}</span>
+            <span style="font-size:11px;color:var(--muted)">📍 ${x.s.city} | 🗓️ ${x.d.fields?.date||x.s.date}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px">
+            ${[['مجموعات',sc.col,25],['بيئة',sc.env,20],['تقنية',sc.tech,20],['كادر',sc.staff,20],['خدمات',sc.svc,15]].map(([n,v,m])=>`
+            <div style="text-align:center;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px">
+              <div style="font-size:14px;font-weight:900;color:var(--navy)">${v||'—'}</div>
+              <div style="font-size:9px;color:var(--muted)">${n}/${m}</div>
+            </div>`).join('')}
+          </div>
+          ${strengths !== '—' ? `<div style="font-size:12px;color:var(--green)">✅ <strong>أبرز القوة:</strong> ${strengths.substring(0,120)}${strengths.length>120?'...':''}</div>` : ''}
+          ${gaps !== '—' ? `<div style="font-size:12px;color:var(--red);margin-top:4px">🔧 <strong>تحتاج تطوير:</strong> ${gaps.substring(0,120)}${gaps.length>120?'...':''}</div>` : ''}
+        </div>`;
+      }).join('');
+
+  // Schedule summary
+  const schedText = weeks.length === 0
+    ? '<p style="color:var(--muted)">لا توجد أسابيع مسجّلة بعد.</p>'
+    : `<p>تم تسجيل <strong>${weeks.length} أسبوع عمل</strong> في سجل الدوام، من ${weeks[0]?.start||'—'} إلى ${weeks[weeks.length-1]?.end||'—'}.</p>`;
+
+  // Recommendations
+  const recs = [];
+  if(withData.length < 6) recs.push({ priority:'عاجل', text:`إكمال تقييم ${6-withData.length} مكتبة متبقية (${allData.filter(x=>!x.d?.totalScore).map(x=>x.s.name.replace('فرع','')).join(' — ')})` });
+  if(weakestAxis && weakestAxis.avg < 70) recs.push({ priority:'عاجل', text:`تطوير محور <strong>${weakestAxis.name}</strong> — متوسطه ${weakestAxis.avg}% عبر المنظومة، وهو الأضعف ويحتاج تدخلاً فورياً` });
+  if(avgScore && avgScore < 75) recs.push({ priority:'قريب', text:`رفع متوسط التقييم العام من ${avgScore}/100 عبر خطط تحسين موجّهة لكل مكتبة` });
+  if(bestSchool) recs.push({ priority:'مقترح', text:`الاستفادة من تجربة ${bestSchool.s.name} (${bestSchool.d.totalScore}/100) كنموذج يُحتذى به للمكتبات الأخرى` });
+  recs.push({ priority:'مقترح', text:`اعتماد نظام ILS موحّد لجميع المكتبات الست لتسهيل الإدارة والمتابعة المركزية` });
+
+  const recsColors = { 'عاجل':'#b83232', 'قريب':'#b8760e', 'مقترح':'#0a6b52' };
+  const recsText = recs.map((r,i)=>`
+    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="min-width:50px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:${recsColors[r.priority]||'#555'}22;color:${recsColors[r.priority]||'#555'};text-align:center;height:fit-content;margin-top:2px">${r.priority}</div>
+      <div style="font-size:13px;line-height:1.7">${r.text}</div>
+    </div>`).join('');
+
+  // Build full HTML report
+  return `
+  <div style="font-family:Cairo,sans-serif;direction:rtl;color:var(--text);line-height:1.8">
+
+    <!-- Header -->
+    <div style="text-align:center;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px">أكاديمية الفلاح — مراكز مصادر التعلم</div>
+      <div style="font-size:20px;font-weight:900;color:var(--navy);margin-top:4px">التقرير التنفيذي الشامل</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">مهمة تطوير المكتبات المدرسية 2026 | صدر بتاريخ: ${now.toLocaleDateString('ar-AE')}</div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div style="background:linear-gradient(135deg,#e8f2fd,#e6f8f3);border-right:5px solid var(--navy);padding:16px 18px;border-radius:0 14px 14px 0;margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:8px">📌 الملخص التنفيذي</div>
+      <p style="font-size:13px">
+        تسير مهمة تطوير مكتبات أكاديمية الفلاح بصورة منتظمة، وقد أُنجز <strong>${mission.elapsed} يوماً</strong> 
+        (${mission.pct}% من إجمالي المهمة)، والمهمة حالياً في مرحلة <strong>${mission.phase}</strong>.
+        ${withData.length > 0
+          ? ` تم تقييم <strong>${withData.length} مكتبة</strong> من أصل 6، بمتوسط عام <strong>${avgScore}/100</strong> (${grade(avgScore)}).
+              ${bestSchool ? `تتصدر القائمة <strong>${bestSchool.s.name}</strong> بدرجة ${bestSchool.d.totalScore}/100.` : ''}
+              ${weakestAxis ? `المحور الذي يحتاج أكثر الاهتمام هو <strong>${weakestAxis.name}</strong>.` : ''}`
+          : ' لم يُدخَل أي تقييم بعد — يُوصى بالمباشرة بإدخال نتائج الزيارات الميدانية.'}
+      </p>
+    </div>
+
+    <!-- Mission Progress -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">📊 مؤشرات تقدم المهمة</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        ${[
+          ['أيام منجزة', mission.elapsed+' يوم', '#0c3d72'],
+          ['نسبة الإنجاز', mission.pct+'%', '#0d8a79'],
+          ['مكتبات مُقيَّمة', withData.length+' / 6', '#b8760e'],
+          ['متوسط التقييم', avgScore ? avgScore+'/100' : '—', '#0a6b52'],
+        ].map(([l,v,c])=>`
+        <div style="background:#f8fbff;border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:var(--muted);font-weight:700">${l}</span>
+          <span style="font-size:16px;font-weight:900;color:${c}">${v}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Evaluations -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">🏫 نتائج تقييم المكتبات (${withData.length} من أصل 6)</div>
+      ${schoolsText}
+      ${withData.length < 6 ? `<div style="background:#fff4e0;border:1px solid #f5c842;border-radius:10px;padding:12px;font-size:12px;color:#7a4e00">⏳ المكتبات غير المُقيَّمة بعد: ${allData.filter(x=>!x.d?.totalScore).map(x=>x.s.name).join(' • ')}</div>` : ''}
+    </div>
+
+    <!-- Axis Analysis -->
+    ${withData.length > 0 ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">📈 تحليل المحاور عبر المنظومة</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${axisAvgs.slice().reverse().map(a=>{
+          const pct = a.avg;
+          const col = pct>=80?'#0a6b52':pct>=65?'#b8760e':'#b83232';
+          return `<div style="display:flex;align-items:center;gap:10px">
+            <div style="min-width:140px;font-size:12px;font-weight:700;color:var(--text)">${a.name}</div>
+            <div style="flex:1;height:20px;background:var(--bg);border-radius:10px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${col};border-radius:10px;display:flex;align-items:center;padding-right:8px">
+                <span style="font-size:10px;font-weight:900;color:#fff">${pct}%</span>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:${col};min-width:40px">${a.avg >= 80 ? 'جيد' : a.avg >= 65 ? 'مقبول' : 'يحتاج عناية'}</div>
+          </div>`;}).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Schedule -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">🗓️ ملخص سجل الدوام</div>
+      ${schedText}
+    </div>
+
+    <!-- Recommendations -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">🎯 التوصيات والأولويات</div>
+      ${recsText}
+    </div>
+
+    <!-- Footer -->
+    <div style="border-top:2px solid var(--border);padding-top:14px;text-align:center;font-size:11px;color:var(--muted)">
+      أُعدَّ هذا التقرير تلقائياً من بيانات المنصة الميدانية | أكاديمية الفلاح — مراكز مصادر التعلم 2026
+    </div>
+  </div>`;
 }
 
 // ═══════════════════════════════════════════════
@@ -1041,6 +1168,8 @@ window.addEventListener('DOMContentLoaded', () => {
   renderCharts(allData);
   renderSchedule();
   renderTimeline();
+  // Auto-generate report on load
+  setTimeout(generateSmartReport, 600);
 });
 </script>
 </body>
