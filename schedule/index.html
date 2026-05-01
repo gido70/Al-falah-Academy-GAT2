@@ -2131,8 +2131,8 @@ var WKM=(function(){
         +'<div class="wkm-wnum">'+wn+'</div>'
         +'<div class="wkm-winfo"><div class="wkm-dates">'+s+' ← '+e+'</div><div class="wkm-wstatus">'+st+(sv?' | '+sv:'')+'</div></div>'
         +'<div class="wkm-wactions">'
-        +'<button class="wkm-load-btn" onclick="WKM._load(''+k+'')">📂 فتح</button>'
-        +'<button class="wkm-del-btn" onclick="WKM._del(''+k+'',event)">🗑️</button>'
+        +'<button class="wkm-load-btn" onclick="WKM._load(\''+k+'\')">📂 فتح</button>'
+        +'<button class="wkm-del-btn" onclick="WKM._del(\''+k+'\',event)">🗑️</button>'
         +'</div></div>';
     }).join('');
     _updateLabel();
@@ -2150,22 +2150,81 @@ var WKM=(function(){
   return {
     _load:_load,_del:_del,
     newWeek:function(){
-      var wnEl=document.getElementById('wnum');
-      var curWn=wnEl?wnEl.value||'':'';
-      if(curWn&&!confirm('هل تريد حفظ الأسبوع الحالي ('+curWn+') قبل إنشاء جديد?')){}
-      else if(curWn)_save();
-      var keys=_keys();var mx=0;
-      keys.forEach(function(k){var n=parseInt(k.replace(PFX,''));if(!isNaN(n)&&n>mx)mx=n;});
-      var nw=mx+1;
-      var form=document.getElementById('wForm');if(form)form.reset();
-      document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('sel');});
-      if(typeof DAYS!=='undefined')DAYS.forEach(function(_,i){if(typeof calcHrs==='function')calcHrs(i);if(typeof styleRow==='function')styleRow(i);});
-      if(typeof updateAttSumm==='function')updateAttSumm();
-      if(wnEl)wnEl.value=nw;
-      if(mx>0){var pd=_get(PFX+mx);if(pd&&pd.wend){try{var pe=new Date(pd.wend);var ns=new Date(pe);ns.setDate(ns.getDate()+3);var ne=new Date(ns);ne.setDate(ne.getDate()+4);var fmt=function(d){return d.toISOString().split('T')[0];};var sEl=document.getElementById('wstart');var eEl=document.getElementById('wend');if(sEl)sEl.value=fmt(ns);if(eEl)eEl.value=fmt(ne);}catch(er){}}}
-      _cur=PFX+nw;_updateLabel();
-      _toast('📝 أسبوع جديد: '+nw+' — ابدأ التعبئة','#0e7f70');
-      if(typeof showPage==='function')showPage('pg-week','📋 الأسبوع والحضور','nav-week');
+      /* زر أسبوع جديد — تفريغ كامل وآمن دون المساس بالحفظ أو التصميم */
+      var wnEl = document.getElementById('wnum');
+      var oldWn = parseInt((wnEl && wnEl.value ? wnEl.value : '0').toString().replace(/[^0-9]/g,''),10) || 0;
+
+      var keys = _keys();
+      var mx = 0;
+      keys.forEach(function(k){
+        var n = parseInt(k.replace(PFX,''),10);
+        if(!isNaN(n) && n > mx) mx = n;
+      });
+
+      var nw = oldWn ? oldWn + 1 : (mx + 1 || 1);
+
+      // حفظ تاريخ الأسبوع السابق مؤقتاً لحساب الأسبوع الجديد
+      var prevStart = document.querySelector('[name="wstart"]') ? document.querySelector('[name="wstart"]').value : '';
+      var prevEnd   = document.querySelector('[name="wend"]') ? document.querySelector('[name="wend"]').value : '';
+
+      // تفريغ النموذج كله
+      var form = document.getElementById('wForm');
+      if(form) form.reset();
+
+      // إعادة رقم الأسبوع الجديد
+      if(wnEl) wnEl.value = nw;
+
+      // ضبط التاريخ: إذا كان هناك أسبوع سابق، انقل التاريخ 7 أيام للأمام
+      try{
+        var sEl = document.querySelector('[name="wstart"]');
+        var eEl = document.querySelector('[name="wend"]');
+        function fmt(d){ return d.toISOString().split('T')[0]; }
+        if(prevStart && sEl){ var ns = new Date(prevStart); ns.setDate(ns.getDate()+7); sEl.value = fmt(ns); }
+        if(prevEnd && eEl){ var ne = new Date(prevEnd); ne.setDate(ne.getDate()+7); eEl.value = fmt(ne); }
+      }catch(er){}
+
+      // إعادة الحضور والانصراف والدوام للقيم الافتراضية
+      if(typeof DAYS !== 'undefined'){
+        DAYS.forEach(function(_,i){
+          var ain = document.getElementById('ain'+i);
+          var aout = document.getElementById('aout'+i);
+          var atype = document.getElementById('atype'+i);
+          var anote = document.getElementById('anote'+i);
+          var dloc = document.getElementById('dloc'+i);
+          var dtasks = document.getElementById('dtasks'+i);
+          if(ain) ain.value = '08:00';
+          if(aout) aout.value = (i===4 ? '11:30' : '14:00');
+          if(atype) atype.selectedIndex = 0;
+          if(anote) anote.value = '';
+          if(dloc) dloc.selectedIndex = 0;
+          if(dtasks) dtasks.value = '';
+          if(typeof calcHrs === 'function') calcHrs(i);
+          if(typeof styleRow === 'function') styleRow(i);
+        });
+      }
+
+      // مسح اختيارات الأعمال وتحويل النصوص الخاصة بها إلى الحالة الفارغة
+      document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('sel'); });
+      document.querySelectorAll('.pill-result').forEach(function(r){
+        r.textContent = '— لم يُختر بعد —';
+        r.style.color = '#94a3b8';
+        r.style.fontStyle = 'italic';
+      });
+
+      // إخفاء التقارير الناتجة حتى لا يختلط الأسبوع القديم بالجديد
+      var reportBox = document.getElementById('reportBox');
+      var mgrBox = document.getElementById('mgrBox');
+      if(reportBox) reportBox.style.display = 'none';
+      if(mgrBox) mgrBox.style.display = 'none';
+
+      if(typeof updateAttSumm === 'function') updateAttSumm();
+      if(typeof syncToReport === 'function') setTimeout(syncToReport, 120);
+      if(typeof showPage === 'function') showPage('pg-week','📋 الأسبوع والحضور','nav-week');
+
+      _cur = PFX + nw;
+      _updateLabel();
+      _toast('📝 تم تجهيز الأسبوع رقم '+nw+' للتعبئة','#0e7f70');
+      return false;
     },
     showList:function(){_render();var ov=document.getElementById('wkm-overlay');if(ov)ov.style.display='flex';},
     close:function(){var ov=document.getElementById('wkm-overlay');if(ov)ov.style.display='none';},
@@ -2191,42 +2250,5 @@ else{setTimeout(WKM.init,600);}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
-  <script>
-// زر أسبوع جديد
-document.addEventListener("DOMContentLoaded", function () {
-  const newWeekBtn = document.querySelector(".btn-gold"); // زر "أسبوع جديد"
-
-  if (newWeekBtn) {
-    newWeekBtn.addEventListener("click", function () {
-
-      // 1. تفريغ كل الحقول
-      document.querySelectorAll("input, textarea").forEach(el => {
-        if (el.type !== "button" && el.type !== "submit") {
-          el.value = "";
-        }
-      });
-
-      document.querySelectorAll("select").forEach(el => {
-        el.selectedIndex = 0;
-      });
-
-      // 2. زيادة رقم الأسبوع تلقائيًا
-      const weekInput = document.querySelector('input[placeholder*="رقم"]');
-      if (weekInput && weekInput.value) {
-        weekInput.value = parseInt(weekInput.value) + 1;
-      }
-
-      // 3. رسالة تأكيد
-      const toast = document.getElementById("toast");
-      if (toast) {
-        toast.innerText = "تم تجهيز أسبوع جديد";
-        toast.style.display = "block";
-        setTimeout(() => toast.style.display = "none", 2000);
-      }
-
-    });
-  }
-});
-</script>
 </body>
 </html>
