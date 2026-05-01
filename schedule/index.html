@@ -770,7 +770,7 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 
 <!-- SAVE BAR -->
 <div class="save-bar">
-  <button type="button" class="btn btn-navy bsm" id="btn-save">📌 حفظ مؤقت</button>
+  <button type="button" class="btn btn-navy bsm" id="btn-save">📌 حفظ في القاعدة</button>
   <button type="button" class="btn btn-soft bsm" id="btn-load">🔄 استرجاع</button>
   <button type="button" class="btn btn-gold bsm" id="btn-gen">📄 التقرير الكامل</button>
   <button type="button" class="btn bsm" style="background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;" id="btn-mgr">👔 عرض المدير</button>
@@ -1135,7 +1135,7 @@ function saveDraft() {
 function loadDraft() {
   try{
     var s = localStorage.getItem(LSK);
-    if(!s){ toast("⚠️ لا يوجد حفظ مؤقت"); return; }
+    if(!s){ toast("⚠️ لا يوجد حفظ في القاعدة"); return; }
     setFormData(JSON.parse(s)); setTimeout(syncToReport, 100); toast("✅ تم استرجاع البيانات");
   }catch(e){ alert("خطأ في الاسترجاع!"); }
 }
@@ -2185,5 +2185,5 @@ loadDraft=function(){
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',WKM.init);}
 else{setTimeout(WKM.init,600);}
 </script>
-</body>
+<script src="../assets/db-sync.js"></script></body>
 </html>

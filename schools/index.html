@@ -4,4 +4,4 @@ async function uploadFiles(inputId,bucket){const sid=q('school').value;const s=s
 showMsg('msg','تم رفع الملفات وحفظها في القاعدة.','ok');q(inputId).value='';loadFiles()}
 async function loadFiles(){const sid=q('school').value;const s=schoolById(sid);const gal=q('gallery');if(!s){gal.innerHTML='';return}const sb=SB();const {data,error}=await sb.from('school_files').select('*').eq('school_id',s.id).order('created_at',{ascending:false});if(error){gal.innerHTML='<div class="msg err">'+error.message+'</div>';return}gal.innerHTML=(data||[]).map(f=>`<div class="thumb">${(f.file_type||'').startsWith('image/')?`<img src="${f.file_url}" alt="">`:'<div style="font-size:46px">📄</div>'}<b>${bucketLabel(f.file_category)}</b><div class="muted" style="font-size:12px">${f.file_name}</div><a class="btn outline" href="${f.file_url}" target="_blank">فتح</a></div>`).join('')||'<div class="msg warn">لا توجد ملفات لهذه المدرسة بعد.</div>'}
 document.addEventListener('DOMContentLoaded',()=>{fillSchools('school');loadFiles()})
-</script></body></html>
+</script><script src="../assets/db-sync.js"></script></body></html>
