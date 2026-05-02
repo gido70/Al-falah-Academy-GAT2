@@ -381,7 +381,62 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 }
 @media print { .platform-home-btn { display: none !important; } }
 
-.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}</style>
+.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}
+/* === Multi visits selection patch === */
+.visit-multi-box{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:0 0 14px;
+}
+.visit-option{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  background:#f8fafc;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:9px 11px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--navy);
+  line-height:1.7;
+  cursor:pointer;
+  transition:all .15s;
+}
+.visit-option:hover{
+  border-color:var(--gold);
+  background:var(--soft);
+}
+.visit-option input{
+  margin-top:5px;
+  accent-color:var(--teal);
+  transform:scale(1.15);
+}
+.visit-option.checked{
+  border-color:var(--teal);
+  background:linear-gradient(135deg,#f0fbf8,#ffffff);
+  box-shadow:0 0 0 3px rgba(14,127,112,.08);
+}
+.visit-selected-box{
+  background:#f0f6ff;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:14px;
+  color:var(--navy);
+  font-size:13px;
+  line-height:1.8;
+}
+.visit-selected-box strong{
+  display:block;
+  margin-bottom:4px;
+}
+@media(max-width:750px){
+  .visit-multi-box{grid-template-columns:1fr;}
+}
+
+</style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
 <a class="platform-home-btn" href="../index.html">🏠 الرئيسية</a>
@@ -525,21 +580,29 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 <div class="pg" id="pg-visits">
   <div class="sc">
     <div class="sc-head"><div class="sc-num">5</div><div><div class="sc-title">الزيارات الميدانية للمدارس</div></div></div>
-    <div class="stitle">الجدول المعتمد — اختاري الزيارة المنجزة</div>
-    <div class="fld" style="margin-bottom:14px">
-      <select name="approved_visit" style="font-size:14px;padding:10px 12px;">
-        <option value="">— اختر من الجدول المعتمد —</option>
-        <option>الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين</option>
-        <option>الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين</option>
-        <option>الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة</option>
-        <option>الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي</option>
-        <option>الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي</option>
-        <option>الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي</option>
-        <option>زيارة مدرسة خارج المنظومة</option><option>أخرى</option>
-      </select>
+
+    <div class="stitle">الجدول المعتمد — اختاري زيارة واحدة أو أكثر داخل الأسبوع</div>
+
+    <input type="hidden" name="approved_visit" id="approved_visit_multi" value="">
+
+    <div class="visit-multi-box">
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين"> <span>الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين"> <span>الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة"> <span>الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي"> <span>الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي"> <span>الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي"> <span>الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="زيارة مدرسة خارج المنظومة"> <span>زيارة مدرسة خارج المنظومة</span></label>
+      <label class="visit-option"><input type="checkbox" class="visit-check" value="أخرى"> <span>أخرى</span></label>
     </div>
+
+    <div class="visit-selected-box">
+      <strong>الزيارات المختارة:</strong>
+      <div id="selectedVisitsText">— لم يتم اختيار أي زيارة بعد —</div>
+    </div>
+
     <div class="g3">
-      <div class="fld"><label>عدد الزيارات</label><input type="number" name="visits_count" min="0" placeholder="0"></div>
+      <div class="fld"><label>عدد الزيارات</label><input type="number" name="visits_count" id="visits_count_auto" min="0" placeholder="0" readonly></div>
       <div class="fld"><label>نوع الزيارة</label>
         <select name="visits_type">
           <option>تقييم أولي شامل</option><option>متابعة تنفيذ</option><option>دعم فني</option>
@@ -2250,5 +2313,70 @@ else{setTimeout(WKM.init,600);}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
+
+<script>
+/* === Multi visits selection patch === */
+(function(){
+  function syncSelectedVisits(){
+    var checks = Array.from(document.querySelectorAll('.visit-check'));
+    if(!checks.length) return;
+
+    var selected = checks.filter(function(c){ return c.checked; }).map(function(c){ return c.value; });
+
+    checks.forEach(function(c){
+      var box = c.closest('.visit-option');
+      if(box) box.classList.toggle('checked', c.checked);
+    });
+
+    var hidden = document.getElementById('approved_visit_multi');
+    if(hidden) hidden.value = selected.join(' | ');
+
+    var count = document.getElementById('visits_count_auto') || document.querySelector('[name="visits_count"]');
+    if(count) count.value = selected.length ? String(selected.length) : '';
+
+    var out = document.getElementById('selectedVisitsText');
+    if(out){
+      out.innerHTML = selected.length
+        ? selected.map(function(v){ return '✅ ' + v; }).join('<br>')
+        : '— لم يتم اختيار أي زيارة بعد —';
+    }
+  }
+
+  function restoreSelectedVisitsFromHidden(){
+    var hidden = document.getElementById('approved_visit_multi');
+    var saved = hidden && hidden.value ? hidden.value : '';
+    if(!saved) return;
+    var parts = saved.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
+    document.querySelectorAll('.visit-check').forEach(function(c){
+      c.checked = parts.indexOf(c.value) !== -1;
+    });
+    syncSelectedVisits();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.visit-check').forEach(function(c){
+      c.addEventListener('change', syncSelectedVisits);
+    });
+    syncSelectedVisits();
+
+    var oldSetFormData = window.setFormData;
+    if(typeof oldSetFormData === 'function'){
+      window.setFormData = function(d){
+        oldSetFormData(d);
+        setTimeout(function(){
+          if(d && d.approved_visit){
+            var hidden = document.getElementById('approved_visit_multi');
+            if(hidden) hidden.value = d.approved_visit;
+            restoreSelectedVisitsFromHidden();
+          } else {
+            syncSelectedVisits();
+          }
+        }, 50);
+      };
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
