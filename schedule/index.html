@@ -2230,8 +2230,8 @@ var WKM=(function(){
       +'<div class="wkm-wnum">'+wn+'</div>'
       +'<div class="wkm-winfo"><div class="wkm-dates">'+s+' ← '+e+'</div><div class="wkm-wstatus">'+st+(sv?' | '+sv:'')+' | '+src+'</div></div>'
       +'<div class="wkm-wactions">'
-      +'<button type="button" class="wkm-load-btn" onclick="loadWeek(''+k+'')">📂 فتح</button>'
-      +(k.indexOf(PFX)===0?'<button type="button" class="wkm-del-btn" data-wkm-del="'+k+'">🗑️</button>':'')
+      +'<button type="button" class="wkm-load-btn" data-wkm-open="'+k+'">📂 فتح</button>'
+      +'<button type="button" class="wkm-del-btn" data-wkm-del="'+k+'">🗑️ حذف</button>'
       +'</div></div>';
   }
 
@@ -2247,14 +2247,33 @@ var WKM=(function(){
     _updateLabel();
   }
 
-  function _del(k,e){
+  async function _del(k,e){
     if(e)e.stopPropagation();
-    if(k.indexOf(RFX)===0){_toast('الحذف من القاعدة غير مفعّل هنا حفاظًا على البيانات','#b8860b');return;}
-    var wn=k.replace(PFX,'');
-    if(!confirm('حذف الأسبوع '+wn+'؟'))return;
+    var d=_get(k)||{};
+    var wn=d.wnum||d.week_number||(k&&k.indexOf(PFX)===0?k.replace(PFX,''):'');
+
+    if(k && k.indexOf(RFX)===0){
+      var dbid=d._db_id;
+      if(!dbid){_toast('⚠️ لا يوجد رقم قاعدة لهذا الأسبوع','#991b1b');return;}
+      if(!confirm('حذف الأسبوع '+(wn||'المحدد')+' من القاعدة؟'))return;
+      var c=_client();
+      if(!c){_toast('⚠️ لا يوجد اتصال بقاعدة البيانات','#991b1b');return;}
+      try{
+        var r=await c.from('daily_work_logs').delete().eq('id',dbid);
+        if(r.error){console.error(r.error);_toast('❌ فشل حذف الأسبوع من القاعدة','#991b1b');return;}
+        delete _remoteMap[k];
+        _remote=_remote.filter(function(x){return x!==k;});
+        if(_cur===k)_cur=null;
+        await _render();
+        _toast('🗑️ تم حذف الأسبوع من القاعدة','#991b1b');
+        return;
+      }catch(err){console.error(err);_toast('❌ خطأ أثناء الحذف من القاعدة','#991b1b');return;}
+    }
+
+    if(!confirm('حذف الأسبوع '+(wn||'المحدد')+' من الجهاز؟'))return;
     localStorage.removeItem(k);
     if(_cur===k)_cur=null;
-    _render();_toast('🗑️ تم الحذف','#991b1b');
+    _render();_toast('🗑️ تم الحذف من الجهاز','#991b1b');
   }
 
   function _bindModalClicks(){
@@ -2355,8 +2374,7 @@ var WKM=(function(){
 
 saveDraft=function(){WKM.save();};
 loadDraft=function(){
-  var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('falah_week_')===0)keys.push(k);}
-  if(!keys.length){if(typeof toast==='function')toast('لا يوجد حفظ — اضغط ➕ أسبوع جديد');return;}
+  /* سجل الأسابيع يقرأ من Supabase أولاً ثم من الجهاز، لذلك لا نمنعه إذا لم توجد نسخة محلية */
   WKM.showList();
 };
 
@@ -2368,34 +2386,3 @@ else{setTimeout(WKM.init,600);}
 <script src="../assets/db-sync.js?v=20260502b"></script>
 </body>
 </html>
-async function loadWeek(k){
-  try{
-    // جلب البيانات من local أو Supabase حسب نظامك الحالي
-    let data = _get(k);
-
-    // إذا لم توجد محلياً → جلب من Supabase
-    if(!data && window.alfalahSupabase){
-      const { data: remote } = await window.alfalahSupabase
-        .from('weeks')
-        .select('*')
-        .eq('id', k)
-        .single();
-
-      data = remote;
-    }
-
-    if(!data){
-      alert('لم يتم العثور على بيانات الأسبوع');
-      return;
-    }
-
-    // تعبئة النموذج
-    fillFormWithWeek(data);
-
-    showToast('تم فتح الأسبوع');
-
-  }catch(e){
-    console.error(e);
-    alert('خطأ في فتح الأسبوع');
-  }
-}
