@@ -2174,13 +2174,59 @@ var WKM=(function(){
     return d;
   }
 
+  function _deletedDbIds(){
+    try{return JSON.parse(localStorage.getItem('wkm_deleted_db_ids')||'[]')||[];}catch(e){return [];}
+  }
+
+  function _markDeletedDbId(id){
+    if(id==null)return;
+    var a=_deletedDbIds().map(String);
+    if(a.indexOf(String(id))<0){a.push(String(id));localStorage.setItem('wkm_deleted_db_ids',JSON.stringify(a));}
+  }
+
+  function _sameWeekData(a,b){
+    if(!a||!b)return false;
+    var aw=(a.wnum||a.week_number||'').toString();
+    var bw=(b.wnum||b.week_number||'').toString();
+    var as=(a.wstart||a.work_date||'').toString();
+    var bs=(b.wstart||b.work_date||'').toString();
+    var ae=(a.wend||'').toString();
+    var be=(b.wend||'').toString();
+    return !!aw && aw===bw && (as===bs || (!as&&!bs)) && (ae===be || (!ae&&!be));
+  }
+
+  function _purgeLocalMatches(d, keepKey){
+    try{
+      _keys().forEach(function(lk){
+        var ld=_get(lk);
+        if(lk===keepKey || _sameWeekData(ld,d)) localStorage.removeItem(lk);
+      });
+      if(localStorage.getItem('falah_wp_final')){
+        var fd=_safeJson(localStorage.getItem('falah_wp_final'));
+        if(_sameWeekData(fd,d)) localStorage.removeItem('falah_wp_final');
+      }
+    }catch(e){console.error(e);}
+  }
+
+  function _uniqueKeys(remoteKeys, localKeys){
+    var out=[];
+    var seen=[];
+    (remoteKeys||[]).concat(localKeys||[]).forEach(function(k){
+      var d=_get(k)||{};
+      var sig=[d.wnum||d.week_number||'',d.wstart||d.work_date||'',d.wend||'',d._db_id||''].join('|');
+      if(seen.indexOf(sig)===-1){seen.push(sig);out.push(k);}
+    });
+    return out;
+  }
+
   async function _fetchRemote(){
     var c=_client();
     if(!c) return [];
     var r=await c.from('daily_work_logs').select('*').order('updated_at',{ascending:false}).limit(100);
     if(r.error){console.error(r.error);_toast('⚠️ تعذر قراءة الأسابيع من القاعدة','#b8860b');return [];} 
+    var deleted=_deletedDbIds().map(String);
     _remoteMap={};
-    _remote=(r.data||[]).map(function(row){
+    _remote=(r.data||[]).filter(function(row){return deleted.indexOf(String(row.id))===-1;}).map(function(row){
       var d=_rowToData(row);
       var k=RFX+(row.id!=null?row.id:Math.random().toString(36).slice(2));
       _remoteMap[k]=d;
@@ -2241,7 +2287,7 @@ var WKM=(function(){
     var localKeys=_keys().slice().reverse();
     var remoteKeys=[];
     try{ remoteKeys=await _fetchRemote(); }catch(e){ console.error(e); }
-    var keys=remoteKeys.concat(localKeys);
+    var keys=_uniqueKeys(remoteKeys,localKeys);
     if(!keys.length){body.innerHTML='<div class="wkm-empty">📭 لا توجد أسابيع<br><br>اضغط <strong>➕ أسبوع جديد</strong></div>';return;}
     body.innerHTML=keys.map(_itemHtml).join('');
     _updateLabel();
@@ -2261,19 +2307,26 @@ var WKM=(function(){
       try{
         var r=await c.from('daily_work_logs').delete().eq('id',dbid);
         if(r.error){console.error(r.error);_toast('❌ فشل حذف الأسبوع من القاعدة','#991b1b');return;}
+        _markDeletedDbId(dbid);
+        _purgeLocalMatches(d,k);
         delete _remoteMap[k];
         _remote=_remote.filter(function(x){return x!==k;});
+        var rowEl=document.querySelector('[data-wkm-key="'+k+'"]');
+        if(rowEl) rowEl.remove();
         if(_cur===k)_cur=null;
         await _render();
-        _toast('🗑️ تم حذف الأسبوع من القاعدة','#991b1b');
+        _toast('🗑️ تم حذف الأسبوع من القاعدة والقائمة','#991b1b');
         return;
       }catch(err){console.error(err);_toast('❌ خطأ أثناء الحذف من القاعدة','#991b1b');return;}
     }
 
     if(!confirm('حذف الأسبوع '+(wn||'المحدد')+' من الجهاز؟'))return;
+    _purgeLocalMatches(d,k);
     localStorage.removeItem(k);
+    var rowEl=document.querySelector('[data-wkm-key="'+k+'"]');
+    if(rowEl) rowEl.remove();
     if(_cur===k)_cur=null;
-    _render();_toast('🗑️ تم الحذف من الجهاز','#991b1b');
+    _render();_toast('🗑️ تم الحذف من الجهاز والقائمة','#991b1b');
   }
 
   function _bindModalClicks(){
