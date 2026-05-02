@@ -2230,7 +2230,7 @@ var WKM=(function(){
       +'<div class="wkm-wnum">'+wn+'</div>'
       +'<div class="wkm-winfo"><div class="wkm-dates">'+s+' ← '+e+'</div><div class="wkm-wstatus">'+st+(sv?' | '+sv:'')+' | '+src+'</div></div>'
       +'<div class="wkm-wactions">'
-      +'<button type="button" class="wkm-load-btn" data-wkm-open="'+k+'">📂 فتح</button>'
+      +'<button type="button" class="wkm-load-btn" onclick="loadWeek(''+k+'')">📂 فتح</button>'
       +(k.indexOf(PFX)===0?'<button type="button" class="wkm-del-btn" data-wkm-del="'+k+'">🗑️</button>':'')
       +'</div></div>';
   }
@@ -2368,3 +2368,34 @@ else{setTimeout(WKM.init,600);}
 <script src="../assets/db-sync.js?v=20260502b"></script>
 </body>
 </html>
+async function loadWeek(k){
+  try{
+    // جلب البيانات من local أو Supabase حسب نظامك الحالي
+    let data = _get(k);
+
+    // إذا لم توجد محلياً → جلب من Supabase
+    if(!data && window.alfalahSupabase){
+      const { data: remote } = await window.alfalahSupabase
+        .from('weeks')
+        .select('*')
+        .eq('id', k)
+        .single();
+
+      data = remote;
+    }
+
+    if(!data){
+      alert('لم يتم العثور على بيانات الأسبوع');
+      return;
+    }
+
+    // تعبئة النموذج
+    fillFormWithWeek(data);
+
+    showToast('تم فتح الأسبوع');
+
+  }catch(e){
+    console.error(e);
+    alert('خطأ في فتح الأسبوع');
+  }
+}
