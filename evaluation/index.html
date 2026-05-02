@@ -1566,5 +1566,204 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
+
+<script>
+/* === Alfalah evaluation DB restore/delete/chart fix — added safely 2026-05-02 ===
+   هذا المقطع لا يغير هيكل الصفحة. وظيفته فقط:
+   1) قراءة التقييمات من Supabase عند فتح الصفحة.
+   2) جعل الحذف يحذف من القاعدة ومن التخزين المحلي.
+   3) تحديث الجداول والرسوم البيانية بعد الاسترجاع/الحذف.
+*/
+(function(){
+  const TABLE = 'library_evaluations';
+  const LOCAL_KEY = (typeof LSK !== 'undefined') ? LSK : 'falah_lib_v6';
+
+  function client(){ return window.alfalahSupabase || window.supabaseClient || null; }
+  function toast(msg){
+    const t=document.getElementById('toast');
+    if(t){ t.textContent=msg; t.style.display='block'; setTimeout(()=>{t.style.display='none';},2600); }
+    else console.log(msg);
+  }
+  function safeDB(){
+    if(typeof DB === 'undefined' || !DB) window.DB={ev:{}};
+    if(!DB.ev) DB.ev={};
+    return DB;
+  }
+  function saveLocal(){
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(safeDB())); }catch(e){ console.warn(e); }
+  }
+  function normDate(v){ return v || new Date().toISOString().split('T')[0]; }
+  function getSchoolById(sid){ try{return SCH.find(s=>s.id===sid)||null;}catch(e){return null;} }
+  function schoolIdFromRow(row){
+    const d = row && row.full_data && typeof row.full_data==='object' ? row.full_data : {};
+    let sid = d.school_id || d.esch || d.school || row.school_code || row.school_id || '';
+    if(typeof sid === 'number') sid = String(sid);
+    sid = String(sid||'').trim();
+    if(sid && typeof SCH !== 'undefined' && SCH.some(s=>s.id===sid)) return sid;
+    // محاولة المطابقة بالاسم إن لم يوجد الرمز
+    const name = String(d.school_name || d.sname || d['f-sname'] || row.school_name || '').trim();
+    if(name && typeof SCH !== 'undefined'){
+      const m = SCH.find(s=>s.name===name || name.includes(s.short) || name.includes(s.name));
+      if(m) return m.id;
+    }
+    return '';
+  }
+  function rowDate(row){
+    return row.updated_at || row.created_at || row.saved_at || row.visit_date || (row.full_data && row.full_data.savedAt) || '';
+  }
+  function dataFromRow(row){
+    const d = row && row.full_data && typeof row.full_data==='object' ? Object.assign({}, row.full_data) : {};
+    if(!d.date) d.date = row.visit_date || '';
+    if(!d.lib) d.lib = row.librarian_name || '';
+    if(!d.overall) d.overall = row.final_level || '';
+    if(!d.str) d.str = row.strengths || '';
+    if(!d.wk) d.wk = row.weaknesses || '';
+    if(!d.chal) d.chal = row.weaknesses || '';
+    if(!d.rec) d.rec = row.recommendations || '';
+    d.saved = true;
+    d.savedAt = rowDate(row) || d.savedAt || new Date().toISOString();
+    d._dbRowId = row.id || null;
+    return d;
+  }
+  function refreshAll(){
+    try{ if(typeof popSel==='function') popSel(); }catch(e){}
+    try{ if(typeof uHome==='function') uHome(); }catch(e){}
+    try{ if(typeof uSch==='function') uSch(); }catch(e){}
+    try{ if(typeof uDat==='function') uDat(); }catch(e){}
+    try{ if(typeof uCmp==='function') uCmp(); }catch(e){}
+    try{ if(typeof uRep==='function' && document.getElementById('page-rep')?.classList.contains('active')) uRep(); }catch(e){}
+    try{ if(typeof uCh==='function') setTimeout(uCh,120); }catch(e){}
+    try{ if(typeof popEmailSchool==='function') popEmailSchool(); }catch(e){}
+    try{ if(typeof popEmSch==='function') popEmSch(); }catch(e){}
+  }
+  async function fetchRemoteEvaluations(){
+    const sb=client();
+    if(!sb) return [];
+    const {data,error}=await sb.from(TABLE).select('*').order('updated_at',{ascending:false});
+    if(error){ console.warn('Evaluation remote load error', error); return []; }
+    return Array.isArray(data)?data:[];
+  }
+  async function loadEvaluationsFromSupabase(){
+    const rows = await fetchRemoteEvaluations();
+    if(!rows.length){ refreshAll(); return; }
+    const seen = new Set();
+    const db=safeDB();
+    rows.forEach(row=>{
+      const sid = schoolIdFromRow(row);
+      if(!sid || seen.has(sid)) return;
+      seen.add(sid);
+      const d=dataFromRow(row);
+      d.school_id=sid;
+      const s=getSchoolById(sid);
+      if(s){ d.school_name=s.name; d.school_code=sid; }
+      db.ev[sid]=d;
+    });
+    saveLocal();
+    refreshAll();
+  }
+  window.loadEvaluationsFromSupabase = loadEvaluationsFromSupabase;
+
+  async function deleteRemoteRowsForSchool(sid){
+    const sb=client();
+    if(!sb) return;
+    const rows = await fetchRemoteEvaluations();
+    const ids = rows.filter(r=>schoolIdFromRow(r)===sid).map(r=>r.id).filter(Boolean);
+    if(ids.length){
+      const {error}=await sb.from(TABLE).delete().in('id', ids);
+      if(error) throw error;
+    }
+  }
+  window.delEv = async function(sid){
+    if(!sid) sid=document.getElementById('esch')?.value||'';
+    if(!sid) return alert('اختر المدرسة أولاً');
+    const s=getSchoolById(sid);
+    if(!confirm('حذف تقييم '+(s?s.short:sid)+' من القاعدة والجهاز؟')) return;
+    try{
+      await deleteRemoteRowsForSchool(sid);
+      if(safeDB().ev[sid]) delete DB.ev[sid];
+      saveLocal();
+      refreshAll();
+      toast('✅ تم حذف التقييم من القاعدة والقائمة');
+    }catch(e){
+      console.error(e);
+      alert('فشل حذف التقييم من القاعدة: '+(e.message||e));
+    }
+  };
+
+  async function removePreviousEvaluationRows(sid){
+    try{ await deleteRemoteRowsForSchool(sid); }catch(e){ console.warn('delete old evaluation rows failed', e); }
+  }
+  async function saveEvaluationToSupabase(sid,d){
+    const sb=client();
+    if(!sb) return false;
+    const s=getSchoolById(sid);
+    const sc = (typeof calcSc==='function') ? calcSc(d) : {};
+    const values = Object.values(sc||{}).filter(v=>Number(v)>0);
+    const total = values.length ? Math.round(values.reduce((a,b)=>a+Number(b),0)/values.length*10)/10 : 0;
+    d.school_id=sid; d.school_code=sid; d.school_name=s?.name||''; d.saved=true; d.savedAt=new Date().toISOString();
+    await removePreviousEvaluationRows(sid);
+    const row={
+      school_code:sid,
+      visit_date:normDate(d.date),
+      librarian_name:d.lib||'',
+      total_score:total,
+      final_level:d.overall||'',
+      strengths:d.str||'',
+      weaknesses:d.wk||d.chal||'',
+      recommendations:d.rec||'',
+      full_data:d,
+      updated_at:new Date().toISOString()
+    };
+    const {error}=await sb.from(TABLE).insert(row);
+    if(error) throw error;
+    return true;
+  }
+
+  const oldSaveEval = window.saveEval;
+  window.saveEval = async function(){
+    const sid=document.getElementById('esch')?.value||'';
+    if(!sid) return alert('اختر المدرسة!');
+    const d = (typeof getEv==='function') ? getEv() : {};
+    safeDB().ev[sid]=d;
+    saveLocal();
+    refreshAll();
+    try{
+      await saveEvaluationToSupabase(sid,d);
+      safeDB().ev[sid]=d;
+      saveLocal();
+      refreshAll();
+      toast('✅ تم حفظ التقييم في القاعدة');
+    }catch(e){
+      console.error(e);
+      alert('تم الحفظ محلياً، لكن فشل الحفظ في القاعدة: '+(e.message||e));
+    }
+  };
+
+  const oldSaveAll = window.saveAll;
+  window.saveAll = async function(){
+    const sid=document.getElementById('esch')?.value||'';
+    if(sid && document.getElementById('eform')?.style.display!=='none'){
+      return window.saveEval();
+    }
+    if(typeof oldSaveAll==='function') return oldSaveAll();
+  };
+
+  // تحديث صفحة المقارنة والرسوم عند فتحها حتى تعتمد على آخر بيانات القاعدة
+  const oldPg = window.pg;
+  window.pg = function(id,title,nid){
+    const r = (typeof oldPg==='function') ? oldPg(id,title,nid) : undefined;
+    if(id==='page-home'||id==='page-sch'||id==='page-cmp'||id==='page-dat'||id==='page-rep'||id==='page-ch'){
+      loadEvaluationsFromSupabase().then(()=>{ if(id==='page-ch' && typeof uCh==='function') setTimeout(uCh,150); });
+    }
+    return r;
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    setTimeout(()=>loadEvaluationsFromSupabase(),450);
+    setTimeout(()=>loadEvaluationsFromSupabase(),1400);
+  });
+})();
+</script>
+
 </body>
 </html>
