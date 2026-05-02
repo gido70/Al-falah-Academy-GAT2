@@ -272,6 +272,14 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
   background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;
   line-height:2;font-size:14px;color:#1e293b;white-space:pre-wrap;
 }
+textarea.manager-letter{
+  width:100%;min-height:360px;resize:vertical;display:block;
+  font-family:'Cairo',Tahoma,Arial,sans-serif;direction:rtl;text-align:right;
+  outline:none;
+}
+textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.12)}
+.manager-edit-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px;background:#f8fafc;border:1px solid var(--border);border-radius:14px;padding:12px}
+.manager-edit-tools .fld{min-width:220px;flex:1}
 .manager-letter h3{color:var(--navy);font-size:16px;margin:0 0 8px;text-align:center}
 .btn-word{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff}
 .final-note{
@@ -381,62 +389,7 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 }
 @media print { .platform-home-btn { display: none !important; } }
 
-.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}
-/* === Multi visits selection patch === */
-.visit-multi-box{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin:0 0 14px;
-}
-.visit-option{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
-  background:#f8fafc;
-  border:1.5px solid var(--border);
-  border-radius:12px;
-  padding:9px 11px;
-  font-size:12px;
-  font-weight:700;
-  color:var(--navy);
-  line-height:1.7;
-  cursor:pointer;
-  transition:all .15s;
-}
-.visit-option:hover{
-  border-color:var(--gold);
-  background:var(--soft);
-}
-.visit-option input{
-  margin-top:5px;
-  accent-color:var(--teal);
-  transform:scale(1.15);
-}
-.visit-option.checked{
-  border-color:var(--teal);
-  background:linear-gradient(135deg,#f0fbf8,#ffffff);
-  box-shadow:0 0 0 3px rgba(14,127,112,.08);
-}
-.visit-selected-box{
-  background:#f0f6ff;
-  border:1.5px solid var(--border);
-  border-radius:12px;
-  padding:10px 12px;
-  margin-bottom:14px;
-  color:var(--navy);
-  font-size:13px;
-  line-height:1.8;
-}
-.visit-selected-box strong{
-  display:block;
-  margin-bottom:4px;
-}
-@media(max-width:750px){
-  .visit-multi-box{grid-template-columns:1fr;}
-}
-
-</style>
+.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}</style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
 <a class="platform-home-btn" href="../index.html">🏠 الرئيسية</a>
@@ -580,29 +533,21 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
 <div class="pg" id="pg-visits">
   <div class="sc">
     <div class="sc-head"><div class="sc-num">5</div><div><div class="sc-title">الزيارات الميدانية للمدارس</div></div></div>
-
-    <div class="stitle">الجدول المعتمد — اختاري زيارة واحدة أو أكثر داخل الأسبوع</div>
-
-    <input type="hidden" name="approved_visit" id="approved_visit_multi" value="">
-
-    <div class="visit-multi-box">
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين"> <span>الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين"> <span>الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة"> <span>الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي"> <span>الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي"> <span>الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي"> <span>الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="زيارة مدرسة خارج المنظومة"> <span>زيارة مدرسة خارج المنظومة</span></label>
-      <label class="visit-option"><input type="checkbox" class="visit-check" value="أخرى"> <span>أخرى</span></label>
+    <div class="stitle">الجدول المعتمد — اختاري الزيارة المنجزة</div>
+    <div class="fld" style="margin-bottom:14px">
+      <select name="approved_visit" style="font-size:14px;padding:10px 12px;">
+        <option value="">— اختر من الجدول المعتمد —</option>
+        <option>الثلاثاء 28/4/2026 — أكاديمية الفلاح فرع الخبيصي — العين</option>
+        <option>الأربعاء 29/4/2026 — أكاديمية الفلاح فرع الجيمي — العين</option>
+        <option>الثلاثاء 5/5/2026 — مدرسة الفلاح الخاصة (الدخيلات) — الشارجة</option>
+        <option>الخميس 7/5/2026 — أكاديمية الفلاح فرع بني ياس — أبوظبي</option>
+        <option>الاثنين 11/5/2026 — أكاديمية الفلاح فرع محمد بن زايد — أبوظبي</option>
+        <option>الثلاثاء 12/5/2026 — أكاديمية الفلاح فرع الدانة — أبوظبي</option>
+        <option>زيارة مدرسة خارج المنظومة</option><option>أخرى</option>
+      </select>
     </div>
-
-    <div class="visit-selected-box">
-      <strong>الزيارات المختارة:</strong>
-      <div id="selectedVisitsText">— لم يتم اختيار أي زيارة بعد —</div>
-    </div>
-
     <div class="g3">
-      <div class="fld"><label>عدد الزيارات</label><input type="number" name="visits_count" id="visits_count_auto" min="0" placeholder="0" readonly></div>
+      <div class="fld"><label>عدد الزيارات</label><input type="number" name="visits_count" min="0" placeholder="0"></div>
       <div class="fld"><label>نوع الزيارة</label>
         <select name="visits_type">
           <option>تقييم أولي شامل</option><option>متابعة تنفيذ</option><option>دعم فني</option>
@@ -900,7 +845,18 @@ input[readonly]{background:#edf2f7;cursor:default;color:var(--muted);}
     <table class="mgr-tbl"><thead><tr><th>اليوم</th><th>النوع</th><th>الحضور</th><th>الانصراف</th><th>ملاحظة</th></tr></thead><tbody id="mgrAttBody"></tbody></table>
     
     <div class="mgr-stitle" style="margin-top:14px">📨 الصياغة الإدارية المختصرة</div>
-    <div class="manager-letter" id="mgrLetterBody">سيظهر هنا ملخص إداري احترافي بعد توليد التقرير.</div>
+    <div class="manager-edit-tools">
+      <div class="fld">
+        <label>اسم المدير/ة أو الجهة المستلمة</label>
+        <input id="managerName" type="text" placeholder="مثال: مدير الإدارة / الأستاذ ...">
+      </div>
+      <div class="fld">
+        <label>صفة المخاطب</label>
+        <input id="managerTitle" type="text" value="المدير/ة" placeholder="مثال: المدير/ة، مدير الإدارة، سعادة الأستاذ">
+      </div>
+      <button type="button" class="btn btn-soft bsm" id="btn-refresh-manager-letter">🔄 تحديث الصياغة تلقائياً</button>
+    </div>
+    <textarea class="manager-letter editable" id="mgrLetterBody" rows="14" placeholder="يمكنك تعديل خطاب المدير هنا قبل الطباعة أو Word أو Gmail...">سيظهر هنا ملخص إداري احترافي بعد توليد التقرير.</textarea>
 
     
     <div class="mgr-stitle" style="margin-top:12px">📈 مؤشرات بصرية مختصرة</div>
@@ -1904,6 +1860,8 @@ function buildManagerLetterFinal(){
   var wnum=_fv("wnum") || "—";
   var wstart=_fv("wstart") || "—";
   var wend=_fv("wend") || "—";
+  var managerName=_fv("managerName");
+  var managerTitle=_fv("managerTitle") || "المدير/ة";
   var ach=_fv("achievements");
   var chal=_fv("challenges");
   var next=_fv("next_week");
@@ -1911,7 +1869,7 @@ function buildManagerLetterFinal(){
   var reqType=_fv("week_request_type");
   var req=_fv("week_requests");
   var text="";
-  text += "سعادة المدير/ة،\n\n";
+  text += "سعادة "+managerTitle+(managerName ? " " + managerName : "")+"،\n\n";
   text += "أرفع لسعادتكم التقرير الأسبوعي لمتابعة أعمال تطوير مراكز مصادر التعلم، وذلك عن الأسبوع رقم "+wnum+"، للفترة من "+wstart+" إلى "+wend+".\n\n";
   text += "أولاً: ملخص الأسبوع\n";
   text += (ach ? ach : "تم تنفيذ الأعمال الأسبوعية وفق خطة المتابعة، مع توثيق الحضور والانصراف ومتابعة الجوانب الإدارية والميدانية المرتبطة بمشروع تطوير المكتبات.") + "\n\n";
@@ -1930,23 +1888,41 @@ function buildManagerLetterFinal(){
   text += "\nوتفضلوا بقبول فائق الاحترام.";
   return text;
 }
-function updateManagerLetterFinal(){
+function updateManagerLetterFinal(force){
   var el=document.getElementById("mgrLetterBody");
-  if(el) el.textContent=buildManagerLetterFinal();
+  if(!el) return;
+  var txt=buildManagerLetterFinal();
+  if(el.tagName === "TEXTAREA"){
+    if(force || el.dataset.userEdited !== "1") el.value = txt;
+  }else{
+    if(force || el.dataset.userEdited !== "1") el.textContent = txt;
+  }
+}
+function getManagerLetterTextFinal(){
+  var el=document.getElementById("mgrLetterBody");
+  if(el){
+    var val = (el.tagName === "TEXTAREA") ? el.value : el.textContent;
+    if(val && val.trim()) return val;
+  }
+  return buildManagerLetterFinal();
 }
 function exportElementWordFinal(elId, fileName){
-  updateManagerLetterFinal();
+  updateManagerLetterFinal(false);
   var el=document.getElementById(elId);
   if(!el){ alert("لا يوجد محتوى للتصدير"); return; }
+  var clone=el.cloneNode(true);
+  var ta=clone.querySelector ? clone.querySelector("#mgrLetterBody") : null;
+  var liveTa=document.getElementById("mgrLetterBody");
+  if(ta && liveTa){ ta.textContent = liveTa.value || liveTa.textContent || ""; }
   var style=document.querySelector("style") ? document.querySelector("style").innerHTML : "";
-  var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>'+style+' body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;background:#fff}.site-header,.save-bar,button{display:none!important}</style><\/head><body>'+el.outerHTML+'<\/body><\/html>';
+  var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>'+style+' body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;background:#fff}.site-header,.save-bar,button{display:none!important}</style><\/head><body>'+clone.outerHTML+'<\/body><\/html>';
   var blob=new Blob(["\ufeff",html],{type:"application/msword;charset=utf-8"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
 }
 function openGmailFinal(){
   updateManagerLetterFinal();
   var subject=encodeURIComponent("التقرير الأسبوعي - مراكز مصادر التعلم");
-  var body=encodeURIComponent(buildManagerLetterFinal());
+  var body=encodeURIComponent(getManagerLetterTextFinal());
   window.open("https://mail.google.com/mail/?view=cm&fs=1&su="+subject+"&body="+body, "_blank");
 }
 document.addEventListener("click", function(e){
@@ -1954,14 +1930,27 @@ document.addEventListener("click", function(e){
   if(e.target.id==="btn-word") exportElementWordFinal("reportBox","التقرير_الأسبوعي_الكامل.doc");
   if(e.target.id==="btn-mgr-word") exportElementWordFinal("mgrBox","تقرير_المدير_الأسبوعي.doc");
   if(["btn-mgr-email","ha-email","btn-email"].includes(e.target.id)){ e.preventDefault(); openGmailFinal(); }
-  if(["btn-mgr","ha-mgr","btn-gen","ha-gen"].includes(e.target.id)){ setTimeout(updateManagerLetterFinal,400); }
+  if(["btn-mgr","ha-mgr","btn-gen","ha-gen"].includes(e.target.id)){ 
+    var ta=document.getElementById("mgrLetterBody");
+    if(ta) ta.dataset.userEdited="0";
+    setTimeout(function(){ updateManagerLetterFinal(true); },400); 
+  }
+  if(e.target.id==="btn-refresh-manager-letter"){
+    var ta2=document.getElementById("mgrLetterBody");
+    if(ta2) ta2.dataset.userEdited="0";
+    updateManagerLetterFinal(true);
+    if(typeof toast === "function") toast("تم تحديث صياغة المدير تلقائيًا");
+  }
+});
+document.addEventListener("input", function(e){
+  if(e.target && e.target.id === "mgrLetterBody") e.target.dataset.userEdited="1";
 });
 
 
 // === إصلاح البريد والرسوم البيانية الرسمية ===
 function showEmailPanelFinal(){
   if(typeof updateManagerLetterFinal === "function") updateManagerLetterFinal();
-  var text = (typeof buildManagerLetterFinal === "function") ? buildManagerLetterFinal() : "التقرير الأسبوعي";
+  var text = (typeof getManagerLetterTextFinal === "function") ? getManagerLetterTextFinal() : ((typeof buildManagerLetterFinal === "function") ? buildManagerLetterFinal() : "التقرير الأسبوعي");
   var box = document.getElementById("emailTextBox");
   if(box) box.value = text;
   var panel = document.getElementById("emailPanel");
@@ -2313,70 +2302,5 @@ else{setTimeout(WKM.init,600);}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
-
-<script>
-/* === Multi visits selection patch === */
-(function(){
-  function syncSelectedVisits(){
-    var checks = Array.from(document.querySelectorAll('.visit-check'));
-    if(!checks.length) return;
-
-    var selected = checks.filter(function(c){ return c.checked; }).map(function(c){ return c.value; });
-
-    checks.forEach(function(c){
-      var box = c.closest('.visit-option');
-      if(box) box.classList.toggle('checked', c.checked);
-    });
-
-    var hidden = document.getElementById('approved_visit_multi');
-    if(hidden) hidden.value = selected.join(' | ');
-
-    var count = document.getElementById('visits_count_auto') || document.querySelector('[name="visits_count"]');
-    if(count) count.value = selected.length ? String(selected.length) : '';
-
-    var out = document.getElementById('selectedVisitsText');
-    if(out){
-      out.innerHTML = selected.length
-        ? selected.map(function(v){ return '✅ ' + v; }).join('<br>')
-        : '— لم يتم اختيار أي زيارة بعد —';
-    }
-  }
-
-  function restoreSelectedVisitsFromHidden(){
-    var hidden = document.getElementById('approved_visit_multi');
-    var saved = hidden && hidden.value ? hidden.value : '';
-    if(!saved) return;
-    var parts = saved.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
-    document.querySelectorAll('.visit-check').forEach(function(c){
-      c.checked = parts.indexOf(c.value) !== -1;
-    });
-    syncSelectedVisits();
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('.visit-check').forEach(function(c){
-      c.addEventListener('change', syncSelectedVisits);
-    });
-    syncSelectedVisits();
-
-    var oldSetFormData = window.setFormData;
-    if(typeof oldSetFormData === 'function'){
-      window.setFormData = function(d){
-        oldSetFormData(d);
-        setTimeout(function(){
-          if(d && d.approved_visit){
-            var hidden = document.getElementById('approved_visit_multi');
-            if(hidden) hidden.value = d.approved_visit;
-            restoreSelectedVisitsFromHidden();
-          } else {
-            syncSelectedVisits();
-          }
-        }, 50);
-      };
-    }
-  });
-})();
-</script>
-
 </body>
 </html>
