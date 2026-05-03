@@ -1765,5 +1765,254 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
 })();
 </script>
 
+
+
+<script>
+/* === Alfalah Evaluation Reliable Sync + Clear + Charts Patch — 2026-05-03 ===
+   إصلاح نهائي محصور في البيانات فقط:
+   - Supabase هو مصدر الحقيقة للتقييمات عند فتح الصفحة.
+   - حذف فردي وحذف شامل من القاعدة + الجهاز.
+   - استيراد JSON مع إمكانية رفعه للقاعدة.
+   - الرسوم والمقارنة والتقرير النهائي تعتمد على نفس البيانات.
+*/
+(function(){
+  const TABLE = 'library_evaluations';
+  const LOCAL_KEY = (typeof LSK !== 'undefined') ? LSK : 'falah_lib_v6';
+  const SCHOOL_DB_ID = {dan:1,mzd:2,bny:3,khb:4,jmi:5,shj:6};
+  const AXES = ["المجموعات","مجموعات الإمارات","التنظيم الفني","البيئة","الأنشطة","الشراكات","الكادر والمؤهلات","التقنية"];
+  const RATING_KEYS = ["uae","cd","cc","cco","sh","cr","sp","se","at","in","rch","tu","cu","ri","pa","co","ts","ss","sb","sc","sst","si","ste","dg","te","un"];
+
+  function sb(){ return window.alfalahSupabase || window.supabaseClient || null; }
+  function db(){ if(typeof DB==='undefined' || !DB) window.DB={ev:{}}; if(!DB.ev) DB.ev={}; return DB; }
+  function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(db())); }catch(e){ console.warn(e); } }
+  function toast(msg){
+    let el=document.getElementById('alfalah-sync-toast');
+    if(!el){
+      el=document.createElement('div'); el.id='alfalah-sync-toast';
+      el.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:999999;background:#0c447c;color:#fff;padding:12px 20px;border-radius:18px;font-family:Cairo,Tahoma,sans-serif;font-weight:900;box-shadow:0 8px 26px rgba(0,0,0,.25);max-width:92%;text-align:center;display:none';
+      document.body.appendChild(el);
+    }
+    el.textContent=msg; el.style.display='block'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none',2800);
+  }
+  function school(sid){ try{return SCH.find(s=>s.id===sid)||null;}catch(e){return null;} }
+  function normalizeLevel(v){ return String(v||'').replace(/🔴|🟠|🔵|🟢/g,'').trim(); }
+  function cleanNumber(v){ const n=Number(v); return Number.isFinite(n)?Math.max(0,Math.min(6,n)):0; }
+  function avg(vals){ vals=(vals||[]).map(cleanNumber).filter(v=>v>0); return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:0; }
+  function axisFromRatings(d){
+    const R=k=>cleanNumber(d&&d['r_'+k]);
+    return {
+      "المجموعات":avg([R('cd'),R('cc'),R('cco')]),
+      "مجموعات الإمارات":avg([R('uae')]),
+      "التنظيم الفني":avg([R('sh'),R('cr')]),
+      "البيئة":avg([R('sp'),R('se'),R('at'),R('in')]),
+      "الأنشطة":avg([R('rch'),R('tu'),R('cu'),R('ri')]),
+      "الشراكات":avg([R('pa'),R('co'),R('ts'),R('ss')]),
+      "الكادر والمؤهلات":avg([R('sb'),R('sc'),R('sst'),R('si'),R('ste'),R('scol'),R('marc'),R('ils')]),
+      "التقنية":avg([R('dg'),R('te'),R('un')])
+    };
+  }
+  function firstScoreObject(d,row){
+    const candidates=[d&&d._axisScores,d&&d.axis_scores,d&&d.axisScores,d&&d.scores,d&&d.sc,d&&d.score_by_axis,row&&row.axis_scores,row&&row.scores,row&&row.score_by_axis];
+    for(const c of candidates){ if(c && typeof c==='object') return c; }
+    return null;
+  }
+  function axisScores(d,row){
+    const fromRatings=axisFromRatings(d||{});
+    const hasRatings=Object.values(fromRatings).some(v=>v>0);
+    if(hasRatings) return fromRatings;
+    const obj=firstScoreObject(d,row);
+    if(obj){
+      const out={}; AXES.forEach(a=>out[a]=cleanNumber(obj[a]));
+      if(Object.values(out).some(v=>v>0)) return out;
+    }
+    const total=cleanNumber((d&&d.total_score)||(d&&d.totalScore)||(row&&row.total_score));
+    if(total>0){ const out={}; AXES.forEach(a=>out[a]=total); return out; }
+    return fromRatings;
+  }
+  function totalFromScores(sc){ const vals=Object.values(sc||{}).map(cleanNumber).filter(v=>v>0); return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:0; }
+
+  // اجعل حسابات النظام كلها تقرأ المحاور المحفوظة أو أرقام التقييم المفصلة أو المتوسط العام كاحتياط.
+  window.calcSc = function(d){ return axisScores(d||{}, null); };
+  window.tot = function(sc){ return totalFromScores(sc); };
+  window.allD = function(){
+    return (SCH||[]).map(s=>{ const d=db().ev[s.id]; const sc=d&&d.saved?axisScores(d,null):null; return {s,d:d||null,sc}; })
+      .filter(r=>r.sc && Object.values(r.sc).some(v=>cleanNumber(v)>0 || r.d?.saved));
+  };
+
+  function sidFromRow(row){
+    const d=(row&&row.full_data&&typeof row.full_data==='object')?row.full_data:{};
+    let sid=String(d.school_id||d.esch||d.school_code||row.school_code||'').trim();
+    if(sid && SCH.some(s=>s.id===sid)) return sid;
+    const numeric=row.school_id || d.school_db_id;
+    if(numeric){ const found=Object.entries(SCHOOL_DB_ID).find(([,v])=>String(v)===String(numeric)); if(found) return found[0]; }
+    const name=String(d.school_name||d.sname||d['f-sname']||row.school_name||'').trim();
+    if(name){ const m=SCH.find(s=>name===s.name || name.includes(s.short) || name.includes(s.name)); if(m) return m.id; }
+    return '';
+  }
+  function rowTime(row){ return row.updated_at||row.created_at||row.saved_at||row.visit_date||(row.full_data&&row.full_data.savedAt)||''; }
+  function dataFromRow(row){
+    const base=(row&&row.full_data&&typeof row.full_data==='object')?JSON.parse(JSON.stringify(row.full_data)):{};
+    const sid=sidFromRow(row); const s=school(sid);
+    base.school_id=sid; base.school_code=sid; base.school_db_id=SCHOOL_DB_ID[sid]||null; base.school_name=s?.name||base.school_name||'';
+    if(!base.date) base.date=row.visit_date||'';
+    if(!base.lib) base.lib=row.librarian_name||'';
+    if(!base.overall) base.overall=row.final_level||'';
+    if(!base.str) base.str=row.strengths||'';
+    if(!base.wk) base.wk=row.weaknesses||'';
+    if(!base.chal) base.chal=row.weaknesses||'';
+    if(!base.rec) base.rec=row.recommendations||'';
+    base.total_score=cleanNumber(row.total_score||base.total_score);
+    base._axisScores=axisScores(base,row);
+    base.saved=true; base.savedAt=rowTime(row)||base.savedAt||new Date().toISOString(); base._dbRowId=row.id||null;
+    return base;
+  }
+  async function fetchRows(){
+    const c=sb(); if(!c) return null;
+    const {data,error}=await c.from(TABLE).select('*').order('updated_at',{ascending:false});
+    if(error){ console.error('load evaluations error', error); toast('تعذر تحميل التقييمات من القاعدة'); return null; }
+    return Array.isArray(data)?data:[];
+  }
+  function refresh(){
+    try{ if(typeof popSel==='function') popSel(); }catch(e){}
+    try{ if(typeof uHome==='function') uHome(); }catch(e){}
+    try{ if(typeof uSch==='function') uSch(); }catch(e){}
+    try{ if(typeof uDat==='function') uDat(); }catch(e){}
+    try{ if(typeof uCmp==='function') uCmp(); }catch(e){}
+    try{ if(typeof uRep==='function' && document.getElementById('page-rep')?.classList.contains('active')) uRep(); }catch(e){}
+    try{ if(typeof uCh==='function') setTimeout(uCh,120); }catch(e){}
+    try{ if(typeof popEmailSchool==='function') popEmailSchool(); }catch(e){}
+    try{ if(typeof popEmSch==='function') popEmSch(); }catch(e){}
+  }
+  async function loadRemote({replace=true}={}){
+    const rows=await fetchRows();
+    if(rows===null){ refresh(); return; }
+    if(replace) db().ev={};
+    const seen=new Set();
+    for(const row of rows){
+      const sid=sidFromRow(row); if(!sid || seen.has(sid)) continue;
+      seen.add(sid); db().ev[sid]=dataFromRow(row);
+    }
+    saveLocal(); refresh();
+  }
+  window.loadEvaluationsFromSupabase = loadRemote;
+
+  async function deleteRowsForSchool(sid){
+    const c=sb(); if(!c) return;
+    const ids=[];
+    const rows=await fetchRows();
+    if(rows){ rows.forEach(r=>{ if(sidFromRow(r)===sid && r.id) ids.push(r.id); }); }
+    if(ids.length){ const {error}=await c.from(TABLE).delete().in('id',ids); if(error) throw error; }
+    else{
+      // احتياط إذا تعذر تحديد id
+      await c.from(TABLE).delete().eq('school_code',sid);
+      if(SCHOOL_DB_ID[sid]) await c.from(TABLE).delete().eq('school_id',SCHOOL_DB_ID[sid]);
+    }
+  }
+  async function deleteAllRows(){
+    const c=sb(); if(!c) return;
+    const {error}=await c.from(TABLE).delete().neq('id',0);
+    if(error) throw error;
+  }
+  async function saveOneRemote(sid,d){
+    const c=sb(); if(!c) return false;
+    const s=school(sid); const scores=axisScores(d,null); const total=totalFromScores(scores);
+    d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid]||null; d.school_name=s?.name||'';
+    d.saved=true; d.savedAt=new Date().toISOString(); d._axisScores=scores; d.total_score=total;
+    await deleteRowsForSchool(sid);
+    const row={
+      school_id:SCHOOL_DB_ID[sid]||null,
+      school_code:sid,
+      visit_date:d.date||new Date().toISOString().slice(0,10),
+      librarian_name:d.lib||'',
+      total_score:total,
+      final_level:normalizeLevel(d.overall),
+      strengths:d.str||'',
+      weaknesses:d.wk||d.chal||'',
+      recommendations:d.rec||'',
+      full_data:d,
+      updated_at:new Date().toISOString()
+    };
+    const {error}=await c.from(TABLE).insert(row);
+    if(error) throw error;
+    return true;
+  }
+  async function pushAllRemote(){
+    const entries=Object.entries(db().ev||{}).filter(([,d])=>d&&d.saved);
+    for(const [sid,d] of entries){ await saveOneRemote(sid,d); }
+    await loadRemote({replace:true});
+  }
+  window.pushAllEvaluationsToSupabase = pushAllRemote;
+
+  window.saveEval = async function(){
+    const sid=document.getElementById('esch')?.value||''; if(!sid) return alert('اختر المدرسة!');
+    const d=(typeof getEv==='function')?getEv():(db().ev[sid]||{});
+    d.saved=true; d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores);
+    db().ev[sid]=d; saveLocal(); refresh();
+    try{ await saveOneRemote(sid,d); await loadRemote({replace:true}); toast('✅ تم حفظ التقييم في القاعدة'); }
+    catch(e){ console.error(e); alert('تم الحفظ محلياً، لكن فشل الحفظ في القاعدة: '+(e.message||e)); }
+  };
+  window.saveAll = async function(){
+    const sid=document.getElementById('esch')?.value||'';
+    if(sid && document.getElementById('eform')?.style.display!=='none') return window.saveEval();
+    saveLocal(); refresh(); toast('✅ تم الحفظ محلياً');
+  };
+  window.delEv = async function(sid){
+    if(!sid) sid=document.getElementById('esch')?.value||''; if(!sid) return alert('اختر المدرسة أولاً');
+    const s=school(sid); if(!confirm('حذف تقييم '+(s?s.short:sid)+' من القاعدة والجهاز؟')) return;
+    try{ await deleteRowsForSchool(sid); delete db().ev[sid]; saveLocal(); await loadRemote({replace:true}); toast('✅ تم حذف التقييم'); }
+    catch(e){ console.error(e); alert('فشل حذف التقييم: '+(e.message||e)); }
+  };
+  window.clrAll = async function(){
+    if(!confirm('سيتم تصفير كل التقييمات الحالية من القاعدة والجهاز. هل أنت متأكد؟')) return;
+    try{ await deleteAllRows(); db().ev={}; saveLocal(); refresh(); toast('✅ تم تصفير التقييمات بالكامل'); }
+    catch(e){ console.error(e); alert('فشل تصفير التقييمات من القاعدة: '+(e.message||e)); }
+  };
+  window.clrEval = function(){
+    if(!confirm('مسح بيانات النموذج الحالي فقط دون حذف التقييم المحفوظ؟')) return;
+    const sid=document.getElementById('esch')?.value||''; if(sid){ const keep=db().ev[sid]; delete db().ev[sid]; try{ ldEv(sid); } finally { if(keep) db().ev[sid]=keep; } } else if(typeof ldEv==='function') ldEv('');
+  };
+  window.impData = function(){
+    const f=document.getElementById('impF')?.files?.[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const p=JSON.parse(e.target.result); const incoming=p.ev || (p.data&&p.school?{[document.getElementById('esch')?.value||'imported']:p.data}:null);
+        if(!incoming) return alert('الملف لا يحتوي على بيانات تقييم صحيحة');
+        const replace=confirm('هل تريد استبدال التقييمات الحالية بالمستوردة؟\nموافق = تصفير الحالي ثم استيراد.\nإلغاء = دمج المستورد مع الحالي.');
+        if(replace){ try{ await deleteAllRows(); }catch(err){ console.warn(err); } db().ev={}; }
+        Object.entries(incoming).forEach(([sid,d])=>{ if(SCH.some(s=>s.id===sid)){ d.saved=true; d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores); db().ev[sid]=d; } });
+        saveLocal(); refresh();
+        if(confirm('تم الاستيراد محلياً. هل تريد حفظ البيانات المستوردة في Supabase الآن؟')){ await pushAllRemote(); toast('✅ تم الاستيراد والحفظ في القاعدة'); }
+        else toast('✅ تم الاستيراد محلياً');
+      }catch(err){ alert('❌ خطأ في الملف: '+err.message); }
+      const input=document.getElementById('impF'); if(input) input.value='';
+    };
+    reader.readAsText(f);
+  };
+
+  // إعادة بناء الرسوم بعد كل فتح للقسم، مع ضبط حجمها على الموبايل.
+  const oldUCh = window.uCh;
+  window.uCh = function(){
+    if(typeof oldUCh==='function') oldUCh();
+    setTimeout(()=>{ try{ Object.values(CI||{}).forEach(ch=>{ if(ch&&ch.options){ ch.options.maintainAspectRatio=false; ch.resize(); } }); }catch(e){} },80);
+  };
+  const prevPg=window.pg;
+  window.pg=function(id,title,nid){
+    const r=(typeof prevPg==='function')?prevPg(id,title,nid):undefined;
+    if(['page-home','page-sch','page-cmp','page-dat','page-rep','page-ch'].includes(id)){
+      loadRemote({replace:true}).then(()=>{ if(id==='page-ch') setTimeout(()=>window.uCh&&window.uCh(),180); });
+    }
+    return r;
+  };
+  document.addEventListener('DOMContentLoaded',()=>{
+    const style=document.createElement('style');
+    style.textContent='.cbox{overflow:hidden}.cbox canvas{width:100%!important;max-width:100%!important;height:320px!important}@media(max-width:700px){.cbox{padding:12px}.cbox canvas{height:260px!important}.cgrid{grid-template-columns:1fr!important}.ctbl{font-size:12px}.sn{font-size:24px}.s4{grid-template-columns:1fr 1fr!important}}';
+    document.head.appendChild(style);
+    setTimeout(()=>loadRemote({replace:true}),500);
+    setTimeout(()=>loadRemote({replace:true}),1500);
+  });
+})();
+</script>
+
 </body>
 </html>
