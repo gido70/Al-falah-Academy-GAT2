@@ -1457,8 +1457,7 @@ function applyDirectorMode(){
 
 function shareReport(){
   const url = directorOnlyUrl();
-  const text = 'تقرير متابعة أداء مكتبات أكاديمية الفلاح — نسخة الإدارة التعليمية:
-' + url;
+  const text = 'تقرير متابعة أداء مكتبات أكاديمية الفلاح — نسخة الإدارة التعليمية:\n' + url;
   if(navigator.share){
     navigator.share({title:'تقرير المتابعة الإدارية', text, url}).catch(()=>{});
   }else{
