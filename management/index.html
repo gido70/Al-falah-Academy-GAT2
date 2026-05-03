@@ -480,6 +480,32 @@ body {
   .db-title{font-size:17px}
 }
 
+
+/* ═══ MONTHLY EXECUTIVE GROUPING ═══ */
+.monthly-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px}
+.month-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.month-card::before{content:"";position:absolute;top:0;right:0;width:7px;height:100%;background:var(--gold-grad)}
+.month-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;border-bottom:2px solid var(--bg);padding-bottom:10px}
+.month-name{font-size:16px;font-weight:900;color:var(--navy)}
+.month-meta{font-size:11px;color:var(--muted);font-weight:700}
+.month-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.month-stat{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+.month-stat strong{display:block;font-size:20px;color:var(--navy);line-height:1}
+.month-stat span{font-size:10px;color:var(--muted);font-weight:700}
+.month-weeks{display:flex;flex-direction:column;gap:7px}
+.month-week{display:grid;grid-template-columns:80px 1fr 95px;gap:8px;align-items:center;background:#f8fbff;border:1px solid var(--border);border-radius:12px;padding:9px 10px;font-size:12px}
+.month-week strong{color:var(--navy)}
+.month-week .date{color:var(--muted);font-weight:700}
+.month-week .status{display:inline-flex;justify-content:center;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;background:#e0f7f0;color:#0a6b52}
+.month-week .status.vac{background:#fce8e8;color:#b83232}
+.director-mode .header,.director-mode .action-bar,.director-mode .gold-bar,.director-mode .share-box,.director-mode .footer,.director-mode .alfalah-fixed-home{display:none!important}
+.director-mode .wrap{max-width:920px;padding-top:22px}
+.director-mode .wrap > *:not(.ai-report-card){display:none!important}
+.director-mode .ai-report-card{border:0;background:#fff;box-shadow:none;padding:0}
+.director-mode .ai-header{display:none!important}
+.director-mode .ai-output{display:block!important;border:0!important;padding:0!important}
+@media(max-width:900px){.monthly-grid{grid-template-columns:1fr}.month-week{grid-template-columns:1fr}.month-stats{grid-template-columns:repeat(3,1fr)}}
+
 @media print {
   @page { size: A4; margin: 12mm; }
   .action-bar, .share-box, .share-btns, .ai-gen-btn, .alfalah-fixed-home, .abtn { display:none!important; }
@@ -592,7 +618,9 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
   <div class="action-bar">
     <button class="abtn" onclick="window.print()">🖨️ طباعة / PDF</button>
     <button class="abtn abtn-gold" onclick="printExecutiveReport()">📄 تقرير المدير PDF</button>
+    <button class="abtn abtn-gold" onclick="downloadExecutiveWord()">📝 تقرير المدير Word</button>
     <button class="abtn abtn-teal" onclick="openDirectorReportWindow()">🧾 نسخة المدير النظيفة</button>
+    <button class="abtn abtn-teal" onclick="copyDirectorOnlyLink()">🔐 نسخ رابط المدير فقط</button>
     <button class="abtn abtn-teal" onclick="copyLink()">🔗 نسخ رابط المشاركة</button>
     <button class="abtn" onclick="shareWhatsApp()">📱 مشاركة واتساب</button>
     <button class="abtn" onclick="shareEmail()">📧 مشاركة بريد</button>
@@ -723,13 +751,13 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
 <!-- SHARE BOX -->
   <div class="share-box">
     <div class="share-title">🔗 مشاركة آمنة مع الإدارة</div>
-    <div class="share-sub">أرسل هذا الرابط للمدير المباشر أو مدير الإدارة — يفتح من أي جهاز ويعرض كل شيء تلقائياً</div>
+    <div class="share-sub">استخدم رابط المدير فقط عند الإرسال؛ يفتح التقرير التنفيذي النظيف دون أزرار أو روابط رجوع.</div>
     <div class="share-url" id="shareUrl">—</div>
     <div class="share-btns">
-      <button class="share-btn primary" onclick="copyLink()">📋 نسخ الرابط</button>
+      <button class="share-btn primary" onclick="copyDirectorOnlyLink()">📋 نسخ رابط المدير فقط</button>
       <button class="share-btn whatsapp" onclick="shareWhatsApp()">📱 واتساب</button>
       <button class="share-btn email" onclick="shareEmail()">📧 بريد إلكتروني</button>
-      <button class="share-btn" onclick="window.print()">🖨️ طباعة</button>
+      <button class="share-btn" onclick="openDirectorReportWindow()">🧾 معاينة نسخة المدير</button>
     </div>
   </div>
 
@@ -1040,56 +1068,73 @@ function renderCharts(allData) {
 }
 
 // ═══════════════════════════════════════════════
+//  MONTHLY SCHEDULE HELPERS
+// ═══════════════════════════════════════════════
+const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function parseAnyDate(v){
+  if(!v) return null;
+  if(v instanceof Date && !isNaN(v)) return v;
+  const s=String(v).trim();
+  let d=new Date(s);
+  if(!isNaN(d)) return d;
+  const m=s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if(m){ d=new Date(Number(m[3]), Number(m[2])-1, Number(m[1])); if(!isNaN(d)) return d; }
+  return null;
+}
+function monthKeyFromWeek(w){
+  const d=parseAnyDate(w.start || w.from || w.work_date || w.end) || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function groupWeeksByMonth(list){
+  const map={};
+  (list||[]).forEach(w=>{
+    const key=monthKeyFromWeek(w);
+    const d=parseAnyDate(w.start || w.from || w.work_date || w.end) || new Date();
+    if(!map[key]) map[key]={key,year:d.getFullYear(),month:d.getMonth()+1,name:`${AR_MONTHS[d.getMonth()]} ${d.getFullYear()}`,weeks:[],totalVisits:0,totalHours:0};
+    const visits=Number(w.visitCount || w.visits || 0) || 0;
+    const hrs=Number(w.totalHours || w.hours || 0) || 0;
+    map[key].weeks.push(w);
+    map[key].totalVisits += visits;
+    map[key].totalHours += hrs;
+  });
+  return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key));
+}
+function renderMonthlyCards(list){
+  const months=groupWeeksByMonth(list);
+  if(!months.length) return '<div class="no-data"><div class="no-data-icon">📅</div><div class="no-data-title">لا توجد أسابيع مسجلة بعد</div><div class="no-data-sub">سجل العمل الأسبوعي سيظهر هنا تلقائياً بعد حفظه في القاعدة.</div></div>';
+  return `<div class="monthly-grid">${months.map(m=>`
+    <div class="month-card">
+      <div class="month-head"><div class="month-name">📊 تقرير شهر ${m.name}</div><div class="month-meta">${m.weeks.length} أسبوع</div></div>
+      <div class="month-stats">
+        <div class="month-stat"><strong>${m.weeks.length}</strong><span>أسابيع</span></div>
+        <div class="month-stat"><strong>${m.totalVisits || 0}</strong><span>زيارات</span></div>
+        <div class="month-stat"><strong>${m.totalHours || '—'}</strong><span>ساعات</span></div>
+      </div>
+      <div class="month-weeks">
+        ${m.weeks.map(w=>`<div class="month-week"><strong>الأسبوع ${w.week || '—'}</strong><span class="date">${w.start||'—'} ← ${w.end||'—'}</span><span class="status ${String(w.status||'').includes('إجازة')?'vac':''}">${w.status||'دوام كامل'}</span></div>`).join('')}
+      </div>
+    </div>`).join('')}</div>`;
+}
+function renderMonthlyReportPlain(list){
+  const months=groupWeeksByMonth(list);
+  if(!months.length) return '<p style="color:#5a7ea8">لا توجد أسابيع مسجلة بعد.</p>';
+  return months.map(m=>`
+    <div style="border:1px solid #d0e0f5;border-radius:14px;padding:14px;margin:10px 0;background:#fff">
+      <div style="font-size:15px;font-weight:900;color:#0c3d72;margin-bottom:8px">📊 تقرير شهر ${m.name}</div>
+      <div style="font-size:12px;color:#5a7ea8;margin-bottom:10px">عدد الأسابيع: ${m.weeks.length} | الزيارات: ${m.totalVisits||0} | الساعات: ${m.totalHours||'—'}</div>
+      ${m.weeks.map(w=>`<div style="padding:8px 0;border-top:1px solid #edf3fb;font-size:12px"><strong>الأسبوع ${w.week||'—'}:</strong> ${w.start||'—'} إلى ${w.end||'—'} — ${w.status||'دوام كامل'}</div>`).join('')}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
 //  SCHEDULE SUMMARY
 // ═══════════════════════════════════════════════
 function renderSchedule() {
   const list = REMOTE_WEEK_LIST || localLoad('week_list') || [];
   const container = document.getElementById('scheduleContent');
   setText('kWeeks', list.length || '—');
-
-  if(list.length === 0) return; // keep no-data
-
-  let totalHours = 0, totalVisits = 0;
-  const rows = list.map(w => {
-    const d = localLoad('week_'+w.week) || {};
-    const hours = d.totalHours || '—';
-    const visits = d.visitCount || 0;
-    if(typeof hours === 'number') totalHours += hours;
-    totalVisits += visits;
-    return `<tr>
-      <td><strong>الأسبوع ${w.week}</strong></td>
-      <td>${w.start||'—'}</td>
-      <td>${w.end||'—'}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:${w.status?.includes('إجازة')?'#fce8e8':'#e0f7f0'};color:${w.status?.includes('إجازة')?'#b83232':'#0a6b52'}">${w.status||'دوام كامل'}</span></td>
-      <td style="text-align:center"><strong>${hours}</strong></td>
-      <td style="text-align:center">${visits}</td>
-    </tr>`;
-  }).join('');
-
-  container.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">
-      <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--navy)">${list.length}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:700">أسابيع مسجّلة</div>
-      </div>
-      <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--teal)">${totalHours||'—'}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:700">إجمالي الساعات</div>
-      </div>
-      <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:var(--gold)">${totalVisits||'—'}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:700">إجمالي الزيارات</div>
-      </div>
-    </div>
-    <div style="overflow-x:auto">
-      <table class="weeks-table">
-        <thead><tr>
-          <th>الأسبوع</th><th>من تاريخ</th><th>إلى تاريخ</th>
-          <th>الحالة</th><th>الساعات</th><th>الزيارات</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+  if(!container) return;
+  container.innerHTML = renderMonthlyCards(list);
 }
 
 // ═══════════════════════════════════════════════
@@ -1203,10 +1248,8 @@ function buildReport() {
         </div>`;
       }).join('');
 
-  // Schedule summary
-  const schedText = weeks.length === 0
-    ? '<p style="color:var(--muted)">لا توجد أسابيع مسجّلة بعد.</p>'
-    : `<p>تم تسجيل <strong>${weeks.length} أسبوع عمل</strong> في سجل الدوام، من ${weeks[0]?.start||'—'} إلى ${weeks[weeks.length-1]?.end||'—'}.</p>`;
+  // Monthly schedule summary
+  const schedText = renderMonthlyReportPlain(weeks);
 
   // Recommendations
   const recs = [];
@@ -1300,7 +1343,7 @@ function buildReport() {
 
     <!-- Schedule -->
     <div style="margin-bottom:20px">
-      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">🗓️ ملخص سجل الدوام</div>
+      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px">🗓️ التقارير الشهرية وسجل الدوام</div>
       ${schedText}
     </div>
 
@@ -1349,18 +1392,50 @@ function openDirectorReportWindow(){
   w.document.close();
 }
 
+
+function directorOnlyUrl(){
+  const u=new URL(window.location.href);
+  u.searchParams.set('director','1');
+  u.hash='';
+  return u.toString();
+}
+function copyDirectorOnlyLink(){
+  const url=directorOnlyUrl();
+  const el=document.getElementById('shareUrl');
+  if(el) el.textContent=url;
+  navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ رابط المدير فقط')).catch(()=>prompt('انسخ رابط المدير فقط:',url));
+}
+function downloadExecutiveWord(){
+  ensureReportReady();
+  const content=(document.getElementById('aiOutput')||{}).innerHTML || buildReport();
+  const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير المدير</title><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#0a2540;line-height:1.9;padding:24px}h1,h2,h3{color:#0c3d72}.page{max-width:900px;margin:auto}.no-print{display:none}</style></head><body><div class="page">${content}</div></body></html>`;
+  const blob=new Blob(['\ufeff',html],{type:'application/msword;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='تقرير_المدير_أكاديمية_الفلاح.doc';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast('✅ تم تنزيل ملف Word');
+}
+function applyDirectorMode(){
+  const u=new URL(window.location.href);
+  if(u.searchParams.get('director')==='1'){
+    document.body.classList.add('director-mode');
+    document.title='تقرير المدير — أكاديمية الفلاح';
+  }
+}
+
 // ═══════════════════════════════════════════════
 //  SHARE FUNCTIONS
 // ═══════════════════════════════════════════════
 function copyLink() {
-  const url = window.location.href;
+  const url = directorOnlyUrl();
   navigator.clipboard.writeText(url)
     .then(() => showToast('✅ تم نسخ الرابط'))
     .catch(() => { prompt('انسخ هذا الرابط:', url); });
 }
 
 function shareWhatsApp() {
-  const url  = encodeURIComponent(window.location.href);
+  const url  = encodeURIComponent(directorOnlyUrl());
   const text = encodeURIComponent('📊 لوحة متابعة مكتبات أكاديمية الفلاح 2026\nيمكنك متابعة مجريات العمل عبر الرابط:');
   window.open(`https://wa.me/?text=${text}%20${url}`);
 }
@@ -1368,7 +1443,7 @@ function shareWhatsApp() {
 function shareEmail() {
   const url  = window.location.href;
   const sub  = encodeURIComponent('لوحة المتابعة الإدارية — مكتبات أكاديمية الفلاح 2026');
-  const body = encodeURIComponent(`السلام عليكم،\n\nأرفق رابط لوحة المتابعة الإدارية لمهمة تطوير مكتبات أكاديمية الفلاح:\n\n${url}\n\nاللوحة تعرض: التقييمات، الإنجازات، المقارنة البيانية، سجل الدوام، وخطة المهمة.`);
+  const body = encodeURIComponent(`السلام عليكم،\n\nأرفق رابط لوحة المتابعة الإدارية لمهمة تطوير مكتبات أكاديمية الفلاح:\n\n${directorOnlyUrl()}\n\nالرابط يفتح التقرير التنفيذي النظيف المخصص للمدير فقط، دون أزرار إدارة أو روابط رجوع.`);
   window.open(`mailto:?subject=${sub}&body=${body}`);
 }
 
@@ -1391,11 +1466,13 @@ function showToast(msg) {
 //  INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  applyDirectorMode();
+
   // Mission
   calcMission();
 
   // Share URL
-  const url = window.location.href;
+  const url = directorOnlyUrl();
   document.getElementById('shareUrl').textContent = url;
 
   // Footer time
@@ -1413,7 +1490,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderSchedule();
   renderTimeline();
   // Auto-generate report on load
-  setTimeout(generateSmartReport, 600);
+  setTimeout(()=>{ generateSmartReport(); if(document.body.classList.contains('director-mode')) window.scrollTo(0,0); }, 600);
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
