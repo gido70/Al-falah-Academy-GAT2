@@ -182,6 +182,16 @@ body {
 .abtn-gold { background: rgba(184,118,14,.4); border-color: var(--amber); }
 .abtn-teal { background: rgba(13,138,121,.4); border-color: var(--teal); }
 .abtn-share { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.5); font-weight: 900; }
+.abtn-print{background:#ffffff;color:#0c3d72;border-color:#ffffff;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.abtn-director{background:linear-gradient(135deg,#0d8a79,#0a6b52);border-color:#0d8a79;color:#fff;box-shadow:0 6px 16px rgba(13,138,121,.22)}
+.abtn-word{background:linear-gradient(135deg,#b8760e,#e09b1a);border-color:#f5c842;color:#fff;box-shadow:0 6px 16px rgba(184,118,14,.22)}
+.abtn-share2{background:linear-gradient(135deg,#1557a0,#0c3d72);border-color:#8db5e5;color:#fff;box-shadow:0 6px 16px rgba(21,87,160,.22)}
+.abtn-refresh{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.45)}
+.abtn-home{background:rgba(255,255,255,.20);border-color:rgba(255,255,255,.55);color:#fff!important;text-decoration:none!important}
+.simplified-actions{gap:10px;justify-content:center}
+.report-editable{background:#fffdf4;border:1px dashed #d79b1d;border-radius:12px;padding:10px 14px;min-height:34px;outline:none}
+.report-editable:focus{box-shadow:0 0 0 3px rgba(224,155,26,.18);border-color:#b8760e}
+
 .gold-bar { height: 4px; background: linear-gradient(90deg, transparent, var(--amber), #ffe066, var(--amber), transparent); }
 
 /* ═══ CONTENT ═══ */
@@ -589,8 +599,8 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
       <!-- Read-only badge -->
       <div class="readonly-badge">
         <div class="rb-icon">🔒</div>
-        <div class="rb-text">للمراجعة الإدارية</div>
-        <div class="rb-sub">عرض فقط — لا تعديل</div>
+        <div class="rb-text">للإدارة التعليمية</div>
+        <div class="rb-sub">عرض تنفيذي — قابل للطباعة</div>
       </div>
     </div>
   </div>
@@ -615,17 +625,13 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
   </div>
 
   <!-- Action Bar -->
-  <div class="action-bar">
-    <button class="abtn" onclick="window.print()">🖨️ طباعة / PDF</button>
-    <button class="abtn abtn-gold" onclick="printExecutiveReport()">📄 تقرير المدير PDF</button>
-    <button class="abtn abtn-gold" onclick="downloadExecutiveWord()">📝 تقرير المدير Word</button>
-    <button class="abtn abtn-teal" onclick="openDirectorReportWindow()">🧾 نسخة المدير النظيفة</button>
-    <button class="abtn abtn-teal" onclick="copyDirectorOnlyLink()">🔐 نسخ رابط المدير فقط</button>
-    <button class="abtn abtn-teal" onclick="copyLink()">🔗 نسخ رابط المشاركة</button>
-    <button class="abtn" onclick="shareWhatsApp()">📱 مشاركة واتساب</button>
-    <button class="abtn" onclick="shareEmail()">📧 مشاركة بريد</button>
-    <button class="abtn" onclick="location.reload()">🔄 تحديث</button>
-    <a class="abtn abtn-share" href="../index.html">🏠 الرئيسية</a>
+  <div class="action-bar simplified-actions">
+    <button class="abtn abtn-print" onclick="window.print()">🖨️ طباعة الصفحة كاملة PDF</button>
+    <button class="abtn abtn-director" onclick="openDirectorReportWindow()">📄 نسخة الإدارة التعليمية</button>
+    <button class="abtn abtn-word" onclick="downloadExecutiveWord()">📝 Word قابل للتعديل</button>
+    <button class="abtn abtn-share2" onclick="shareReport()">📱 مشاركة التقرير</button>
+    <button class="abtn abtn-refresh" onclick="location.reload()">🔄 تحديث البيانات</button>
+    <a class="abtn abtn-home" href="../index.html">🏠 الرئيسية</a>
     <span style="margin-right:auto;font-size:11px;color:rgba(255,255,255,.7);font-weight:700" id="lastUpdate"></span>
   </div>
   <div class="gold-bar"></div>
@@ -751,10 +757,10 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
 <!-- SHARE BOX -->
   <div class="share-box">
     <div class="share-title">🔗 مشاركة آمنة مع الإدارة</div>
-    <div class="share-sub">استخدم رابط المدير فقط عند الإرسال؛ يفتح التقرير التنفيذي النظيف دون أزرار أو روابط رجوع.</div>
+    <div class="share-sub">استخدم رابط الإدارة التعليمية عند الإرسال؛ يفتح التقرير التنفيذي النظيف دون أزرار أو روابط رجوع.</div>
     <div class="share-url" id="shareUrl">—</div>
     <div class="share-btns">
-      <button class="share-btn primary" onclick="copyDirectorOnlyLink()">📋 نسخ رابط المدير فقط</button>
+      <button class="share-btn primary" onclick="copyDirectorOnlyLink()">📋 نسخ رابط الإدارة التعليمية</button>
       <button class="share-btn whatsapp" onclick="shareWhatsApp()">📱 واتساب</button>
       <button class="share-btn email" onclick="shareEmail()">📧 بريد إلكتروني</button>
       <button class="share-btn" onclick="openDirectorReportWindow()">🧾 معاينة نسخة المدير</button>
@@ -1290,10 +1296,22 @@ function buildReport() {
     </div>
 
     <!-- Header -->
-    <div style="text-align:center;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:20px">
+    <div style="text-align:center;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:18px">
       <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px">أكاديمية الفلاح — مراكز مصادر التعلم</div>
       <div style="font-size:20px;font-weight:900;color:var(--navy);margin-top:4px">التقرير التنفيذي الشامل</div>
       <div style="font-size:12px;color:var(--muted);margin-top:4px">مهمة تطوير المكتبات المدرسية 2026 | صدر بتاريخ: ${now.toLocaleDateString('ar-AE')}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="report-editable" contenteditable="true" title="يمكنك تعديل هذا النص قبل الطباعة أو التصدير إلى Word">
+        <strong>إلى:</strong> سعادة مدير/ة الإدارة التعليمية
+      </div>
+      <div class="report-editable" contenteditable="true" title="يمكنك تعديل هذا النص قبل الطباعة أو التصدير إلى Word">
+        <strong>المعد:</strong> فريق متابعة مراكز مصادر التعلم
+      </div>
+    </div>
+    <div class="report-editable" contenteditable="true" style="margin-bottom:18px" title="مساحة مرنة لإضافة ملاحظة أو اسم المدير أو توجيه خاص">
+      <strong>ملاحظة تحريرية:</strong> يمكن تعديل هذه الخانة قبل الطباعة أو قبل تنزيل نسخة Word لإضافة اسم المدير أو صياغة مخصصة.
     </div>
 
     <!-- Executive Summary -->
@@ -1401,7 +1419,7 @@ function openDirectorReportWindow(){
   const content=(document.getElementById('aiOutput')||{}).innerHTML || buildReport();
   const w=window.open('', '_blank');
   if(!w){ showToast('يرجى السماح بفتح النافذة الجديدة'); return; }
-  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تقرير المدير — أكاديمية الفلاح</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;background:#f0f5fc;margin:0;color:#0a2540;line-height:1.9}.page{max-width:900px;margin:24px auto;background:#fff;border:1px solid #d0e0f5;border-radius:18px;padding:28px;box-shadow:0 10px 35px rgba(12,61,114,.12)}.toolbar{position:sticky;top:0;background:#0c3d72;color:#fff;padding:12px;text-align:center;z-index:9}.toolbar button{font-family:Cairo;border:0;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer}@media print{.toolbar{display:none}.page{box-shadow:none;border:0;margin:0;max-width:100%;padding:0}body{background:#fff}}</style></head><body><div class="toolbar"><button onclick="window.print()">🖨️ طباعة / PDF</button></div><main class="page">${content}</main></body></html>`);
+  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تقرير الإدارة التعليمية — أكاديمية الفلاح</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"><style>:root{--navy:#0c3d72;--blue:#1557a0;--teal:#0d8a79;--gold:#b8760e;--amber:#e09b1a;--green:#0a6b52;--red:#b83232;--bg:#f0f5fc;--surface:#fff;--text:#0a2540;--muted:#5a7ea8;--border:#d0e0f5}body{font-family:Cairo,Tahoma,Arial,sans-serif;background:#f0f5fc;margin:0;color:#0a2540;line-height:1.9}.page{max-width:920px;margin:24px auto;background:#fff;border:1px solid #d0e0f5;border-radius:22px;padding:30px;box-shadow:0 12px 40px rgba(12,61,114,.14)}.toolbar{position:sticky;top:0;background:linear-gradient(135deg,#0c3d72,#0d8a79);color:#fff;padding:12px;text-align:center;z-index:9;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.toolbar button{font-family:Cairo;border:0;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer}.report-editable{background:#fffdf4;border:1px dashed #d79b1d;border-radius:12px;padding:10px 14px;min-height:34px;outline:none}.report-editable:focus{box-shadow:0 0 0 3px rgba(224,155,26,.18);border-color:#b8760e}@media print{.toolbar{display:none}.page{box-shadow:none;border:0;margin:0;max-width:100%;padding:0}body{background:#fff}.report-editable{border-color:#eee;background:#fff}}</style></head><body><div class="toolbar"><button onclick="window.print()">🖨️ طباعة / PDF</button><button onclick="document.execCommand('selectAll');document.execCommand('copy')">📋 نسخ التقرير</button></div><main class="page">${content}</main></body></html>`);
   w.document.close();
 }
 
@@ -1416,24 +1434,35 @@ function copyDirectorOnlyLink(){
   const url=directorOnlyUrl();
   const el=document.getElementById('shareUrl');
   if(el) el.textContent=url;
-  navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ رابط المدير فقط')).catch(()=>prompt('انسخ رابط المدير فقط:',url));
+  navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ رابط الإدارة التعليمية')).catch(()=>prompt('انسخ رابط الإدارة التعليمية:',url));
 }
 function downloadExecutiveWord(){
   ensureReportReady();
   const content=(document.getElementById('aiOutput')||{}).innerHTML || buildReport();
-  const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير المدير</title><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#0a2540;line-height:1.9;padding:24px}h1,h2,h3{color:#0c3d72}.page{max-width:900px;margin:auto}.no-print{display:none}</style></head><body><div class="page">${content}</div></body></html>`;
+  const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير الإدارة التعليمية</title><style>:root{--navy:#0c3d72;--blue:#1557a0;--teal:#0d8a79;--gold:#b8760e;--amber:#e09b1a;--green:#0a6b52;--red:#b83232;--bg:#f0f5fc;--surface:#fff;--text:#0a2540;--muted:#5a7ea8;--border:#d0e0f5}body{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#0a2540;line-height:1.9;padding:24px}h1,h2,h3{color:#0c3d72}.page{max-width:900px;margin:auto}.report-editable{background:#fffdf4;border:1px dashed #d79b1d;border-radius:12px;padding:10px 14px;min-height:34px}.no-print{display:none}</style></head><body><div class="page">${content}</div></body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url; a.download='تقرير_المدير_أكاديمية_الفلاح.doc';
+  a.href=url; a.download='تقرير_الإدارة_التعليمية_أكاديمية_الفلاح.doc';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  showToast('✅ تم تنزيل ملف Word');
+  showToast('✅ تم تنزيل ملف Word قابل للتعديل');
 }
 function applyDirectorMode(){
   const u=new URL(window.location.href);
   if(u.searchParams.get('director')==='1'){
     document.body.classList.add('director-mode');
-    document.title='تقرير المدير — أكاديمية الفلاح';
+    document.title='تقرير الإدارة التعليمية — أكاديمية الفلاح';
+  }
+}
+
+function shareReport(){
+  const url = directorOnlyUrl();
+  const text = 'تقرير متابعة أداء مكتبات أكاديمية الفلاح — نسخة الإدارة التعليمية:
+' + url;
+  if(navigator.share){
+    navigator.share({title:'تقرير المتابعة الإدارية', text, url}).catch(()=>{});
+  }else{
+    window.open('https://wa.me/?text=' + encodeURIComponent(text));
   }
 }
 
@@ -1455,8 +1484,8 @@ function shareWhatsApp() {
 
 function shareEmail() {
   const url  = window.location.href;
-  const sub  = encodeURIComponent('لوحة المتابعة الإدارية — مكتبات أكاديمية الفلاح 2026');
-  const body = encodeURIComponent(`السلام عليكم،\n\nأرفق رابط لوحة المتابعة الإدارية لمهمة تطوير مكتبات أكاديمية الفلاح:\n\n${directorOnlyUrl()}\n\nالرابط يفتح التقرير التنفيذي النظيف المخصص للمدير فقط، دون أزرار إدارة أو روابط رجوع.`);
+  const sub  = encodeURIComponent('تقرير الإدارة التعليمية — مكتبات أكاديمية الفلاح 2026');
+  const body = encodeURIComponent(`السلام عليكم،\n\nأرفق رابط تقرير الإدارة التعليمية لمهمة تطوير مكتبات أكاديمية الفلاح:\n\n${directorOnlyUrl()}\n\nالرابط يفتح التقرير التنفيذي النظيف المخصص للمدير فقط، دون أزرار إدارة أو روابط رجوع.`);
   window.open(`mailto:?subject=${sub}&body=${body}`);
 }
 
