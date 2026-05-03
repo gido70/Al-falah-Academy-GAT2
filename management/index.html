@@ -1099,6 +1099,19 @@ function groupWeeksByMonth(list){
   });
   return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key));
 }
+function monthWeekLabel(index){
+  const labels = ['الأول','الثاني','الثالث','الرابع','الخامس','السادس'];
+  return labels[index] || String(index + 1);
+}
+
+function sortedWeeksInsideMonth(weeks){
+  return [...(weeks || [])].sort((a,b)=>{
+    const da = parseAnyDate(a.start || a.from || a.work_date || a.end) || new Date(0);
+    const db = parseAnyDate(b.start || b.from || b.work_date || b.end) || new Date(0);
+    return da - db;
+  });
+}
+
 function renderMonthlyCards(list){
   const months=groupWeeksByMonth(list);
   if(!months.length) return '<div class="no-data"><div class="no-data-icon">📅</div><div class="no-data-title">لا توجد أسابيع مسجلة بعد</div><div class="no-data-sub">سجل العمل الأسبوعي سيظهر هنا تلقائياً بعد حفظه في القاعدة.</div></div>';
@@ -1111,7 +1124,7 @@ function renderMonthlyCards(list){
         <div class="month-stat"><strong>${m.totalHours || '—'}</strong><span>ساعات</span></div>
       </div>
       <div class="month-weeks">
-        ${m.weeks.map(w=>`<div class="month-week"><strong>الأسبوع ${w.week || '—'}</strong><span class="date">${w.start||'—'} ← ${w.end||'—'}</span><span class="status ${String(w.status||'').includes('إجازة')?'vac':''}">${w.status||'دوام كامل'}</span></div>`).join('')}
+        ${sortedWeeksInsideMonth(m.weeks).map((w,i)=>`<div class="month-week"><strong>الأسبوع ${monthWeekLabel(i)}</strong><span class="date">${w.start||'—'} ← ${w.end||'—'}</span><span class="status ${String(w.status||'').includes('إجازة')?'vac':''}">${w.status||'دوام كامل'}</span></div>`).join('')}
       </div>
     </div>`).join('')}</div>`;
 }
@@ -1122,7 +1135,7 @@ function renderMonthlyReportPlain(list){
     <div style="border:1px solid #d0e0f5;border-radius:14px;padding:14px;margin:10px 0;background:#fff">
       <div style="font-size:15px;font-weight:900;color:#0c3d72;margin-bottom:8px">📊 تقرير شهر ${m.name}</div>
       <div style="font-size:12px;color:#5a7ea8;margin-bottom:10px">عدد الأسابيع: ${m.weeks.length} | الزيارات: ${m.totalVisits||0} | الساعات: ${m.totalHours||'—'}</div>
-      ${m.weeks.map(w=>`<div style="padding:8px 0;border-top:1px solid #edf3fb;font-size:12px"><strong>الأسبوع ${w.week||'—'}:</strong> ${w.start||'—'} إلى ${w.end||'—'} — ${w.status||'دوام كامل'}</div>`).join('')}
+      ${sortedWeeksInsideMonth(m.weeks).map((w,i)=>`<div style="padding:8px 0;border-top:1px solid #edf3fb;font-size:12px"><strong>الأسبوع ${monthWeekLabel(i)}:</strong> ${w.start||'—'} إلى ${w.end||'—'} — ${w.status||'دوام كامل'}</div>`).join('')}
     </div>`).join('');
 }
 
