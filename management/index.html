@@ -423,6 +423,88 @@ body {
   margin-bottom: 8px;
 }
 
+
+/* ═══ DIRECTOR PRESENTATION ENHANCEMENTS ═══ */
+.director-brief {
+  background: linear-gradient(135deg,#ffffff,#f7fbff);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  margin: 4px 0 28px;
+  position: relative;
+  overflow: hidden;
+}
+.director-brief::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 7px; height: 100%;
+  background: var(--gold-grad);
+}
+.db-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+.db-title { font-size:20px; font-weight:900; color:var(--navy); display:flex; align-items:center; gap:8px; }
+.db-sub { font-size:12px; color:var(--muted); font-weight:700; margin-top:4px; }
+.db-badge { background:#e0f7f0; color:var(--green); border:1px solid rgba(13,138,121,.35); padding:7px 14px; border-radius:999px; font-size:12px; font-weight:900; }
+.db-grid { display:grid; grid-template-columns:1.3fr .7fr; gap:16px; }
+.db-summary { font-size:14px; line-height:2; color:var(--text); background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px; }
+.db-points { display:flex; flex-direction:column; gap:10px; }
+.db-point { background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:12px; }
+.db-point strong { display:block; color:var(--navy); font-size:13px; margin-bottom:4px; }
+.db-point span { color:var(--muted); font-size:12px; line-height:1.7; }
+.report-watermark {
+  position: fixed;
+  inset: auto 18px 18px auto;
+  opacity: .06;
+  font-size: 70px;
+  font-weight: 900;
+  color: var(--navy);
+  pointer-events: none;
+  z-index: 0;
+}
+.executive-note {
+  background:#fffdf4;
+  border:1px solid #f3d27c;
+  border-right:6px solid var(--amber);
+  color:#5c3b00;
+  border-radius:14px;
+  padding:14px 16px;
+  font-size:13px;
+  line-height:1.9;
+  margin-top:14px;
+}
+.print-cover { display:none; }
+
+@media(max-width:760px){
+  .db-grid{grid-template-columns:1fr}
+  .db-title{font-size:17px}
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  .action-bar, .share-box, .share-btns, .ai-gen-btn, .alfalah-fixed-home, .abtn { display:none!important; }
+  .header { background:#fff!important; color:#0a2540!important; border-bottom:3px solid #0c3d72; }
+  .header::before,.header::after { display:none!important; }
+  .header-text .h1, .header-text .academy, .header-text .h2 { color:#0c3d72!important; }
+  .readonly-badge { display:block; border-color:#d0e0f5; color:#0c3d72; background:#f8fbff; }
+  .readonly-badge .rb-text,.readonly-badge .rb-sub{color:#0c3d72!important}
+  .mission-strip { background:#f8fbff!important; border-bottom:1px solid #d0e0f5; }
+  .mission-title,.mission-pct,.ms,.ms strong { color:#0c3d72!important; }
+  body { background:#fff!important; }
+  .wrap { padding:18px 0!important; max-width:100%!important; }
+  .kpi-card,.school-eval-card,.chart-card,.schedule-card,.director-brief,.ai-report-card { box-shadow:none!important; break-inside:avoid; page-break-inside:avoid; }
+  .charts-grid { grid-template-columns:1fr!important; }
+  .schools-grid { grid-template-columns:repeat(2,1fr)!important; }
+  .footer { border-top:2px solid #0c3d72; }
+}
+
+body.print-report-mode .wrap > *:not(.ai-report-card):not(.footer),
+body.print-report-mode .share-box,
+body.print-report-mode .sec-title:not(:has(+ .ai-report-card)) { display:none!important; }
+body.print-report-mode .ai-report-card { border:0!important; background:#fff!important; padding:0!important; }
+body.print-report-mode .ai-header { border-bottom:3px solid #0c3d72; padding-bottom:12px; }
+body.print-report-mode .ai-output { display:block!important; border:0!important; padding:0!important; }
+
 /* ═══ NO-DATA STATE ═══ */
 .no-data {
   text-align: center; padding: 40px 20px;
@@ -509,6 +591,8 @@ body {
   <!-- Action Bar -->
   <div class="action-bar">
     <button class="abtn" onclick="window.print()">🖨️ طباعة / PDF</button>
+    <button class="abtn abtn-gold" onclick="printExecutiveReport()">📄 تقرير المدير PDF</button>
+    <button class="abtn abtn-teal" onclick="openDirectorReportWindow()">🧾 نسخة المدير النظيفة</button>
     <button class="abtn abtn-teal" onclick="copyLink()">🔗 نسخ رابط المشاركة</button>
     <button class="abtn" onclick="shareWhatsApp()">📱 مشاركة واتساب</button>
     <button class="abtn" onclick="shareEmail()">📧 مشاركة بريد</button>
@@ -547,6 +631,21 @@ body {
       <div class="kpi-num" id="kBest">—</div>
       <div class="kpi-label">أعلى تقييم مكتبة</div>
       <div class="kpi-sub" id="kBestName">—</div>
+    </div>
+  </div>
+
+  <!-- DIRECTOR BRIEF -->
+  <div class="director-brief" id="directorBrief">
+    <div class="db-head">
+      <div>
+        <div class="db-title">🎖️ خلاصة تنفيذية جاهزة للمدير</div>
+        <div class="db-sub">تُحدَّث تلقائيًا من التقييمات، سجل الدوام، وخطة المهمة.</div>
+      </div>
+      <div class="db-badge">عرض قيادي مختصر</div>
+    </div>
+    <div class="no-data">
+      <div class="no-data-icon">⏳</div>
+      <div class="no-data-title">جاري إعداد الخلاصة...</div>
     </div>
   </div>
 
@@ -623,7 +722,7 @@ body {
 
 <!-- SHARE BOX -->
   <div class="share-box">
-    <div class="share-title">🔗 مشاركة لوحة المتابعة مع الإدارة</div>
+    <div class="share-title">🔗 مشاركة آمنة مع الإدارة</div>
     <div class="share-sub">أرسل هذا الرابط للمدير المباشر أو مدير الإدارة — يفتح من أي جهاز ويعرض كل شيء تلقائياً</div>
     <div class="share-url" id="shareUrl">—</div>
     <div class="share-btns">
@@ -739,6 +838,43 @@ function gradeInfo(s) {
   if(s>=70) return { label:'جيد 👍', color:'#7a4e00', bg:'#fff4e0' };
   if(s>=60) return { label:'مقبول ⚠️', color:'#7a4e00', bg:'#fff4e0' };
   return { label:'يحتاج تطوير 🔧', color:'#b83232', bg:'#fce8e8' };
+}
+
+function stripBranchName(name){ return String(name||'').replace('فرع ','').replace('مدرسة الفلاح الخاصة ',''); }
+function renderDirectorBrief(allData){
+  const box = document.getElementById('directorBrief');
+  if(!box) return;
+  const withData = (allData||[]).filter(x=>x.d?.totalScore);
+  const weeks = REMOTE_WEEK_LIST || localLoad('week_list') || [];
+  const done = withData.length;
+  const avg = done ? Math.round(withData.reduce((a,x)=>a+Number(x.d.totalScore||0),0)/done) : 0;
+  const sorted = [...withData].sort((a,b)=>(b.d.totalScore||0)-(a.d.totalScore||0));
+  const best = sorted[0];
+  const pending = (allData||[]).filter(x=>!x.d?.totalScore).map(x=>stripBranchName(x.s.name));
+  const mission = calcMission();
+  const verdict = done===0 ? 'بدأ بناء المنظومة، وتبقى مرحلة إدخال نتائج التقييم.' : done<6 ? 'العمل يسير بصورة موثقة، وتوجد زيارات متبقية لاستكمال الصورة الكاملة.' : 'اكتملت صورة التقييم الميداني للمكتبات الست، وأصبحت البيانات جاهزة للتحليل واتخاذ القرار.';
+  box.innerHTML = `
+    <div class="db-head">
+      <div>
+        <div class="db-title">🎖️ خلاصة تنفيذية جاهزة للمدير</div>
+        <div class="db-sub">تُحدَّث تلقائيًا من التقييمات، سجل الدوام، وخطة المهمة.</div>
+      </div>
+      <div class="db-badge">${mission.pct}% من زمن المهمة</div>
+    </div>
+    <div class="db-grid">
+      <div class="db-summary">
+        <strong style="color:var(--navy)">الخلاصة:</strong>
+        ${verdict}
+        ${done ? ` تم توثيق <strong>${done}</strong> تقييم من أصل 6، بمتوسط عام <strong>${avg}/100</strong>. ${best ? `وتظهر <strong>${best.s.name}</strong> كأفضل نتيجة حالية بدرجة <strong>${best.d.totalScore}/100</strong>.` : ''}` : ''}
+        ${weeks.length ? ` كما تم تسجيل <strong>${weeks.length}</strong> أسبوع عمل في سجل المتابعة.` : ''}
+        <div class="executive-note">هذه الصفحة صُممت لتعرض العمل بصورة قيادية مختصرة: ماذا أُنجز؟ أين نقف؟ وما القرار أو الدعم المطلوب؟</div>
+      </div>
+      <div class="db-points">
+        <div class="db-point"><strong>📌 موضع الانتباه</strong><span>${pending.length ? 'استكمال تقييم: '+pending.join('، ') : 'كل المدارس ظاهرة في لوحة التقييم.'}</span></div>
+        <div class="db-point"><strong>📈 مؤشر الأداء</strong><span>${done ? 'متوسط التقييم الحالي: '+avg+'/100' : 'ينتظر إدخال أول تقييم فعلي.'}</span></div>
+        <div class="db-point"><strong>🎯 الإجراء القادم</strong><span>${done<6 ? 'إكمال التقييمات المتبقية ثم اعتماد خطة تحسين لكل مكتبة.' : 'اعتماد خطة تحسين مبنية على نتائج المقارنة.'}</span></div>
+      </div>
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════
@@ -1091,6 +1227,12 @@ function buildReport() {
   return `
   <div style="font-family:Cairo,sans-serif;direction:rtl;color:var(--text);line-height:1.8">
 
+    <div style="background:linear-gradient(155deg,#0c3d72,#1557a0,#0d8a79);color:#fff;border-radius:18px;padding:24px 28px;text-align:center;margin-bottom:18px;position:relative;overflow:hidden">
+      <div style="font-size:12px;opacity:.8;font-weight:700">نسخة تنفيذية للعرض الإداري</div>
+      <div style="font-size:24px;font-weight:900;margin-top:5px">تقرير متابعة أداء مكتبات أكاديمية الفلاح</div>
+      <div style="font-size:13px;opacity:.85;margin-top:5px">عرض مختصر لاتخاذ القرار — مبني على بيانات المنصة الميدانية</div>
+    </div>
+
     <!-- Header -->
     <div style="text-align:center;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:20px">
       <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px">أكاديمية الفلاح — مراكز مصادر التعلم</div>
@@ -1100,7 +1242,7 @@ function buildReport() {
 
     <!-- Executive Summary -->
     <div style="background:linear-gradient(135deg,#e8f2fd,#e6f8f3);border-right:5px solid var(--navy);padding:16px 18px;border-radius:0 14px 14px 0;margin-bottom:20px">
-      <div style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:8px">📌 الملخص التنفيذي</div>
+      <div style="font-size:16px;font-weight:900;color:#0c3d72;margin-bottom:10px;border-bottom:2px solid #0c3d72;padding-bottom:6px">📌 الملخص التنفيذي</div>
       <p style="font-size:13px">
         تسير مهمة تطوير مكتبات أكاديمية الفلاح بصورة منتظمة، وقد أُنجز <strong>${mission.elapsed} يوماً</strong> 
         (${mission.pct}% من إجمالي المهمة)، والمهمة حالياً في مرحلة <strong>${mission.phase}</strong>.
@@ -1168,11 +1310,43 @@ function buildReport() {
       ${recsText}
     </div>
 
+    <div style="margin:24px 0;text-align:center">
+      <div style="display:inline-block;border:2px dashed #0c3d72;padding:12px 24px;border-radius:12px;font-weight:900;color:#0c3d72;background:#f8fbff">
+        تقرير رسمي — للاستخدام الإداري فقط
+      </div>
+    </div>
+
     <!-- Footer -->
     <div style="border-top:2px solid var(--border);padding-top:14px;text-align:center;font-size:11px;color:var(--muted)">
       أُعدَّ هذا التقرير تلقائياً من بيانات المنصة الميدانية | أكاديمية الفلاح — مراكز مصادر التعلم 2026
     </div>
   </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  DIRECTOR REPORT OUTPUT
+// ═══════════════════════════════════════════════
+function ensureReportReady(){
+  const out=document.getElementById('aiOutput');
+  if(out && (!out.innerHTML || out.style.display==='none')){
+    try{ out.innerHTML=buildReport(); out.style.display='block'; }catch(e){ console.warn(e); }
+  }
+}
+function printExecutiveReport(){
+  ensureReportReady();
+  document.body.classList.add('print-report-mode');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>document.body.classList.remove('print-report-mode'), 500);
+  },150);
+}
+function openDirectorReportWindow(){
+  ensureReportReady();
+  const content=(document.getElementById('aiOutput')||{}).innerHTML || buildReport();
+  const w=window.open('', '_blank');
+  if(!w){ showToast('يرجى السماح بفتح النافذة الجديدة'); return; }
+  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تقرير المدير — أكاديمية الفلاح</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;background:#f0f5fc;margin:0;color:#0a2540;line-height:1.9}.page{max-width:900px;margin:24px auto;background:#fff;border:1px solid #d0e0f5;border-radius:18px;padding:28px;box-shadow:0 10px 35px rgba(12,61,114,.12)}.toolbar{position:sticky;top:0;background:#0c3d72;color:#fff;padding:12px;text-align:center;z-index:9}.toolbar button{font-family:Cairo;border:0;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer}@media print{.toolbar{display:none}.page{box-shadow:none;border:0;margin:0;max-width:100%;padding:0}body{background:#fff}}</style></head><body><div class="toolbar"><button onclick="window.print()">🖨️ طباعة / PDF</button></div><main class="page">${content}</main></body></html>`);
+  w.document.close();
 }
 
 // ═══════════════════════════════════════════════
@@ -1234,6 +1408,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Render
   const allData = renderSchools();
+  renderDirectorBrief(allData);
   renderCharts(allData);
   renderSchedule();
   renderTimeline();
