@@ -669,6 +669,68 @@ const TIMELINE_ITEMS = [
 function localLoad(key) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
+let REMOTE_EVAL_DATA = null;
+let REMOTE_WEEK_LIST = null;
+function getSBClient(){
+  try{
+    if(window.alfalahSupabase) return window.alfalahSupabase;
+    if(window.supabase && window.ALFALAH_SUPABASE_URL && window.ALFALAH_SUPABASE_KEY){
+      return window.supabase.createClient(window.ALFALAH_SUPABASE_URL, window.ALFALAH_SUPABASE_KEY);
+    }
+  }catch(e){ console.warn('Supabase client not ready',e); }
+  return null;
+}
+function normalizeEvaluationRow(row){
+  const full = row.full_data || {};
+  const totalScore = Number(full.totalScore ?? full.total_score ?? row.total_score ?? 0);
+  return {
+    ...full,
+    totalScore,
+    finalLevel: full.finalLevel || row.final_level || '',
+    strengths: full.strengths || row.strengths || '',
+    weaknesses: full.weaknesses || row.weaknesses || '',
+    recommendations: full.recommendations || row.recommendations || '',
+    scores: full.scores || full.axisScores || {},
+    fields: {
+      ...(full.fields || {}),
+      date: (full.fields && full.fields.date) || row.visit_date || '',
+      lib: (full.fields && full.fields.lib) || row.librarian_name || ''
+    }
+  };
+}
+async function loadRemoteEvaluationsForManager(){
+  const sb=getSBClient();
+  if(!sb) return null;
+  const {data,error}=await sb.from('library_evaluations')
+    .select('id,school_id,school_code,visit_date,librarian_name,total_score,final_level,strengths,weaknesses,recommendations,full_data,created_at')
+    .order('created_at',{ascending:false});
+  if(error){ console.warn('management evaluations load error',error); return null; }
+  const byCode={};
+  (data||[]).forEach(row=>{
+    const s = row.school_code ? SCHOOLS.find(x=>x.code===row.school_code) : SCHOOLS.find(x=>String(x.id||'')===String(row.school_id||''));
+    const code = row.school_code || s?.code;
+    if(code && !byCode[code]) byCode[code]=normalizeEvaluationRow(row);
+  });
+  return SCHOOLS.map(s=>({s,d:byCode[s.code] || localLoad('eval_'+s.code)}));
+}
+async function loadRemoteWeeksForManager(){
+  const sb=getSBClient();
+  if(!sb) return null;
+  const {data,error}=await sb.from('daily_work_logs').select('*').order('id',{ascending:false});
+  if(error){ console.warn('management weeks load error',error); return null; }
+  const groups={};
+  (data||[]).forEach(r=>{
+    const n = r.week_number || r.week || r.week_no || r.week_id || r.id;
+    const key=String(n || '');
+    if(!key) return;
+    if(!groups[key]) groups[key]={week:n,start:r.start_date||r.from_date||r.work_date||'',end:r.end_date||r.to_date||r.work_date||'',status:r.week_status||r.status||r.work_type||'دوام كامل',visitCount:0,totalHours:0};
+    const text=[r.tasks,r.notes,r.work_type,r.mission].join(' ');
+    if(/زيارة|ميدانية/.test(text)) groups[key].visitCount++;
+  });
+  const arr=Object.values(groups).sort((a,b)=>Number(a.week)-Number(b.week));
+  return arr.length?arr:null;
+}
+
 function setText(id, v) { const el = document.getElementById(id); if(el) el.textContent = v; }
 function gradeInfo(s) {
   if(!s) return { label:'لم يُقيَّم', color:'#888', bg:'#f0f0f0' };
@@ -706,7 +768,7 @@ function calcMission() {
 // ═══════════════════════════════════════════════
 function renderSchools() {
   const grid = document.getElementById('schoolsGrid');
-  const allData = SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
+  const allData = REMOTE_EVAL_DATA || SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
   const withData = allData.filter(x => x.d?.totalScore);
   const sorted = [...withData].sort((a,b) => (b.d.totalScore||0)-(a.d.totalScore||0));
 
@@ -845,7 +907,7 @@ function renderCharts(allData) {
 //  SCHEDULE SUMMARY
 // ═══════════════════════════════════════════════
 function renderSchedule() {
-  const list = localLoad('week_list') || [];
+  const list = REMOTE_WEEK_LIST || localLoad('week_list') || [];
   const container = document.getElementById('scheduleContent');
   setText('kWeeks', list.length || '—');
 
@@ -940,9 +1002,9 @@ function generateSmartReport() {
 function buildReport() {
   const now     = new Date();
   const mission = calcMission();
-  const allData = SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
+  const allData = REMOTE_EVAL_DATA || SCHOOLS.map(s => ({ s, d: localLoad('eval_'+s.code) }));
   const withData = allData.filter(x => x.d?.totalScore);
-  const weeks   = localLoad('week_list') || [];
+  const weeks   = REMOTE_WEEK_LIST || localLoad('week_list') || [];
   const sorted  = [...withData].sort((a,b)=>(b.d.totalScore||0)-(a.d.totalScore||0));
 
   const scores  = withData.map(x => x.d.totalScore);
@@ -1154,7 +1216,7 @@ function showToast(msg) {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   // Mission
   calcMission();
 
@@ -1165,6 +1227,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // Footer time
   document.getElementById('footerTime').textContent = 'تاريخ العرض: ' + new Date().toLocaleString('ar-AE');
   document.getElementById('lastUpdate').textContent = 'آخر تحديث: ' + new Date().toLocaleString('ar-AE');
+
+  // Load central data first; fallback to localStorage if Supabase is unavailable
+  REMOTE_EVAL_DATA = await loadRemoteEvaluationsForManager();
+  REMOTE_WEEK_LIST = await loadRemoteWeeksForManager();
 
   // Render
   const allData = renderSchools();
