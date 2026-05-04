@@ -329,7 +329,23 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
 @media(max-width:600px) { .platform-home-btn { top:auto; bottom:14px; right:14px; font-size:12px; padding:8px 13px; } }
 @media print { .platform-home-btn { display:none !important; } }
 
-.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}</style>
+.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}
+
+/* ══════ IMPORT PREVIEW PANEL - واضح بعد رفع ملف JSON ══════ */
+.import-preview-card{display:none;border:2px solid var(--teal);background:linear-gradient(135deg,#f8fbff,#e6f7f2);border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 4px 16px rgba(12,68,124,.08)}
+.import-preview-card.show{display:block}
+.import-preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.import-preview-title{font-size:16px;font-weight:900;color:var(--navy)}
+.import-preview-meta{font-size:13px;color:var(--muted);line-height:1.8}
+.import-preview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.import-preview-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;margin-top:10px;font-size:13px}
+.import-preview-table th{background:var(--navy);color:#fff;padding:9px;text-align:center}
+.import-preview-table td{border-bottom:1px solid var(--border);padding:8px;text-align:center}
+.import-preview-table td:first-child,.import-preview-table th:first-child{text-align:right;font-weight:800}
+.import-status-ok{display:inline-block;background:#e1f5ee;color:#085041;border-radius:999px;padding:3px 10px;font-weight:900;font-size:12px}
+.import-status-warn{display:inline-block;background:#faeeda;color:#633806;border-radius:999px;padding:3px 10px;font-weight:900;font-size:12px}
+
+</style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
 <a class="platform-home-btn" href="../index.html">🏠 الرئيسية</a>
@@ -363,7 +379,7 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
   </nav>
   <!-- ACTION STRIP -->
   <div class="action-strip">
-    <button class="abtn" onclick="saveAll()">💾 حفظ</button>
+    <button class="abtn abtn-teal" onclick="saveAll()">💾 حفظ في قاعدة البيانات</button>
     <button class="abtn" onclick="expWord()">Word 📄</button>
     <button class="abtn abtn-gold" onclick="expAll()">📤 تصدير JSON</button>
     <button class="abtn abtn-gold" onclick="expCSV()">📊 تصدير CSV</button>
@@ -911,7 +927,7 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
           </div>
         </div>
         <div class="abar">
-          <button class="btn bp" onclick="saveEval()">💾 حفظ التقييم</button>
+          <button class="btn bp" onclick="saveEval()">💾 حفظ التقييم في قاعدة البيانات</button>
           <button class="btn bg" onclick="window.print()">🖨️ طباعة PDF</button>
           <button class="btn bt" onclick="expCurJ()" title="تصدير تقييم المدرسة الحالية فقط بعد حفظه تلقائياً">📤 تصدير JSON</button>
           <button class="btn bo" onclick="clrEval()">🔄 مسح</button>
@@ -930,7 +946,21 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
           <button class="btn bo bsm" onclick="document.getElementById('impF').click()">📥 رفع واستيراد</button>
           <button class="btn br bsm" onclick="clrAll()">🗑️ حذف الكل</button>
         </div>
-        <div class="al ali">💡 البيانات في المتصفح — صدّري JSON بعد كل جلسة واحفظيه على جهازك، ثم استوريه بزر "رفع واستيراد" عند الحاجة</div>
+        <div class="al ali">💡 عند رفع ملف JSON ستظهر معاينة واضحة هنا أولاً، ثم اضغط زر الحفظ لتثبيت البيانات في Supabase.</div>
+        <div id="importPreviewBox" class="import-preview-card">
+          <div class="import-preview-head">
+            <div>
+              <div class="import-preview-title">📥 معاينة البيانات المرفوعة قبل الحفظ</div>
+              <div id="importPreviewMeta" class="import-preview-meta"></div>
+            </div>
+            <span id="importPreviewStatus" class="import-status-warn">بانتظار الحفظ</span>
+          </div>
+          <div id="importPreviewTable" style="overflow-x:auto"></div>
+          <div class="import-preview-actions">
+            <button class="btn bt bsm" type="button" onclick="saveImportedEvaluationsToSupabase()">💾 حفظ البيانات المرفوعة في قاعدة البيانات</button>
+            <button class="btn bo bsm" type="button" onclick="cancelImportedPreview()">إلغاء المعاينة</button>
+          </div>
+        </div>
         <div id="dtbl" style="overflow-x:auto"></div>
       </div>
     </div>
@@ -1786,21 +1816,73 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
     if(!confirm('مسح بيانات النموذج الحالي فقط دون حذف التقييم المحفوظ؟')) return;
     const sid=document.getElementById('esch')?.value||''; if(sid){ const keep=db().ev[sid]; delete db().ev[sid]; try{ ldEv(sid); } finally { if(keep) db().ev[sid]=keep; } } else if(typeof ldEv==='function') ldEv('');
   };
+  window.__pendingImportedEvaluations = null;
+
+  function buildImportPreview(incoming,fileName){
+    const rows=[]; const valid={}; const ignored=[];
+    Object.entries(incoming||{}).forEach(([sid,d])=>{
+      const schoolObj=SCH.find(s=>s.id===sid);
+      if(!schoolObj){ ignored.push(sid); return; }
+      d=d&&typeof d==='object'?d:{};
+      d.saved=true;
+      d._axisScores=axisScores(d,null);
+      d.total_score=totalFromScores(d._axisScores);
+      valid[sid]=d;
+      rows.push({sid,school:schoolObj.name,date:d.date||'',lib:d.lib||'',level:d.overall||'',score:d.total_score||0});
+    });
+    window.__pendingImportedEvaluations = valid;
+    const box=document.getElementById('importPreviewBox');
+    const meta=document.getElementById('importPreviewMeta');
+    const table=document.getElementById('importPreviewTable');
+    const status=document.getElementById('importPreviewStatus');
+    if(!box||!meta||!table) return;
+    meta.innerHTML = `اسم الملف: <b>${fileName||'-'}</b> — السجلات الصالحة: <b>${rows.length}</b>` + (ignored.length?` — سجلات غير معروفة لم يتم إدخالها: <b>${ignored.length}</b>`:'');
+    status.className='import-status-warn';
+    status.textContent='بانتظار الحفظ في قاعدة البيانات';
+    table.innerHTML = rows.length ? `<table class="import-preview-table"><thead><tr><th>المدرسة</th><th>التاريخ</th><th>الأخصائي</th><th>التقييم</th><th>الدرجة</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.school}</td><td>${r.date||'-'}</td><td>${r.lib||'-'}</td><td>${r.level||'-'}</td><td>${r.score||0}</td></tr>`).join('')}</tbody></table>` : '<div class="al alw">لم يتم العثور على سجلات مدارس معروفة داخل الملف.</div>';
+    box.classList.add('show');
+    try{ box.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){}
+  }
+
+  window.cancelImportedPreview = function(){
+    window.__pendingImportedEvaluations=null;
+    const box=document.getElementById('importPreviewBox'); if(box) box.classList.remove('show');
+    const input=document.getElementById('impF'); if(input) input.value='';
+    toast('تم إلغاء معاينة الملف المرفوع');
+  };
+
+  window.saveImportedEvaluationsToSupabase = async function(){
+    const pending=window.__pendingImportedEvaluations;
+    if(!pending || !Object.keys(pending).length) return alert('لا توجد بيانات مرفوعة جاهزة للحفظ. ارفع ملف JSON أولاً.');
+    try{
+      for(const [sid,d] of Object.entries(pending)){ db().ev[sid]=d; }
+      saveLocal(); refresh();
+      await pushAllRemote();
+      const status=document.getElementById('importPreviewStatus');
+      if(status){ status.className='import-status-ok'; status.textContent='تم الحفظ في قاعدة البيانات'; }
+      toast('✅ تم حفظ البيانات المرفوعة في Supabase وظهرت في صفحة الإدارة');
+    }catch(e){
+      console.error(e);
+      alert('تمت قراءة الملف، لكن فشل الحفظ في قاعدة البيانات: '+(e.message||e));
+    }
+  };
+
   window.impData = function(){
     const f=document.getElementById('impF')?.files?.[0]; if(!f) return;
     const reader=new FileReader();
     reader.onload=async e=>{
       try{
-        const p=JSON.parse(e.target.result); const incoming=p.ev || (p.data&&p.school?{[document.getElementById('esch')?.value||'imported']:p.data}:null);
+        const p=JSON.parse(e.target.result);
+        const incoming=p.ev || (p.data&&p.school?{[document.getElementById('esch')?.value||'imported']:p.data}:null);
         if(!incoming) return alert('الملف لا يحتوي على بيانات تقييم صحيحة');
-        const replace=confirm('هل تريد استبدال التقييمات الحالية بالمستوردة؟\nموافق = تصفير الحالي ثم استيراد.\nإلغاء = دمج المستورد مع الحالي.');
-        if(replace){ try{ await deleteAllRows(); }catch(err){ console.warn(err); } db().ev={}; }
+        const replace=confirm('هل تريد استبدال التقييمات الحالية بالمستوردة؟\nموافق = تصفير الحالي من العرض المحلي فقط ثم استيراد.\nإلغاء = دمج المستورد مع الحالي.\n\nملاحظة: لن يتم الحفظ في Supabase إلا بعد الضغط على زر الحفظ الواضح في المعاينة.');
+        if(replace){ db().ev={}; saveLocal(); }
         Object.entries(incoming).forEach(([sid,d])=>{ if(SCH.some(s=>s.id===sid)){ d.saved=true; d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores); db().ev[sid]=d; } });
         saveLocal(); refresh();
-        if(confirm('تم الاستيراد محلياً. هل تريد حفظ البيانات المستوردة في Supabase الآن؟')){ await pushAllRemote(); toast('✅ تم الاستيراد والحفظ في القاعدة'); }
-        else toast('✅ تم الاستيراد محلياً');
+        try{ pg('page-dat','البيانات المحفوظة','nav-dat'); }catch(e){}
+        buildImportPreview(incoming,f.name);
+        toast('✅ تم رفع الملف وظهرت البيانات في الصفحة. اضغط زر الحفظ لتثبيتها في Supabase.');
       }catch(err){ alert('❌ خطأ في الملف: '+err.message); }
-      const input=document.getElementById('impF'); if(input) input.value='';
     };
     reader.readAsText(f);
   };
