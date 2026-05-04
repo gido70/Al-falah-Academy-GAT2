@@ -981,6 +981,7 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
         <div class="cbox"><h4>🇦🇪 مجموعات الإمارات — المقارنة</h4><canvas id="ch-ua" height="200" role="img" aria-label="uae"></canvas></div>
         <div class="cbox"><h4>📚 إجمالي الكتب</h4><canvas id="ch-bk" height="200" role="img" aria-label="books"></canvas></div>
         <div class="cbox cful"><h4>🔍 المقارنة التفصيلية لجميع المحاور</h4><canvas id="ch-fl" height="110" role="img" aria-label="full"></canvas></div>
+        <div class="cbox cful"><h4>🎯 الخلاصة العامة لتقييم جميع المكتبات</h4><canvas id="ch-summary" height="115" role="img" aria-label="summary"></canvas><div id="chartSummaryText" style="font-size:13px;color:var(--muted);line-height:1.9;text-align:center;margin-top:10px"></div></div>
       </div>
     </div>
 
@@ -1152,7 +1153,60 @@ function calcSc(d){
   };
 }
 function tot(sc){const v=Object.values(sc).filter(x=>x>0);return v.length?Math.round(v.reduce((s,x)=>s+x,0)/v.length*10)/10:0;}
-function allD(){return SCH.map(s=>{const d=DB.ev[s.id];return{s,d:d||null,sc:d&&d.saved?calcSc(d):null};}).filter(r=>r.sc);}
+function ratingToScore(v){
+  const t=String(v||'').trim();
+  if(/متميز|ممتاز/.test(t)) return 6;
+  if(/جيد جداً|جيد جدا/.test(t)) return 5;
+  if(/جيد/.test(t)) return 4;
+  if(/مقبول/.test(t)) return 3;
+  if(/ضعيف جداً|ضعيف جدا/.test(t)) return 1;
+  if(/ضعيف/.test(t)) return 2;
+  return 0;
+}
+function booksToScore(v){
+  const t=String(v||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  const nums=(t.match(/\d+/g)||[]).map(Number);
+  const n=nums.length?Math.max(...nums):0;
+  if(/أكثر|3000/.test(t) && n>=3000) return 6;
+  if(n>=1500) return 5;
+  if(n>=500) return 4;
+  if(n>0) return 2;
+  return 0;
+}
+function extraLibraryScore(s,d,lib,idx){
+  const base=ratingToScore(lib.rating);
+  const books=booksToScore(lib.books);
+  const staff=lib.specialist ? Math.max(base||0,4) : (base?Math.max(2,base-1):0);
+  const sc={
+    "المجموعات":books || base,
+    "مجموعات الإمارات":0,
+    "التنظيم الفني":base,
+    "البيئة":base,
+    "الأنشطة":0,
+    "الشراكات":0,
+    "الكادر والمؤهلات":staff,
+    "التقنية":0
+  };
+  return {
+    s:{...s, short:(s.short+' — '+(lib.type||('مكتبة '+idx))), name:(s.name+' — '+(lib.type||('مكتبة إضافية '+idx))), code:s.id+'_lib_'+idx},
+    d:{...d, lib:d.lib, overall:lib.rating||d.overall, priority:d.priority, isExtraLibrary:true, libraryUnit:lib},
+    sc,
+    isExtraLibrary:true
+  };
+}
+function allD(){
+  const rows=[];
+  SCH.forEach(s=>{
+    const d=DB.ev[s.id];
+    if(d&&d.saved){
+      rows.push({s,d,sc:calcSc(d),isMainLibrary:true});
+      (Array.isArray(d.libraries)?d.libraries:[]).forEach((lib,i)=>{
+        rows.push(extraLibraryScore(s,d,lib,i+1));
+      });
+    }
+  });
+  return rows.filter(r=>r.sc);
+}
 function uHome(){
   const done=SCH.filter(s=>DB.ev[s.id]?.saved).length;
   document.getElementById("hd").textContent=done;
@@ -1358,8 +1412,19 @@ function uCh(){
   dc("ch-ax");if(data.length){const ap=axes.map(a=>{const vs=data.map(r=>r.sc[a]||0).filter(v=>v>0);return vs.length?Math.round(vs.reduce((s,v)=>s+v,0)/vs.length*10)/10:0;});CI["ch-ax"]=new Chart(document.getElementById("ch-ax").getContext("2d"),{type:"bar",data:{labels:axes,datasets:[{data:ap,backgroundColor:COL,borderRadius:10,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:6},x:{ticks:{font:{family:"Cairo",size:10}}}}}});}
   dc("ch-rk");if(data.length){CI["ch-rk"]=new Chart(document.getElementById("ch-rk").getContext("2d"),{type:"bar",data:{labels:lbs,datasets:[{data:data.map(r=>tot(r.sc)),backgroundColor:data.map((_,i)=>COL[i%COL.length]),borderRadius:10,borderSkipped:false}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:6},y:{ticks:{font:fo}}}}});}
   dc("ch-ua");if(data.length){CI["ch-ua"]=new Chart(document.getElementById("ch-ua").getContext("2d"),{type:"bar",data:{labels:lbs,datasets:[{label:"مجموعات الإمارات",data:data.map(r=>r.sc["مجموعات الإمارات"]||0),backgroundColor:"#0f9d8a",borderRadius:8,borderSkipped:false},{label:"المجموعات العامة",data:data.map(r=>r.sc["المجموعات"]||0),backgroundColor:"#185fa5",borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:fo}}},scales:{y:{beginAtZero:true,max:6},x:{ticks:{font:{family:"Cairo",size:11}}}}}});}
-  dc("ch-bk");if(data.length){CI["ch-bk"]=new Chart(document.getElementById("ch-bk").getContext("2d"),{type:"bar",data:{labels:lbs,datasets:[{label:"عربي",data:data.map(r=>parseInt(r.d.bar)||0),backgroundColor:"#185fa5",borderRadius:6},{label:"إنجليزي",data:data.map(r=>parseInt(r.d.ben)||0),backgroundColor:"#0f9d8a",borderRadius:6}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:fo}}},scales:{x:{stacked:true,ticks:{font:{family:"Cairo",size:11}}},y:{stacked:true,beginAtZero:true}}}});}
-  dc("ch-fl");if(data.length){CI["ch-fl"]=new Chart(document.getElementById("ch-fl").getContext("2d"),{type:"bar",data:{labels:axes,datasets:data.map((r,i)=>({label:r.s.short,data:axes.map(a=>r.sc[a]||0),backgroundColor:COL[i%COL.length]+"bb",borderColor:COL[i%COL.length],borderWidth:1.5,borderRadius:6}))},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:fo}}},scales:{y:{beginAtZero:true,max:6},x:{ticks:{font:{family:"Cairo",size:11}}}}}});}
+  dc("ch-bk");if(data.length){CI["ch-bk"]=new Chart(document.getElementById("ch-bk").getContext("2d"),{type:"bar",data:{labels:lbs,datasets:[{label:"عربي",data:data.map(r=>parseInt(r.d.bar)||0),backgroundColor:"#185fa5",borderRadius:6},{label:"إنجليزي",data:data.map(r=>parseInt(r.d.ben)||0),backgroundColor:"#0f9d8a",borderRadius:6},{label:"تقدير كتب المكتبات الإضافية",data:data.map(r=>r.isExtraLibrary?booksToScore(r.d.libraryUnit?.books||0):0),backgroundColor:"#ba7517",borderRadius:6}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:fo}}},scales:{x:{stacked:true,ticks:{font:{family:"Cairo",size:11}}},y:{stacked:true,beginAtZero:true}}}});}
+  dc("ch-fl");if(data.length){CI["ch-fl"]=new Chart(document.getElementById("ch-fl").getContext("2d"),{type:"bar",data:{labels:axes,datasets:data.map((r,i)=>({label:r.s.short+(r.isExtraLibrary?' 📚':''),data:axes.map(a=>r.sc[a]||0),backgroundColor:COL[i%COL.length]+"bb",borderColor:COL[i%COL.length],borderWidth:1.5,borderRadius:6}))},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:fo}}},scales:{y:{beginAtZero:true,max:6},x:{ticks:{font:{family:"Cairo",size:11}}}}}});}
+  dc("ch-summary");if(data.length&&document.getElementById("ch-summary")){
+    const main=data.filter(r=>r.isMainLibrary).length;
+    const extra=data.filter(r=>r.isExtraLibrary).length;
+    const overall=avgA(data.map(r=>tot(r.sc)));
+    const staffAvg=avgA(data.map(r=>r.sc["الكادر والمؤهلات"]||0));
+    const strong=data.filter(r=>tot(r.sc)>=4).length;
+    const need=data.filter(r=>tot(r.sc)>0&&tot(r.sc)<3).length;
+    CI["ch-summary"]=new Chart(document.getElementById("ch-summary").getContext("2d"),{type:"bar",data:{labels:["المكتبات الرئيسية","المكتبات الإضافية","المتوسط العام","متوسط الكادر","مكتبات قوية","تحتاج دعم"],datasets:[{data:[main,extra,overall,staffAvg,strong,need],backgroundColor:["#185fa5","#0f9d8a","#ba7517","#534ab7","#0f6e56","#c0392b"],borderRadius:10,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:fo}},x:{ticks:{font:{family:"Cairo",size:11}}}}}});
+    const txt=document.getElementById("chartSummaryText");
+    if(txt) txt.innerHTML=`تم احتساب <b>${main}</b> مكتبة رئيسية و<b>${extra}</b> مكتبة إضافية. المتوسط العام الحالي <b>${overall}/6</b>، ومتوسط محور الكادر المهني <b>${staffAvg}/6</b>.`;
+  }
 }
 function scoreLevel(v){
   if(v>=5) return {txt:"متميزة",cls:"bg2",color:"#0f6e56"};
