@@ -331,6 +331,24 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
 
 .alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}
 
+
+
+/* ══════ MULTI LIBRARY UNITS - أكثر من مكتبة داخل المدرسة ══════ */
+.multi-lib-card{background:linear-gradient(135deg,#f8fbff,#e6f7f2);border:2px solid var(--teal);border-radius:16px;padding:16px;margin:14px 0;}
+.multi-lib-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.multi-lib-title{font-size:16px;font-weight:900;color:var(--navy);display:flex;align-items:center;gap:8px;}
+.multi-lib-note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:3px;}
+.multi-lib-list{display:grid;gap:12px;margin-top:12px;}
+.library-unit{background:#fff;border:1.5px solid var(--border);border-right:5px solid var(--gold);border-radius:14px;padding:14px;box-shadow:0 3px 12px rgba(12,68,124,.05);}
+.library-unit-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bg);}
+.library-unit-title{font-size:14px;font-weight:900;color:var(--navy);}
+.library-unit-remove{background:linear-gradient(135deg,#a32d2d,var(--red));color:#fff;border:none;border-radius:9px;padding:6px 12px;font-family:Cairo,sans-serif;font-size:12px;font-weight:900;cursor:pointer;}
+.library-unit-remove:hover{filter:brightness(.95);}
+.library-unit-main{border-right-color:var(--navy);background:linear-gradient(135deg,#ffffff,#f8fbff);}
+.library-unit-main .library-unit-title::before{content:'⭐ ';}
+.secondary-library-summary{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.8;color:var(--navy);}
+@media(max-width:900px){.multi-lib-head{align-items:stretch}.multi-lib-head .btn{justify-content:center;width:100%;}.library-unit .g2{grid-template-columns:1fr!important;}}
+
 /* ══════ IMPORT PREVIEW PANEL - واضح بعد رفع ملف JSON ══════ */
 .import-preview-card{display:none;border:2px solid var(--teal);background:linear-gradient(135deg,#f8fbff,#e6f7f2);border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 4px 16px rgba(12,68,124,.08)}
 .import-preview-card.show{display:block}
@@ -501,36 +519,18 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
             </div>
             <div class="fld full"><label>وصف مختصر للمكتبة (اختياري)</label><textarea id="f-ldesc" placeholder="الموقع، التقسيمات، ما يميزها..."></textarea></div>
           </div>
-          <!-- EXTRA LIBRARY INLINE -->
-          <div class="exbox" id="exbox">
-            <div class="extog" onclick="togEx()">
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-size:20px">📚</span>
-                <div>
-                  <div>هل توجد مكتبة ثانية (إضافية) في المدرسة؟</div>
-                  <div style="font-size:12px;font-weight:400;color:var(--muted);margin-top:2px">اضغط لإضافة معلومات مختصرة — تُسجّل ضمن نفس المدرسة</div>
-                </div>
+          <!-- MULTIPLE LIBRARIES INLINE -->
+          <div class="multi-lib-card" id="libraryUnitsBox">
+            <div class="multi-lib-head">
+              <div>
+                <div class="multi-lib-title">📚 المكتبات داخل المدرسة</div>
+                <div class="multi-lib-note">المكتبة الرئيسية هي التقييم الشامل أعلاه. أضف مكتبات فرعية عند وجود مكتبة KG أو الحلقة الأولى أو الثانية أو الثالثة أو مكتبة رئيسية إضافية.</div>
               </div>
-              <button class="btn bt bxs" type="button" id="exbtn">+ إضافة</button>
+              <button class="btn bt bsm" type="button" onclick="addLibraryUnit()">➕ إضافة مكتبة أخرى</button>
             </div>
-            <div class="excnt" id="excnt">
-              <div class="al als" style="margin-bottom:12px">📌 البيانات التالية للمكتبة الثانية — تُحفظ ضمن سجل نفس المدرسة وليس كمدرسة منفصلة</div>
-              <div class="g2">
-                <div class="fld"><label>نوع المكتبة الثانية</label><select id="f-et"><option>مكتبة الصفوف الصغيرة KG-4</option><option>مكتبة الصفوف الكبيرة 5-12</option><option>مكتبة رقمية</option><option>ركن قراءة</option><option>مكتبة متنقلة</option><option>أخرى</option></select></div>
-                <div class="fld"><label>أخصائيها</label><input id="f-es" placeholder="الاسم أو اتركه فارغاً..."></div>
-                <div class="fld">
-                  <label>عدد كتبها</label>
-                  <div class="qp" id="qeb"><div class="pill" onclick="qp('f-eb',this,'qeb')">أقل من 500</div><div class="pill" onclick="qp('f-eb',this,'qeb')">500-1500</div><div class="pill" onclick="qp('f-eb',this,'qeb')">1500-3000</div><div class="pill" onclick="qp('f-eb',this,'qeb')">أكثر من 3000</div></div>
-                  <input id="f-eb" placeholder="العدد التقريبي...">
-                </div>
-                <div class="fld">
-                  <label>تقييمها العام</label>
-                  <div class="qp" id="qer"><div class="pill" onclick="qp('f-er',this,'qer')">ضعيف</div><div class="pill" onclick="qp('f-er',this,'qer')">مقبول</div><div class="pill" onclick="qp('f-er',this,'qer')">جيد</div><div class="pill" onclick="qp('f-er',this,'qer')">متميز</div></div>
-                  <input id="f-er">
-                </div>
-                <div class="fld full"><label>ملاحظات مختصرة عن المكتبة الثانية</label><textarea id="f-en" placeholder="ما يميزها، احتياجاتها، توافر مجموعات الإمارات فيها..."></textarea></div>
-              </div>
-            </div>
+            <div class="al als" style="margin-bottom:10px">📌 كل مكتبة إضافية تُحفظ ضمن نفس سجل المدرسة في قاعدة البيانات، ولا تُعامل كمدرسة منفصلة.</div>
+            <div id="libraryUnitsList" class="multi-lib-list"></div>
+            <div id="libraryUnitsSummary" class="secondary-library-summary">لا توجد مكتبات إضافية مسجلة حالياً.</div>
           </div>
         </div>
 
@@ -1196,10 +1196,72 @@ function sR(k,v,btn){
 }
 function clrRS(){RS={};document.querySelectorAll(".rp").forEach(rp=>rp.querySelectorAll(".rpill").forEach(b=>RCL.forEach(c=>{if(c)b.classList.remove(c);})));}
 function ldRS(d){["uae","cd","cc","cco","sh","cr","sp","se","at","in","rch","tu","cu","ri","pa","co","ts","ss","sb","sc","sst","si","ste","dg","te","un"].forEach(k=>{if(d?.["r_"+k])sR(k,d["r_"+k],null);});}
-function togEx(){
-  const c=document.getElementById("excnt");const b=document.getElementById("exbtn");const box=document.getElementById("exbox");
-  const o=c.classList.toggle("open");box.classList.toggle("open",o);b.textContent=o?"— إخفاء":"+ إضافة";
+
+function libraryTypeOptions(){
+  return ["مكتبة رئيسية","مكتبة الحلقة الثالثة","مكتبة الحلقة الثانية","مكتبة الحلقة الأولى","مكتبة رياض الأطفال KG","مكتبة الصفوف الصغيرة KG-4","مكتبة الصفوف الكبيرة 5-12","مكتبة رقمية","ركن قراءة","مكتبة متنقلة","أخرى"];
 }
+function libraryRatingOptions(){return ["ضعيف","مقبول","جيد","متميز"];}
+function escapeHtml(v){return String(v||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));}
+function addLibraryUnit(data){
+  const list=document.getElementById("libraryUnitsList"); if(!list) return;
+  const i=Date.now()+"_"+Math.random().toString(36).slice(2,7);
+  const d=data||{};
+  const typeOpts=libraryTypeOptions().map(o=>`<option ${String(d.type||'')===o?'selected':''}>${o}</option>`).join('');
+  const ratingOpts=libraryRatingOptions().map(o=>`<option ${String(d.rating||'')===o?'selected':''}>${o}</option>`).join('');
+  const card=document.createElement('div');
+  card.className='library-unit';
+  card.dataset.libraryUnit='1';
+  card.innerHTML=`
+    <div class="library-unit-head">
+      <div class="library-unit-title">مكتبة إضافية داخل نفس المدرسة</div>
+      <button type="button" class="library-unit-remove" onclick="removeLibraryUnit(this)">حذف</button>
+    </div>
+    <div class="g2">
+      <div class="fld"><label>نوع المكتبة</label><select data-lib-field="type">${typeOpts}</select></div>
+      <div class="fld"><label>أخصائي/مسؤول المكتبة</label><input data-lib-field="specialist" value="${escapeHtml(d.specialist||d.es||'')}" placeholder="الاسم أو اتركه فارغاً..."></div>
+      <div class="fld"><label>عدد الكتب التقريبي</label><input data-lib-field="books" value="${escapeHtml(d.books||d.eb||'')}" placeholder="مثال: أقل من 500 أو 1500"></div>
+      <div class="fld"><label>التقييم العام لهذه المكتبة</label><select data-lib-field="rating">${ratingOpts}</select></div>
+      <div class="fld full"><label>ملاحظات مختصرة عن هذه المكتبة</label><textarea data-lib-field="notes" placeholder="ما يميزها، احتياجاتها، هل تحتاج دعماً، ملاحظات عامة...">${escapeHtml(d.notes||d.en||'')}</textarea></div>
+    </div>`;
+  list.appendChild(card);
+  updateLibraryUnitsSummary();
+}
+function removeLibraryUnit(btn){
+  const card=btn.closest('[data-library-unit]'); if(card) card.remove();
+  updateLibraryUnitsSummary();
+}
+function clearLibraryUnits(){
+  const list=document.getElementById('libraryUnitsList'); if(list) list.innerHTML='';
+  updateLibraryUnitsSummary();
+}
+function collectLibraryUnits(){
+  return Array.from(document.querySelectorAll('[data-library-unit]')).map(card=>{
+    const v=f=>card.querySelector(`[data-lib-field="${f}"]`)?.value||'';
+    return {type:v('type'),specialist:v('specialist'),books:v('books'),rating:v('rating'),notes:v('notes')};
+  }).filter(x=>x.type||x.specialist||x.books||x.rating||x.notes);
+}
+function loadLibraryUnits(arr,legacy){
+  clearLibraryUnits();
+  let rows=Array.isArray(arr)?arr.filter(Boolean):[];
+  if((!rows.length) && legacy && (legacy.hasEx || legacy.et || legacy.es || legacy.eb || legacy.er || legacy.en)){
+    rows=[{type:legacy.et||'مكتبة إضافية',specialist:legacy.es||'',books:legacy.eb||'',rating:legacy.er||'',notes:legacy.en||''}];
+  }
+  rows.forEach(addLibraryUnit);
+  updateLibraryUnitsSummary();
+}
+function updateLibraryUnitsSummary(){
+  const el=document.getElementById('libraryUnitsSummary'); if(!el) return;
+  const rows=collectLibraryUnits();
+  if(!rows.length){el.textContent='لا توجد مكتبات إضافية مسجلة حالياً.';return;}
+  el.innerHTML='تم تسجيل <b>'+rows.length+'</b> مكتبة إضافية: '+rows.map((r,i)=>`${i+1}. ${escapeHtml(r.type||'مكتبة')} ${r.rating?('— '+escapeHtml(r.rating)):''}`).join(' | ');
+}
+function bindLibraryUnitsAutoSummary(){
+  const box=document.getElementById('libraryUnitsBox'); if(!box || box._bound) return;
+  box.addEventListener('input', updateLibraryUnitsSummary);
+  box.addEventListener('change', updateLibraryUnitsSummary);
+  box._bound=true;
+}
+function togEx(){ addLibraryUnit(); }
 function onSch(){
   const sid=document.getElementById("esch").value;const w=document.getElementById("eform");
   if(!sid){w.style.display="none";return;}
@@ -1217,9 +1279,7 @@ function ldEv(sid){
   document.getElementById("eform").querySelectorAll("input:not([type=checkbox]),textarea,select").forEach(el=>{if(!el.readOnly&&el.id!=="esch")el.value="";});
   document.getElementById("eform").querySelectorAll("input[type=checkbox]").forEach(el=>el.checked=false);
   document.querySelectorAll(".pill").forEach(p=>p.classList.remove("sel"));
-  document.getElementById("excnt").classList.remove("open");
-  document.getElementById("exbox").classList.remove("open");
-  document.getElementById("exbtn").textContent="+ إضافة";
+  clearLibraryUnits();
   sv("f-lib",d.lib);sv("f-date",d.date);sv("f-stg",d.stg);sv("f-ltyp",d.ltyp);
   sv("f-stu",d.stu);sv("f-stf",d.stf);sv("f-ldesc",d.ldesc);sv("f-uaen",d.uaen);
   sv("f-bt",d.bt);sv("f-bar",d.bar);sv("f-ben",d.ben);sv("f-dig",d.dig);
@@ -1230,7 +1290,7 @@ function ldEv(sid){
   sv("f-crs",d.crs);sv("f-cred",d.cred);sv("f-sdev",d.sdev);sv("f-sstr",d.sstr);sv("f-tr",d.tr);
   sv("f-lsy",d.lsy);sv("f-tecn",d.tecn);sv("f-ovr",d.overall);sv("f-pri",d.priority);
   sv("f-chal",d.chal);sv("f-str",d.str);sv("f-wk",d.wk);sv("f-rec",d.rec);sv("f-plan",d.plan);
-  if(d.hasEx){togEx();sv("f-et",d.et);sv("f-es",d.es);sv("f-eb",d.eb);sv("f-er",d.er);sv("f-en",d.en);}
+  loadLibraryUnits(d.libraries,d);
   ["h","c","p","s","g","e","r","a","l","d","n","o"].forEach(k=>sk("uae-"+k,d["uae-"+k]));
   ["tl","dp","ac","uc","dg","co"].forEach(k=>sk("env-"+k,d["env-"+k]));
   ["ar","en","st","ua","bf","cl"].forEach(k=>sk("act-"+k,d["act-"+k]));
@@ -1251,8 +1311,9 @@ function getEv(){
     lsy:gv("f-lsy"),tecn:gv("f-tecn"),
     overall:gv("f-ovr"),priority:gv("f-pri"),
     chal:gv("f-chal"),str:gv("f-str"),wk:gv("f-wk"),rec:gv("f-rec"),plan:gv("f-plan"),
-    hasEx:document.getElementById("excnt").classList.contains("open"),
-    et:gv("f-et"),es:gv("f-es"),eb:gv("f-eb"),er:gv("f-er"),en:gv("f-en"),
+    libraries:collectLibraryUnits(),
+    hasEx:collectLibraryUnits().length>0,
+    et:(collectLibraryUnits()[0]||{}).type||"",es:(collectLibraryUnits()[0]||{}).specialist||"",eb:(collectLibraryUnits()[0]||{}).books||"",er:(collectLibraryUnits()[0]||{}).rating||"",en:(collectLibraryUnits()[0]||{}).notes||"",
     saved:true,savedAt:new Date().toISOString()
   };
   ["h","c","p","s","g","e","r","a","l","d","n","o"].forEach(k=>d["uae-"+k]=gk("uae-"+k));
@@ -1909,6 +1970,10 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
     setTimeout(()=>loadRemote({replace:true}),1500);
   });
 })();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummary(); updateLibraryUnitsSummary();}catch(e){console.warn(e);}});
 </script>
 
 </body>
