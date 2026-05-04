@@ -389,7 +389,23 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
 }
 @media print { .platform-home-btn { display: none !important; } }
 
-.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}</style>
+.alfalah-fixed-home{position:fixed;top:14px;right:14px;z-index:999999;background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff!important;text-decoration:none!important;padding:10px 16px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22)}@media(max-width:700px){.alfalah-fixed-home{top:auto;bottom:12px;right:12px}}
+
+/* === IMPORT PREVIEW + CLEAR DATABASE SAVE PANEL === */
+.import-preview-panel{display:none;margin:14px 0 18px;background:linear-gradient(135deg,#ffffff,#f8fbff);border:2px solid var(--blue);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(13,59,110,.12)}
+.import-preview-panel.active{display:block}
+.import-preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:12px}
+.import-preview-title{font-size:16px;font-weight:900;color:var(--navy)}
+.import-preview-meta{font-size:12px;color:var(--muted);line-height:1.8}
+.import-preview-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.import-preview-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;margin-top:8px;background:#fff}
+.import-preview-table th{background:var(--navy);color:#fff;padding:8px 10px;font-size:12px;text-align:center}
+.import-preview-table td{border-bottom:1px solid #e8eef5;padding:8px 10px;font-size:12px;text-align:center}
+.import-preview-ok{background:#ecfdf5;border:1px solid #86efac;color:#14532d;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;margin-top:10px;text-align:center}
+.import-preview-warn{background:#fffbeb;border:1px solid #fbbf24;color:#78350f;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;margin-top:10px;text-align:center}
+.save-db-strong{background:linear-gradient(135deg,#0d3b6e,#0e7f70)!important;color:#fff!important;border:2px solid rgba(255,255,255,.3)!important;font-weight:900!important}
+
+</style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
 <a class="platform-home-btn" href="../index.html">🏠 الرئيسية</a>
@@ -413,6 +429,23 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
 
 <div class="wrap">
 
+<div id="importPreviewPanel" class="import-preview-panel">
+  <div class="import-preview-head">
+    <div>
+      <div class="import-preview-title">📥 معاينة ملف الزيارات والدوام قبل الحفظ</div>
+      <div class="import-preview-meta" id="importPreviewMeta">لم يتم رفع ملف بعد.</div>
+    </div>
+    <button type="button" class="btn btn-soft bsm" onclick="ScheduleImportPreview.hide()">إغلاق المعاينة</button>
+  </div>
+  <div id="importPreviewBody"></div>
+  <div class="import-preview-actions">
+    <button type="button" class="btn save-db-strong bsm" onclick="ScheduleImportPreview.saveToDatabase()">💾 حفظ البيانات المرفوعة في قاعدة البيانات</button>
+    <button type="button" class="btn btn-gold bsm" onclick="generateReport()">📄 عرض التقرير الكامل</button>
+    <button type="button" class="btn btn-soft bsm" onclick="saveJSON()">⬇️ تنزيل نسخة JSON</button>
+  </div>
+</div>
+
+
 <!-- HEADER -->
 <header class="site-header">
   <div class="hdr-top brand-center">
@@ -427,9 +460,9 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
     <button class="ha ha-gold" id="ha-gen">📄 التقرير الكامل</button>
     <button class="ha" style="background:rgba(91,33,182,.3);border-color:#a78bfa;" id="ha-mgr">👔 عرض المدير</button>
     <button class="ha ha-teal" id="ha-email">📧 Gmail</button>
-    <button class="ha" id="ha-json">💾 JSON</button>
+    <button class="ha" id="ha-json">⬇️ تنزيل JSON</button>
     <button class="ha" id="ha-csv">📊 CSV</button>
-    <button class="ha" id="ha-imp">📥 استيراد</button>
+    <button class="ha" id="ha-imp">📥 رفع JSON</button>
     <button class="ha" id="ha-print">🖨️ طباعة</button>
     <button class="ha" id="ha-new-week" style="background:rgba(240,165,0,.35);border-color:#f0a500;font-weight:900;" onclick="WKM.newWeek()">➕ أسبوع جديد</button>
     <button class="ha" id="ha-weeks-btn" style="border-color:rgba(255,255,255,.6);" onclick="WKM.showList()">📅 الأسابيع</button>
@@ -781,7 +814,7 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
 
 <!-- SAVE BAR -->
 <div class="save-bar">
-  <button type="button" class="btn btn-navy bsm" id="btn-save">📌 حفظ في القاعدة</button>
+  <button type="button" class="btn save-db-strong bsm" id="btn-save">💾 حفظ في قاعدة البيانات</button>
   <button type="button" class="btn btn-soft bsm" id="btn-load">🔄 استرجاع</button>
   <button type="button" class="btn btn-gold bsm" id="btn-gen">📄 التقرير الكامل</button>
   <button type="button" class="btn bsm" style="background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;" id="btn-mgr">👔 عرض المدير</button>
@@ -1199,12 +1232,126 @@ function saveCSV() {
 }
 
 function importJSON() { document.getElementById("impF").click(); }
+
+var ScheduleImportPreview = (function(){
+  var importedData = null;
+  var importedFileName = "";
+
+  function esc(v){
+    return String(v==null?"":v).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c;});
+  }
+  function val(d,k,alt){ return d && d[k]!=null && d[k]!=="" ? d[k] : (alt||""); }
+  function daysRows(d){
+    if(typeof DAYS === "undefined") return "";
+    return DAYS.map(function(day,i){
+      return "<tr>"+
+        "<td><b>"+esc(day)+"</b></td>"+
+        "<td>"+esc(val(d,"atype"+i,"دوام رسمي"))+"</td>"+
+        "<td>"+esc(val(d,"ain"+i,"08:00"))+"</td>"+
+        "<td>"+esc(val(d,"aout"+i,(i===4?"11:30":"14:00")))+"</td>"+
+        "<td>"+esc(val(d,"dloc"+i,"—"))+"</td>"+
+        "<td>"+esc(val(d,"anote"+i,"—"))+"</td>"+
+      "</tr>";
+    }).join("");
+  }
+  function render(d,fileName){
+    var panel=document.getElementById("importPreviewPanel");
+    var meta=document.getElementById("importPreviewMeta");
+    var body=document.getElementById("importPreviewBody");
+    if(!panel||!meta||!body) return;
+    var pills=(d._pills&&Array.isArray(d._pills))?d._pills.length:0;
+    meta.innerHTML = "<b>اسم الملف:</b> "+esc(fileName)+" &nbsp; | &nbsp; <b>رقم الأسبوع:</b> "+esc(val(d,"wnum","—"))+" &nbsp; | &nbsp; <b>الفترة:</b> "+esc(val(d,"wstart","—"))+" ← "+esc(val(d,"wend","—"))+" &nbsp; | &nbsp; <b>عناصر العمل:</b> "+pills;
+    body.innerHTML = "<div class='import-preview-ok'>✅ تم قراءة الملف وعرضه في الصفحة. راجع البيانات ثم اضغط زر الحفظ في قاعدة البيانات.</div>"+
+      "<table class='import-preview-table'><thead><tr><th>اليوم</th><th>نوع الدوام</th><th>الحضور</th><th>الانصراف</th><th>الموقع/الزيارة</th><th>ملاحظة</th></tr></thead><tbody>"+daysRows(d)+"</tbody></table>";
+    panel.classList.add("active");
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  function normalize(raw){
+    var d = raw;
+    if(Array.isArray(d)) d = d[0] || {};
+    if(d && d.full_data) d = (typeof d.full_data === "string" ? JSON.parse(d.full_data) : d.full_data);
+    if(d && d.data && typeof d.data === "object" && !d.wnum) d = d.data;
+    if(!d || typeof d !== "object" || Array.isArray(d)) throw new Error("صيغة JSON غير مناسبة لصفحة الدوام والزيارات.");
+    return d;
+  }
+  async function saveDataToDatabase(d){
+    if(!d) throw new Error("لا توجد بيانات للحفظ.");
+    var sb = window.alfalahSupabase || (window.AlfalahDBSync && window.AlfalahDBSync.client && window.AlfalahDBSync.client()) || null;
+    if(!sb) throw new Error("لم يتم الاتصال بـ Supabase. تأكد من ملف supabase-config.js.");
+    var wn = parseInt(String(d.wnum||d.week_number||"").replace(/[^0-9]/g,""),10);
+    if(!wn) throw new Error("رقم الأسبوع غير موجود داخل الملف.");
+    var now = new Date().toISOString();
+    var payload = {
+      week_number: wn,
+      week_title: d.week_title || ("الأسبوع رقم "+wn),
+      work_date: d.wstart || d.work_date || null,
+      work_type: d.wstatus || d.work_type || "دوام كامل",
+      tasks: JSON.stringify(d),
+      notes: JSON.stringify(d),
+      full_data: d,
+      updated_at: now
+    };
+    var existing = null;
+    try{
+      var q = await sb.from("daily_work_logs").select("id").eq("week_number",wn).limit(1);
+      if(!q.error && q.data && q.data.length) existing = q.data[0].id;
+    }catch(_e){}
+    var res;
+    if(d._db_id || existing){
+      res = await sb.from("daily_work_logs").update(payload).eq("id", d._db_id || existing).select();
+    }else{
+      res = await sb.from("daily_work_logs").insert(payload).select();
+    }
+    if(res.error) throw res.error;
+    if(res.data && res.data[0] && res.data[0].id) d._db_id = res.data[0].id;
+    d._savedAt = now;
+    d._savedAtAr = new Date(now).toLocaleString("ar-AE");
+    localStorage.setItem("falah_week_"+wn, JSON.stringify(d));
+    localStorage.setItem("falah_wp_final", JSON.stringify(d));
+    return res.data && res.data[0];
+  }
+  return {
+    show:function(raw,fileName){
+      importedData = normalize(raw);
+      importedFileName = fileName || "ملف JSON";
+      if(typeof setFormData === "function") setFormData(importedData);
+      if(importedData._pills && typeof setSelectedWork === "function") setSelectedWork(importedData._pills);
+      if(typeof syncToReport === "function") setTimeout(syncToReport,120);
+      render(importedData, importedFileName);
+      toast("✅ تم رفع الملف وظهرت البيانات في الصفحة — لم تحفظ بعد في القاعدة");
+    },
+    hide:function(){ var p=document.getElementById("importPreviewPanel"); if(p) p.classList.remove("active"); },
+    saveToDatabase:async function(){
+      try{
+        var d = importedData || (typeof getFormData === "function" ? getFormData() : null);
+        await saveDataToDatabase(d);
+        render(d, importedFileName || "البيانات الحالية");
+        var body=document.getElementById("importPreviewBody");
+        if(body) body.insertAdjacentHTML("afterbegin","<div class='import-preview-ok'>💾 تم الحفظ في قاعدة البيانات بنجاح. ستظهر البيانات في الإدارة والتقارير.</div>");
+        toast("💾 تم الحفظ في قاعدة البيانات");
+      }catch(err){
+        console.error(err);
+        var body=document.getElementById("importPreviewBody");
+        if(body) body.insertAdjacentHTML("afterbegin","<div class='import-preview-warn'>❌ فشل الحفظ: "+esc(err.message||err)+"</div>");
+        alert("فشل الحفظ في قاعدة البيانات: "+(err.message||err));
+      }
+    },
+    saveCurrentToDatabase:async function(){
+      var d = typeof getFormData === "function" ? getFormData() : null;
+      importedData = d; importedFileName = "البيانات الحالية";
+      render(d, importedFileName);
+      return this.saveToDatabase();
+    },
+    _saveDataToDatabase:saveDataToDatabase
+  };
+})();
+
 document.getElementById("impF").addEventListener("change", function(e){
   var f = e.target.files[0]; if(!f) return;
   var reader = new FileReader();
   reader.onload = function(ev){
-    try{ setFormData(JSON.parse(ev.target.result)); setTimeout(syncToReport, 100); toast("✅ تم الاستيراد: "+f.name); }
-    catch(err){ alert("خطأ: "+err.message); }
+    try{ ScheduleImportPreview.show(JSON.parse(ev.target.result), f.name); }
+    catch(err){ alert("خطأ في قراءة ملف JSON: "+err.message); }
   };
   reader.readAsText(f); e.target.value="";
 });
@@ -2246,7 +2393,16 @@ var WKM=(function(){
     localStorage.setItem(k,JSON.stringify(d));
     localStorage.setItem('falah_wp_final',JSON.stringify(d));
     _cur=k;_updateLabel();
-    _toast('✅ الأسبوع '+wn+' محفوظ على الجهاز','#0e7f70');
+    if(window.ScheduleImportPreview && ScheduleImportPreview._saveDataToDatabase){
+      ScheduleImportPreview._saveDataToDatabase(d).then(function(){
+        _toast('💾 الأسبوع '+wn+' محفوظ في قاعدة البيانات','#0e7f70');
+      }).catch(function(err){
+        console.error(err);
+        _toast('⚠️ حُفظ على الجهاز فقط، وفشل حفظ القاعدة: '+(err.message||err),'#991b1b');
+      });
+    }else{
+      _toast('✅ الأسبوع '+wn+' محفوظ على الجهاز','#0e7f70');
+    }
     return true;
   }
 
