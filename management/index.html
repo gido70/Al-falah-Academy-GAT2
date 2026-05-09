@@ -581,6 +581,20 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
 .ai-filter-card select,.ai-filter-card textarea{width:100%;border:2px solid var(--border);border-radius:12px;padding:10px;font-family:Cairo,sans-serif;background:#f8fbff;color:var(--text)}
 .ai-filter-card textarea{min-height:90px;resize:vertical}.ai-filter-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:center}
 @media(max-width:900px){.ai-filter-grid{grid-template-columns:1fr}}
+
+/* === DIRECTOR FEEDBACK === */
+.director-feedback-box{background:#f8fbff;border:1.5px solid var(--border);border-right:6px solid var(--teal);border-radius:16px;padding:16px;margin:18px 0}
+.director-feedback-box h3{color:var(--navy);font-size:16px;margin:0 0 8px;font-weight:900}
+.director-feedback-box textarea,.director-feedback-box input,.director-feedback-box select{width:100%;border:2px solid var(--border);border-radius:12px;padding:10px 12px;font-family:Cairo,sans-serif;background:#fff;color:var(--text);margin-top:6px}
+.director-feedback-box textarea{min-height:95px;resize:vertical}
+.director-feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.director-feedback-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.director-feedback-actions button{border:0;border-radius:12px;padding:10px 16px;font-family:Cairo,sans-serif;font-weight:900;cursor:pointer;background:var(--grad);color:#fff}
+.manager-feedback-list{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;margin-top:14px}
+.manager-feedback-item{border-bottom:1px solid var(--border);padding:10px 0;font-size:13px;line-height:1.8}
+.manager-feedback-item:last-child{border-bottom:0}
+@media(max-width:800px){.director-feedback-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
@@ -749,7 +763,7 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
   <div class="sec-title">📋 التقرير التنفيذي الشامل</div>
 
   <div class="ai-filter-card" id="aiFilterCard">
-    <div class="ai-filter-title">⚙️ خيارات التقرير الإداري</div>
+    <div class="ai-filter-title">🤖 خيارات تقييم AI المتقدم</div>
     <div class="ai-filter-grid">
       <div><label>نوع التقرير</label><select id="aiReportType"><option value="final">التقييم النهائي الشامل</option><option value="schedule">تقييم الجداول والدوام العملي</option><option value="schools">تقييم المدارس والمكتبات</option><option value="monthly">تقرير شهري</option><option value="risk">تحليل المخاطر والفجوات</option></select></div>
       <div><label>اختيار المدرسة</label><select id="aiSchoolScope"><option value="all">جميع المدارس</option></select></div>
@@ -758,13 +772,7 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
     </div>
     <label style="margin-top:12px">ملاحظات أو توجيه خاص للتقرير</label>
     <textarea id="aiUserNote" placeholder="مثال: ركز على ضعف الكادر المهني، أو قيّم شهر مايو فقط، أو اجعل التقرير موجهاً للمدير العام..."></textarea>
-    <div class="ai-filter-actions">
-      <button class="share-btn primary" onclick="generateSmartReport()">🔄 توليد التقرير حسب الاختيارات</button>
-      <button class="share-btn" onclick="printExecutiveReport()">🖨️ PDF / طباعة</button>
-      <button class="share-btn email" onclick="copyDirectorOnlyLink()">🔗 نسخ رابط المدير</button>
-      <button class="share-btn" onclick="openDirectorReportWindow()">👁️ معاينة المدير</button>
-      <button class="share-btn" onclick="downloadExecutiveWord()">📄 Word</button>
-    </div>
+    <div class="ai-filter-actions"><button class="share-btn primary" onclick="generateSmartReport()">🔄 توليد التقرير حسب الاختيارات</button><button class="share-btn" onclick="window.print()">🖨️ طباعة</button></div>
   </div>
 
   <div class="ai-report-card" id="aiReportCard">
@@ -781,6 +789,17 @@ body.print-report-mode .ai-output { display:block!important; border:0!important;
       <div style="margin-top:12px;font-size:15px;font-weight:700;color:var(--navy)">جاري إعداد التقرير التنفيذي...</div>
     </div>
     <div class="ai-output" id="aiOutput"></div>
+  </div>
+
+
+  <!-- DIRECTOR FEEDBACK INBOX -->
+  <div class="share-box" id="managerFeedbackBox">
+    <div class="share-title">💬 ردود وتعليقات المدير</div>
+    <div class="share-sub">تظهر هنا تعليقات المدير المرسلة من رابط الإدارة التعليمية.</div>
+    <div class="share-btns">
+      <button class="share-btn primary" onclick="loadDirectorFeedback()">🔄 تحديث الردود</button>
+    </div>
+    <div id="managerFeedbackList" class="manager-feedback-list">لا توجد ردود محملة بعد.</div>
   </div>
 
 <!-- SHARE BOX -->
@@ -1419,197 +1438,26 @@ function buildReport() {
       </div>
     </div>
 
+    <div class="director-feedback-box">
+      <h3>💬 تعليق المدير والتوصيات</h3>
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">يمكن للمدير كتابة ملاحظاته أو توجيهاته، وسيتم حفظها في قاعدة البيانات لتظهر في صفحة المتابعة الإدارية.</div>
+      <div class="director-feedback-grid">
+        <div><label>اسم المدير / الجهة</label><input id="directorName" placeholder="مثال: مدير الإدارة التعليمية"></div>
+        <div><label>نوع الرد</label><select id="directorDecision"><option value="ملاحظة عامة">ملاحظة عامة</option><option value="موافقة">موافقة</option><option value="توجيه للتنفيذ">توجيه للتنفيذ</option><option value="طلب تعديل">طلب تعديل</option></select></div>
+      </div>
+      <label>التعليق أو التوصيات</label>
+      <textarea id="directorComment" placeholder="اكتب تعليقك أو توصياتك هنا..."></textarea>
+      <div class="director-feedback-actions">
+        <button type="button" onclick="submitDirectorFeedback()">📨 إرسال التعليق</button>
+      </div>
+      <div id="directorFeedbackStatus" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
+    </div>
+
     <!-- Footer -->
     <div style="border-top:2px solid var(--border);padding-top:14px;text-align:center;font-size:11px;color:var(--muted)">
       أُعدَّ هذا التقرير تلقائياً من بيانات المنصة الميدانية | أكاديمية الفلاح — مراكز مصادر التعلم 2026
     </div>
   </div>`;
-}
-
-
-// ═══════════════════════════════════════════════
-//  ENHANCED MANAGEMENT REPORT FILTERS — ثابت بعد إصلاح الصفحة
-// ═══════════════════════════════════════════════
-function reportMonthName(v){
-  const s=String(v||'');
-  const ar=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  for(const m of ar){ if(s.includes(m)) return m; }
-  const m=(s.match(/(?:^|\D)(\d{4})[-\/](\d{1,2})[-\/]\d{1,2}/)||s.match(/(?:^|\D)(\d{1,2})[-\/]\d{1,2}[-\/]\d{4}/));
-  let n='';
-  if(m){ n = m[2] || m[1]; }
-  n=String(n||'').padStart(2,'0');
-  return {'01':'يناير','02':'فبراير','03':'مارس','04':'أبريل','05':'مايو','06':'يونيو','07':'يوليو','08':'أغسطس','09':'سبتمبر','10':'أكتوبر','11':'نوفمبر','12':'ديسمبر'}[n] || 'غير محدد';
-}
-function fillAISchools(){
-  const sel=document.getElementById('aiSchoolScope');
-  if(!sel || sel.dataset.ready) return;
-  (window.SCHOOLS||SCHOOLS||[]).forEach(s=>{
-    const o=document.createElement('option');
-    o.value=s.code; o.textContent=s.name;
-    sel.appendChild(o);
-  });
-  sel.dataset.ready='1';
-}
-function readReportFilters(){
-  fillAISchools();
-  return {
-    type:document.getElementById('aiReportType')?.value||'final',
-    school:document.getElementById('aiSchoolScope')?.value||'all',
-    month:document.getElementById('aiMonth')?.value||'all',
-    style:document.getElementById('aiOutputStyle')?.value||'executive',
-    note:document.getElementById('aiUserNote')?.value||''
-  };
-}
-function applyReportFiltersFromUrl(){
-  fillAISchools();
-  const u=new URL(window.location.href);
-  const map={report:'aiReportType',school:'aiSchoolScope',month:'aiMonth',style:'aiOutputStyle'};
-  Object.entries(map).forEach(([q,id])=>{
-    const el=document.getElementById(id);
-    const val=u.searchParams.get(q);
-    if(el && val) el.value=val;
-  });
-}
-function getReportDataFiltered(f){
-  const allData = REMOTE_EVAL_DATA || (window.SCHOOLS||SCHOOLS||[]).map(s=>({s,d:localLoad('eval_'+s.code)}));
-  let evals = allData.filter(x=>x && x.d && (x.d.totalScore || x.d.saved || x.d.fields));
-  if(f.school !== 'all') evals = evals.filter(x=>x.s.code===f.school);
-  if(f.month !== 'all') evals = evals.filter(x=>reportMonthName(x.d?.fields?.date || x.d?.date || x.s.date)===f.month);
-
-  let weeks = REMOTE_WEEK_LIST || localLoad('week_list') || [];
-  if(f.month !== 'all') weeks = weeks.filter(w=>reportMonthName(w.start || w.from || w.work_date || w.end || w.month)===f.month);
-  return {evals,weeks};
-}
-function scoreGrade(n){
-  n=Number(n||0);
-  if(n>=90) return 'ممتاز';
-  if(n>=80) return 'جيد جداً';
-  if(n>=70) return 'جيد';
-  if(n>=60) return 'مقبول';
-  if(n>0) return 'يحتاج تطوير';
-  return 'غير مكتمل';
-}
-function reportTitleByType(t){
-  return {
-    final:'التقرير الإداري النهائي الشامل',
-    schedule:'تقرير الدوام والمهام اليومية والزيارات',
-    schools:'تقرير تقييم المدارس والمكتبات',
-    monthly:'التقرير الشهري للإدارة',
-    risk:'تقرير المخاطر والفجوات'
-  }[t] || 'التقرير الإداري النهائي الشامل';
-}
-function buildReport(){
-  const f=readReportFilters();
-  const {evals,weeks}=getReportDataFiltered(f);
-  const scores=evals.map(x=>Number(x.d.totalScore||0)).filter(Boolean);
-  const avgScore=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
-  const sorted=[...evals].sort((a,b)=>Number(b.d.totalScore||0)-Number(a.d.totalScore||0));
-  const best=sorted[0];
-  const low=[...evals].sort((a,b)=>Number(a.d.totalScore||0)-Number(b.d.totalScore||0))[0];
-  const title=reportTitleByType(f.type);
-  const scopeText=(f.school==='all'?'جميع المدارس':((window.SCHOOLS||SCHOOLS||[]).find(s=>s.code===f.school)?.name||'مدرسة محددة'));
-  const monthText=(f.month==='all'?'كل الشهور':f.month);
-  const today=new Date().toLocaleDateString('ar-AE');
-
-  const schoolRows=evals.map((x,i)=>{
-    const fields=x.d.fields||{};
-    const libs = Array.isArray(x.d.libraries)?x.d.libraries.length:0;
-    const score=Number(x.d.totalScore||0);
-    return `<tr>
-      <td>${i+1}</td>
-      <td>${x.s.name}</td>
-      <td>${x.s.city||'—'}</td>
-      <td><b>${score||'—'}</b>/100</td>
-      <td>${scoreGrade(score)}</td>
-      <td>${libs?libs+' مكتبة إضافية':'—'}</td>
-      <td>${fields.ovGap || fields.ovStr || '—'}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="7">لا توجد بيانات تقييم في النطاق المختار</td></tr>';
-
-  const weekRows=weeks.map((w,i)=>`<tr>
-    <td>${i+1}</td>
-    <td>${w.weekNumber || w.week || ('الأسبوع '+(i+1))}</td>
-    <td>${w.start || w.from || '—'}</td>
-    <td>${w.end || '—'}</td>
-    <td>${w.status || '—'}</td>
-    <td>${w.visitCount || w.visits || '—'}</td>
-    <td>${w.summary || w.notes || '—'}</td>
-  </tr>`).join('') || '<tr><td colspan="7">لا توجد أسابيع أو زيارات محفوظة في النطاق المختار</td></tr>';
-
-  const axisMap={col:'المجموعات والمصادر',env:'البيئة والمرافق',tech:'التقنية والرقمنة',staff:'الكادر المهني',svc:'الخدمات والأنشطة'};
-  const axisRows=Object.entries(axisMap).map(([k,name])=>{
-    const vals=evals.map(x=>Number(x.d?.scores?.[k]||0)).filter(Boolean);
-    const max={col:25,env:20,tech:20,staff:20,svc:15}[k]||20;
-    const pct=vals.length?Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)/max*100):0;
-    return `<div style="background:#fff;border:1px solid #d0e0f5;border-radius:14px;padding:12px">
-      <div style="font-weight:900;color:#0c3d72">${name}</div>
-      <div style="height:10px;background:#e8f0fa;border-radius:999px;overflow:hidden;margin:8px 0"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1557a0,#0d8a79,#e09b1a)"></div></div>
-      <div style="font-size:12px;color:#5a7ea8">${pct}%</div>
-    </div>`;
-  }).join('');
-
-  let focus='';
-  if(f.type==='schedule') focus='يركز هذا التقرير على انتظام الدوام، وضوح الزيارات، وسهولة تحويل العمل الأسبوعي إلى ملخص شهري للإدارة.';
-  else if(f.type==='schools') focus='يركز هذا التقرير على تقييم المكتبات الرئيسية والإضافية داخل المدارس، مع إبراز فجوات الكادر المهني والمرافق.';
-  else if(f.type==='monthly') focus='يركز هذا التقرير على شهر محدد، ويربط بين التقييمات والزيارات والمهام اليومية لتقديم صورة مختصرة للإدارة.';
-  else if(f.type==='risk') focus='يركز هذا التقرير على المخاطر والفجوات التي تحتاج متابعة عاجلة قبل اعتماد التقرير النهائي.';
-  else focus='يعرض هذا التقرير ملخصاً تنفيذياً شاملاً لبيانات التقييم والدوام والزيارات المحفوظة في النظام.';
-
-  const recs=[];
-  if(!scores.length) recs.push('إدخال أو استيراد بيانات التقييم قبل اعتماد التقرير النهائي.');
-  if(scores.length && avgScore<70) recs.push('إعداد خطة تحسين عاجلة للمكتبات ذات الدرجات المتدنية.');
-  if(weeks.length===0 && (f.type==='schedule'||f.type==='monthly'||f.type==='final')) recs.push('استكمال سجلات الدوام والزيارات حتى يكون التقرير الشهري معتمداً على بيانات فعلية.');
-  if(low) recs.push(`إعطاء أولوية متابعة لـ ${low.s.name} باعتبارها الأكثر احتياجاً للتحسين ضمن النطاق المختار.`);
-  if(best) recs.push(`الاستفادة من تجربة ${best.s.name} كنموذج داخلي للممارسات الجيدة.`);
-  recs.push('إبقاء التقرير قابلاً للتعديل قبل إرساله للإدارة، ثم طباعته PDF من زر الطباعة.');
-
-  const showSchools = ['final','schools','monthly','risk'].includes(f.type);
-  const showSchedule = ['final','schedule','monthly'].includes(f.type);
-  const brief = f.style==='brief';
-
-  return `<div style="font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#0a2540;line-height:1.9">
-    <div style="background:linear-gradient(155deg,#0c3d72,#1557a0,#0d8a79);color:white;border-radius:20px;padding:24px;text-align:center;margin-bottom:18px">
-      <div style="font-size:24px;font-weight:900">${title}</div>
-      <div style="opacity:.9;margin-top:6px">النطاق: ${scopeText} — الفترة: ${monthText} — تاريخ الإصدار: ${today}</div>
-    </div>
-
-    ${f.note?`<div class="executive-note"><b>توجيه خاص:</b> ${f.note}</div>`:''}
-
-    <div class="director-brief">
-      <div class="db-head"><div><div class="db-title">📌 ملخص إداري مختصر</div><div class="db-sub">نسخة موجزة قابلة للطباعة PDF والمشاركة مع الإدارة</div></div><div class="db-badge">بيانات ميدانية فعلية</div></div>
-      <div class="db-summary">${focus}</div>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-num">${evals.length}</div><div class="kpi-label">تقييمات ضمن النطاق</div></div>
-      <div class="kpi-card"><div class="kpi-num">${avgScore||'—'}</div><div class="kpi-label">متوسط التقييم /100</div></div>
-      <div class="kpi-card"><div class="kpi-num" style="font-size:18px">${best?.s?.name||'—'}</div><div class="kpi-label">الأعلى تقييماً</div></div>
-      <div class="kpi-card"><div class="kpi-num">${weeks.length||'—'}</div><div class="kpi-label">أسابيع/زيارات مسجلة</div></div>
-    </div>
-
-    ${showSchools?`<div class="chart-card"><div class="chart-title">🏫 تقييم المدارس والمكتبات</div><table class="weeks-table"><thead><tr><th>#</th><th>المدرسة</th><th>المدينة</th><th>الدرجة</th><th>المستوى</th><th>مكتبات إضافية</th><th>ملاحظة مختصرة</th></tr></thead><tbody>${schoolRows}</tbody></table></div>`:''}
-
-    ${(!brief && showSchools)?`<div class="chart-card"><div class="chart-title">📊 متوسط المحاور — يتضمن الكادر المهني</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">${axisRows}</div></div>`:''}
-
-    ${showSchedule?`<div class="chart-card"><div class="chart-title">🕘 الدوام والمهام اليومية والزيارات</div><table class="weeks-table"><thead><tr><th>#</th><th>الأسبوع</th><th>من</th><th>إلى</th><th>الحالة</th><th>الزيارات</th><th>ملخص</th></tr></thead><tbody>${weekRows}</tbody></table></div>`:''}
-
-    <div class="chart-card"><div class="chart-title">✅ توصيات تنفيذية</div>${recs.map((r,i)=>`<div style="padding:10px 0;border-bottom:1px solid #d0e0f5"><b>${i+1}.</b> ${r}</div>`).join('')}</div>
-
-    <div class="report-editable" contenteditable="true" style="margin-top:16px">
-      <b>ملاحظة اعتماد:</b> يمكن تعديل هذه الفقرة قبل الطباعة أو تنزيل Word لإضافة اسم المدير أو صياغة رسمية نهائية.
-    </div>
-  </div>`;
-}
-function directorOnlyUrl(){
-  const u=new URL(window.location.href);
-  const f=readReportFilters();
-  u.searchParams.set('director','1');
-  u.searchParams.set('report',f.type);
-  u.searchParams.set('school',f.school);
-  u.searchParams.set('month',f.month);
-  u.searchParams.set('style',f.style);
-  u.hash='';
-  return u.toString();
 }
 
 // ═══════════════════════════════════════════════
@@ -1640,6 +1488,18 @@ function openDirectorReportWindow(){
 }
 
 
+function directorOnlyUrl(){
+  const u=new URL(window.location.href);
+  u.searchParams.set('director','1');
+  const type=document.getElementById('aiReportType')?.value;
+  const school=document.getElementById('aiSchoolScope')?.value;
+  const month=document.getElementById('aiMonth')?.value;
+  if(type) u.searchParams.set('type',type);
+  if(school) u.searchParams.set('school',school);
+  if(month) u.searchParams.set('month',month);
+  u.hash='';
+  return u.toString();
+}
 function copyDirectorOnlyLink(){
   const url=directorOnlyUrl();
   const el=document.getElementById('shareUrl');
@@ -1713,6 +1573,61 @@ function showToast(msg) {
   toastTimer = setTimeout(() => { el.style.opacity='0'; }, 3000);
 }
 
+
+// ═══════════════════════════════════════════════
+//  DIRECTOR FEEDBACK
+// ═══════════════════════════════════════════════
+function currentReportScope(){
+  const u = new URL(window.location.href);
+  return {
+    report_type: document.getElementById('aiReportType')?.value || u.searchParams.get('type') || 'final',
+    school_scope: document.getElementById('aiSchoolScope')?.value || u.searchParams.get('school') || 'all',
+    month_scope: document.getElementById('aiMonth')?.value || u.searchParams.get('month') || 'all',
+    report_url: window.location.href.split('#')[0]
+  };
+}
+async function submitDirectorFeedback(){
+  const status = document.getElementById('directorFeedbackStatus');
+  const name = (document.getElementById('directorName')?.value || '').trim();
+  const decision = document.getElementById('directorDecision')?.value || 'ملاحظة عامة';
+  const comment = (document.getElementById('directorComment')?.value || '').trim();
+  if(!comment){ if(status) status.textContent='اكتب التعليق أولاً.'; return; }
+  const payload = { ...currentReportScope(), director_name:name, decision, comment, created_at:new Date().toISOString() };
+  const sb = getSBClient();
+  try{
+    if(sb){
+      const {error}=await sb.from('director_feedback').insert(payload);
+      if(error) throw error;
+      if(status) status.textContent='✅ تم إرسال تعليق المدير وحفظه في قاعدة البيانات.';
+    }else{
+      const arr = JSON.parse(localStorage.getItem('director_feedback_local')||'[]');
+      arr.unshift(payload);
+      localStorage.setItem('director_feedback_local', JSON.stringify(arr));
+      if(status) status.textContent='✅ تم حفظ التعليق مؤقتاً محلياً؛ تأكد من اتصال Supabase للحفظ المركزي.';
+    }
+    const ta=document.getElementById('directorComment'); if(ta) ta.value='';
+  }catch(e){
+    console.error(e);
+    if(status) status.textContent='تعذر الحفظ: '+(e.message||e);
+  }
+}
+async function loadDirectorFeedback(){
+  const box=document.getElementById('managerFeedbackList'); if(!box) return;
+  box.innerHTML='جاري تحميل الردود...';
+  const sb=getSBClient();
+  try{
+    let rows=[];
+    if(sb){
+      const {data,error}=await sb.from('director_feedback').select('*').order('created_at',{ascending:false}).limit(20);
+      if(error) throw error; rows=data||[];
+    }else{
+      rows=JSON.parse(localStorage.getItem('director_feedback_local')||'[]');
+    }
+    if(!rows.length){ box.innerHTML='لا توجد ردود محفوظة حتى الآن.'; return; }
+    box.innerHTML=rows.map(r=>`<div class="manager-feedback-item"><b>${r.director_name||'مدير/جهة غير محددة'}</b> — <span class="tag">${r.decision||'ملاحظة'}</span><br><span class="muted">${new Date(r.created_at||Date.now()).toLocaleString('ar-AE')} | ${r.report_type||''} | ${r.school_scope||'all'} | ${r.month_scope||'all'}</span><br>${r.comment||''}</div>`).join('');
+  }catch(e){ console.error(e); box.innerHTML='تعذر تحميل الردود: '+(e.message||e); }
+}
+
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
@@ -1740,6 +1655,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderCharts(allData);
   renderSchedule();
   renderTimeline();
+  loadDirectorFeedback();
+  // Apply director URL filters
+  const params=new URLSearchParams(location.search);
+  if(params.get('type') && document.getElementById('aiReportType')) document.getElementById('aiReportType').value=params.get('type');
+  if(params.get('month') && document.getElementById('aiMonth')) document.getElementById('aiMonth').value=params.get('month');
+  setTimeout(()=>{ if(params.get('school') && document.getElementById('aiSchoolScope')) document.getElementById('aiSchoolScope').value=params.get('school'); },350);
   // Auto-generate report on load
   setTimeout(()=>{ generateSmartReport(); if(document.body.classList.contains('director-mode')) window.scrollTo(0,0); }, 600);
 });
