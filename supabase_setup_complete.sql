@@ -168,3 +168,76 @@ create policy "public upload library documents" on storage.objects for insert to
 
 create policy "public read specialist certificates" on storage.objects for select to anon, authenticated using (bucket_id = 'specialist-certificates');
 create policy "public upload specialist certificates" on storage.objects for insert to anon, authenticated with check (bucket_id = 'specialist-certificates');
+
+
+-- 7) جدول ردود وتعليقات الإدارة على روابط التقارير
+create table if not exists public.director_feedback (
+  id bigint generated always as identity primary key,
+  report_type text,
+  school_id text,
+  period text,
+  decision text,
+  priority text,
+  comment text,
+  page_url text,
+  is_read boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table public.director_feedback enable row level security;
+
+drop policy if exists "public read director feedback" on public.director_feedback;
+drop policy if exists "public insert director feedback" on public.director_feedback;
+drop policy if exists "public update director feedback" on public.director_feedback;
+
+create policy "public read director feedback" on public.director_feedback for select to anon, authenticated using (true);
+create policy "public insert director feedback" on public.director_feedback for insert to anon, authenticated with check (true);
+create policy "public update director feedback" on public.director_feedback for update to anon, authenticated using (true) with check (true);
+
+-- 8) أعمدة ودعم نهائي للتشغيل المباشر من GitHub Pages
+alter table public.library_evaluations add column if not exists school_code text;
+alter table public.library_evaluations add column if not exists school_name text;
+alter table public.library_evaluations add column if not exists updated_at timestamptz default now();
+
+alter table public.daily_work_logs add column if not exists week_number int;
+alter table public.daily_work_logs add column if not exists week_title text;
+alter table public.daily_work_logs add column if not exists tasks text;
+alter table public.daily_work_logs add column if not exists attendance text;
+alter table public.daily_work_logs add column if not exists departure text;
+alter table public.daily_work_logs add column if not exists work_type text;
+alter table public.daily_work_logs add column if not exists updated_at timestamptz default now();
+
+alter table public.school_files add column if not exists school_code text;
+alter table public.school_files add column if not exists updated_at timestamptz default now();
+
+create index if not exists idx_eval_school_code on public.library_evaluations(school_code);
+create index if not exists idx_daily_week_number on public.daily_work_logs(week_number);
+create index if not exists idx_school_files_school_code on public.school_files(school_code);
+
+-- سياسات الحذف المطلوبة لأزرار الحذف والتصفير من الواجهة
+drop policy if exists "public delete evaluations" on public.library_evaluations;
+create policy "public delete evaluations" on public.library_evaluations for delete to anon, authenticated using (true);
+drop policy if exists "public delete daily logs" on public.daily_work_logs;
+create policy "public delete daily logs" on public.daily_work_logs for delete to anon, authenticated using (true);
+drop policy if exists "public delete management reports" on public.management_reports;
+create policy "public delete management reports" on public.management_reports for delete to anon, authenticated using (true);
+drop policy if exists "public delete ai reviews" on public.ai_reviews;
+create policy "public delete ai reviews" on public.ai_reviews for delete to anon, authenticated using (true);
+drop policy if exists "public delete school files" on public.school_files;
+create policy "public delete school files" on public.school_files for delete to anon, authenticated using (true);
+drop policy if exists "public delete director feedback" on public.director_feedback;
+create policy "public delete director feedback" on public.director_feedback for delete to anon, authenticated using (true);
+
+-- سياسات Storage للحذف والتحديث من صفحات ملفات المدارس
+drop policy if exists "public update library images" on storage.objects;
+create policy "public update library images" on storage.objects for update to anon, authenticated using (bucket_id = 'library-images') with check (bucket_id = 'library-images');
+drop policy if exists "public delete library images" on storage.objects;
+create policy "public delete library images" on storage.objects for delete to anon, authenticated using (bucket_id = 'library-images');
+drop policy if exists "public update library documents" on storage.objects;
+create policy "public update library documents" on storage.objects for update to anon, authenticated using (bucket_id = 'library-documents') with check (bucket_id = 'library-documents');
+drop policy if exists "public delete library documents" on storage.objects;
+create policy "public delete library documents" on storage.objects for delete to anon, authenticated using (bucket_id = 'library-documents');
+drop policy if exists "public update specialist certificates" on storage.objects;
+create policy "public update specialist certificates" on storage.objects for update to anon, authenticated using (bucket_id = 'specialist-certificates') with check (bucket_id = 'specialist-certificates');
+drop policy if exists "public delete specialist certificates" on storage.objects;
+create policy "public delete specialist certificates" on storage.objects for delete to anon, authenticated using (bucket_id = 'specialist-certificates');
