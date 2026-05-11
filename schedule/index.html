@@ -518,15 +518,16 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
   <div class="sc">
     <div class="sc-head"><div class="sc-num">1</div><div><div class="sc-title">بيانات الأسبوع</div></div></div>
     <div class="g2">
-      <div class="fld"><label>رقم الأسبوع</label><input id="wnum" name="wnum" placeholder="مثال: 1"></div>
+      <div class="fld"><label>رقم الأسبوع داخل الشهر (تلقائي)</label><input id="wnum" name="wnum" placeholder="يُحسب من تاريخ بداية الأسبوع" readonly></div>
       <div class="fld"><label>حالة الأسبوع</label>
         <select name="wstatus">
           <option>دوام كامل</option><option>دوام جزئي</option>
           <option>إجازة رسمية</option><option>إجازة سنوية</option><option>تكليف خاص</option>
         </select>
       </div>
-      <div class="fld"><label>من تاريخ</label><input type="date" name="wstart"></div>
-      <div class="fld"><label>إلى تاريخ</label><input type="date" name="wend"></div>
+      <div class="fld"><label>بداية الأسبوع — الاثنين</label><input type="date" name="wstart" id="wstart"></div>
+      <div class="fld"><label>نهاية الأسبوع — الجمعة</label><input type="date" name="wend" id="wend"></div>
+      <div class="fld full"><small style="color:#64748b;font-weight:700">اختر بداية الأسبوع من التقويم. إذا لم تكن الاثنين سيصححها النظام تلقائيًا إلى أقرب اثنين، ويجعل النهاية يوم الجمعة.</small></div>
       <div class="fld"><label>فترة المهمة</label><input value="13 أبريل 2026 — 31 ديسمبر 2026" readonly name="wmission"></div>
       <div class="fld"><label>إجازة متوقعة (إن وجدت)</label><input name="wleave" placeholder="مثال: أسبوعان في يوليو 2026"></div>
     </div>
@@ -994,7 +995,7 @@ function buildAtt() {
     var rowStyle = isFri ? "background:linear-gradient(90deg,rgba(212,160,23,.07),transparent);border-right:3px solid var(--amber);" : "border-right:3px solid var(--blue);";
     var opts = ATT_TYPES.map(function(t){ return "<option>"+t+"</option>"; }).join("");
     return "<tr id='ar"+i+"' style='"+rowStyle+"'>"
-      +"<td style='font-weight:900;font-size:15px;color:var(--navy)'>"+day+(isFri?" 📝":"")+"</td>"
+      +"<td style='font-weight:900;font-size:15px;color:var(--navy)'>"+day+(isFri?" 📝":"")+"<br><small id='dayDate"+i+"' style='font-size:11px;color:#64748b;font-weight:700'>—</small></td>"
       +"<td><div class='tbox'><input type='time' id='ain"+i+"' value='08:00'><small>الحضور</small></div></td>"
       +"<td><div class='tbox'><input type='time' id='aout"+i+"' value='"+outVal+"'><small>الانصراف</small></div></td>"
       
@@ -1077,6 +1078,7 @@ function buildWeekCards() {
     var opts = LOCS.map(function(l){ return "<option>"+l+"</option>"; }).join("");
     return "<div class='day-card"+(i===4?" fri-card":"")+"'>"
       +"<h3>"+icons[i]+" "+day+"</h3>"
+      +"<div id='cardDate"+i+"' style='font-size:11px;color:#64748b;font-weight:800;margin:-2px 0 6px'>—</div>"
       +"<div class='day-tag'>"+DSUBS[i]+"</div>"
       +"<label>موقع العمل</label>"
       +"<select id='dloc"+i+"'>"+opts+"</select>"
@@ -1177,6 +1179,7 @@ function setFormData(d) {
   });
   DAYS.forEach(function(_,i){ styleRow(i); calcHrs(i); });
   updateAttSumm();
+  updateWeekDayDates();
   if(d._pills) setSelectedWork(d._pills);
 }
 
@@ -1955,12 +1958,75 @@ function attachSync() {
   });
 }
 
+
+// ══════════════════════════════════════════════════
+// WEEK RANGE ALIGNMENT — الاثنين إلى الجمعة
+// ══════════════════════════════════════════════════
+function _pad2(n){ return String(n).padStart(2,'0'); }
+function _isoDate(d){ return d.getFullYear()+"-"+_pad2(d.getMonth()+1)+"-"+_pad2(d.getDate()); }
+function _parseDate(v){
+  if(!v) return null;
+  var m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+}
+function _arabicDate(v){
+  var d=_parseDate(v);
+  if(!d) return '—';
+  return d.toLocaleDateString('ar-AE',{year:'numeric',month:'2-digit',day:'2-digit'});
+}
+function _mondayOf(d){
+  var x=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var js=x.getDay(); // Sun=0, Mon=1
+  var diff=(js===0 ? -6 : 1-js);
+  x.setDate(x.getDate()+diff);
+  return x;
+}
+function _weekNumberInMonth(monday){
+  var first=new Date(monday.getFullYear(), monday.getMonth(), 1);
+  var firstMon=_mondayOf(first);
+  if(firstMon.getMonth()!==monday.getMonth()) firstMon.setDate(firstMon.getDate()+7);
+  return Math.max(1, Math.floor((monday-firstMon)/(7*24*60*60*1000))+1);
+}
+function alignWeekRange(){
+  var start=document.querySelector('[name="wstart"]');
+  var end=document.querySelector('[name="wend"]');
+  var wn=document.getElementById('wnum') || document.querySelector('[name="wnum"]');
+  if(!start || !start.value) return;
+  var d=_parseDate(start.value); if(!d) return;
+  var mon=_mondayOf(d);
+  var fri=new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+4);
+  start.value=_isoDate(mon);
+  if(end) end.value=_isoDate(fri);
+  if(wn) wn.value=String(_weekNumberInMonth(mon));
+  updateWeekDayDates();
+  if(typeof syncToReport==='function') setTimeout(syncToReport,30);
+}
+function updateWeekDayDates(){
+  var start=document.querySelector('[name="wstart"]');
+  var d=start && start.value ? _parseDate(start.value) : null;
+  for(var i=0;i<5;i++){
+    var label='—';
+    if(d){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()+i); label=_arabicDate(_isoDate(x)); }
+    var a=document.getElementById('dayDate'+i); if(a) a.textContent=label;
+    var c=document.getElementById('cardDate'+i); if(c) c.textContent=label;
+  }
+}
+function initWeekRangeAlignment(){
+  var start=document.querySelector('[name="wstart"]');
+  var end=document.querySelector('[name="wend"]');
+  if(start){ start.addEventListener('change', alignWeekRange); start.addEventListener('input', alignWeekRange); }
+  if(end){ end.addEventListener('change', function(){ if(start && start.value) alignWeekRange(); }); }
+  updateWeekDayDates();
+}
+
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
 buildNav();
 buildAtt();
 buildWeekCards();
+initWeekRangeAlignment();
 buildPills();
 loadDraft();
 attachSync();
@@ -2384,9 +2450,10 @@ var WKM=(function(){
 
   function _save(){
     if(typeof getFormData!=='function'){_toast('⚠️ الدالة getFormData غير موجودة','#991b1b');return false;}
+    alignWeekRange();
     var d=getFormData();
     var wn=(d.wnum||'').toString().replace(/[^0-9]/g,'');
-    if(!wn){_toast('⚠️ أدخل رقم الأسبوع أولاً','#b8860b');return false;}
+    if(!wn){_toast('⚠️ اختر بداية الأسبوع من التقويم أولاً', '#b8860b');return false;}
     var k=PFX+wn;
     d._savedAt=new Date().toISOString();
     d._savedAtAr=new Date().toLocaleString('ar-AE');
