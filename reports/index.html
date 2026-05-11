@@ -123,4 +123,289 @@ function copyReportText(){let t=$('reportBody')?.innerText||$('briefBody')?.inne
   window.buildReportHTML=async function(mode='full'){let s=selected();if(!hasSelection(s))return '<div class="empty">اختر نوع التقرير أو المدرسة أو التاريخ، ثم اضغط تحديث التقرير.</div>';let evals=await loadEvaluations(), allDays=await loadWorkDays();let f=filterAll(evals,allDays,s);let m=metrics(f.evals,f.days);let kind=f.kind;let title=s.title||((mode==='brief')?'ملخص تنفيذي':'تقرير تحليلي');let html=`<h2>${esc(title)}</h2><div class="smart"><b>النطاق:</b> ${esc(scopeText(s))}<br>${s.note?'<b>ملاحظة:</b> '+esc(s.note):'يعرض هذا التقرير البيانات الفعلية حسب الاختيارات المحددة فقط.'}</div>${kpis(m,kind)}`;if(kind==='evaluation'){html+=`${evalCharts(f.evals)}${donut(m,'evaluation')}`}else if(kind==='work'||kind==='special'){html+=`${details(f.days,s)}${workCharts(f.days)}${donut(m,'work')}`}else if(kind==='all'){html+=`${details(f.days,s)}${workCharts(f.days)}${evalCharts(f.evals)}${donut(m,'evaluation')}`}else{html+='<div class="empty">لم يتم تحديد نوع تقرير واضح.</div>'}if(mode==='brief')html+=`<div class="notice"><b>المطلوب إداريًا:</b> مراجعة المؤشرات، واعتماد التوجيهات، وإرسال ملاحظة مختصرة عبر نموذج الرد أسفل الصفحة.</div>`;return html};
 })();
 </script>
+<script>
+/* FINAL PERIOD PATCH: build reports from the exact selected calendar range and show every workday in that range. */
+(function(){
+  const PATCH_DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  function pEsc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function pISO(v){
+    if(!v) return '';
+    const s=String(v).trim();
+    let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/); if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    return '';
+  }
+  function pDate(s){s=pISO(s); if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d);}
+  function pFmt(d){const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;}
+  function pAdd(s,n){const d=pDate(s); if(!d) return ''; d.setDate(d.getDate()+n); return pFmt(d);}
+  function pDayNo(s){const d=pDate(s); return d?d.getDay():-1;}
+  function pIsWork(s){const g=pDayNo(s); return g>=1 && g<=5;}
+  function pDayName(s){const g=pDayNo(s); return g>=0?PATCH_DAY_NAMES[g]:'—';}
+  function pMonday(s){const d=pDate(s); if(!d) return ''; const g=d.getDay(); const diff=(g===0?-6:1-g); d.setDate(d.getDate()+diff); return pFmt(d);}
+  function pDmy(s){s=pISO(s); if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}-${m}-${y}`;}
+  function pBetween(a,b){
+    a=pISO(a); b=pISO(b); if(!a&&!b) return [];
+    if(a&&!b) b=a; if(!a&&b) a=b; if(a>b){const t=a; a=b; b=t;}
+    const out=[]; let cur=a; let guard=0;
+    while(cur && cur<=b && guard++<370){ if(pIsWork(cur)) out.push(cur); cur=pAdd(cur,1); }
+    return out;
+  }
+  function pMonthBounds(mm){
+    const year=2026; // mission year in this project
+    const m=Number(mm); if(!m) return ['', ''];
+    return [`${year}-${String(m).padStart(2,'0')}-01`, pFmt(new Date(year,m,0))];
+  }
+  function pCompact(d){
+    return {date:pISO(d.date),name:pDayName(d.date),week:(typeof weekOfMonth==='function'?weekOfMonth(pISO(d.date)):0),month:pISO(d.date).slice(5,7),type:d.type||'—',loc:d.loc||'—',tasks:d.tasks||'',note:d.note||'',missing:!!d.missing,raw:d.raw||{}};
+  }
+  function pDedupe(days){
+    const map=new Map();
+    (days||[]).forEach(src=>{
+      const d=pCompact(src); if(!d.date||!pIsWork(d.date)) return;
+      const old=map.get(d.date);
+      if(!old){map.set(d.date,d); return;}
+      old.type=(old.type&&old.type!=='—'?old.type:'') || d.type || '—';
+      old.loc=(old.loc&&old.loc!=='—'?old.loc:'') || d.loc || '—';
+      old.tasks=[old.tasks,d.tasks].filter(Boolean).join('، ');
+      old.note=[old.note,d.note].filter(Boolean).join('، ');
+      old.missing=old.missing && d.missing;
+    });
+    return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  function pCompleteRange(allDays,a,b){
+    const actual=pDedupe(allDays); const byDate=new Map(actual.map(d=>[d.date,d]));
+    return pBetween(a,b).map(date=>byDate.get(date)||{date,name:pDayName(date),week:(typeof weekOfMonth==='function'?weekOfMonth(date):0),month:date.slice(5,7),type:'—',loc:'—',tasks:'',note:'لا يوجد سجل محفوظ لهذا اليوم في قاعدة البيانات.',missing:true,raw:{}});
+  }
+  window.dedupeDays=pDedupe;
+  window.selectDaysByPeriod=function(allDays,s){
+    if(s.day) return pCompleteRange(allDays,s.day,s.day);
+    if(s.from||s.to) return pCompleteRange(allDays,s.from,s.to);
+    if(s.weekFrom||s.weekTo){
+      let a=pISO(s.weekFrom)||pMonday(s.weekTo), b=pISO(s.weekTo)||(a?pAdd(a,4):'');
+      return pCompleteRange(allDays,a,b);
+    }
+    if(s.month){const [a,b]=pMonthBounds(s.month); return pCompleteRange(allDays,a,b);}
+    return [];
+  };
+  window.groupWeeks=function(days,monthFilter=''){
+    const map=new Map();
+    pDedupe(days).filter(d=>!monthFilter||d.date.slice(5,7)===monthFilter).forEach(d=>{
+      const mon=pMonday(d.date); if(!map.has(mon)) map.set(mon,{seq:0,monthSeq:0,start:mon,end:pAdd(mon,4),days:[]});
+      map.get(mon).days.push(d);
+    });
+    const arr=[...map.values()].sort((a,b)=>a.start.localeCompare(b.start)); const perMonth={};
+    arr.forEach((g,i)=>{g.seq=i+1; const mm=(g.days[0]?.date||g.start).slice(5,7); perMonth[mm]=(perMonth[mm]||0)+1; g.monthSeq=perMonth[mm]; g.days=pDedupe(g.days).filter(d=>d.date>=g.start&&d.date<=g.end);});
+    return arr;
+  };
+  window.dayHTML=function(d){
+    const action=[d.tasks,d.note].filter(Boolean).join(' — ');
+    return `<div class="day-card"><b>${pEsc(pDayName(d.date))} — ${pDmy(d.date)}</b><br><b>نوع اليوم:</b> ${pEsc(d.type||'—')}<br><b>الموقع/الزيارة:</b> ${pEsc(d.loc||'—')}<br><b>الأعمال التي تمت:</b> ${pEsc(action||'لا توجد مهام مكتوبة لهذا اليوم.')}</div>`;
+  };
+  window.details=function(days,s){
+    days=pDedupe(days);
+    if(!days.length) return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';
+    if(s.day) return `<h2>تفاصيل اليوم المختار</h2>${days.map(dayHTML).join('')}`;
+    const groups=groupWeeks(days,s.month||'');
+    const head=s.month?'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع':((s.weekFrom||s.weekTo)?'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة':'تفاصيل الفترة المختارة');
+    return `<h2>${head}</h2>${groups.map(g=>`<div class="week-box"><div class="week-title">الأسبوع ${s.month?g.monthSeq:g.seq} — ${pDmy(g.start)} إلى ${pDmy(g.end)}</div>${g.days.map(dayHTML).join('')}</div>`).join('')}`;
+  };
+})();
+</script>
+
+
+<script>
+/* === FINAL DATE / WEEKDAY / WEEK-RANGE FIX — stable local calendar === */
+(function(){
+  const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+  function cleanISO(v){
+    if(!v) return '';
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    return '';
+  }
+  function localDate(iso){
+    iso = cleanISO(iso);
+    if(!iso) return null;
+    const [y,m,d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d); // local calendar, no UTC shift
+  }
+  function fmtDate(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function addLocal(iso, n){
+    const d = localDate(iso);
+    if(!d) return '';
+    d.setDate(d.getDate() + n);
+    return fmtDate(d);
+  }
+  function dayIndex(iso){
+    const d = localDate(iso);
+    return d ? d.getDay() : -1;
+  }
+  function dayName(iso){
+    const g = dayIndex(iso);
+    return g >= 0 ? AR_DAYS[g] : '—';
+  }
+  function isWorkDay(iso){
+    const g = dayIndex(iso);
+    return g >= 1 && g <= 5; // Monday to Friday
+  }
+  function mondayOfLocal(iso){
+    const d = localDate(iso);
+    if(!d) return '';
+    const g = d.getDay();
+    const diff = (g === 0 ? -6 : 1 - g);
+    d.setDate(d.getDate() + diff);
+    return fmtDate(d);
+  }
+  function dmyLocal(iso){
+    iso = cleanISO(iso);
+    if(!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return `${d}-${m}-${y}`;
+  }
+  function workDatesBetween(a,b){
+    a = cleanISO(a); b = cleanISO(b);
+    if(a && !b) b = a;
+    if(!a && b) a = b;
+    if(!a || !b) return [];
+    if(a > b){ const t=a; a=b; b=t; }
+    const out=[];
+    let cur=a, guard=0;
+    while(cur <= b && guard++ < 370){
+      if(isWorkDay(cur)) out.push(cur);
+      cur = addLocal(cur, 1);
+    }
+    return out;
+  }
+  function textMerge(values){
+    return values.map(v => String(v || '').trim())
+      .filter(v => v && v !== '—' && v !== '{}')
+      .filter((v,i,a)=>a.indexOf(v)===i).join('، ');
+  }
+  function safeWeekOfMonth(iso){
+    if(typeof window.weekOfMonth === 'function') return window.weekOfMonth(iso);
+    const d = localDate(iso); if(!d) return 0;
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    const offset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+    return Math.ceil((d.getDate() + offset) / 7);
+  }
+  function compactDayFixed(src){
+    const date = cleanISO(src && src.date);
+    return {
+      date,
+      name: dayName(date),
+      week: (src && src.week) || safeWeekOfMonth(date),
+      month: date ? date.slice(5,7) : '',
+      type: (src && src.type) || '—',
+      loc: (src && src.loc) || '—',
+      tasks: (src && src.tasks) || '',
+      note: (src && src.note) || '',
+      missing: !!(src && src.missing),
+      raw: (src && src.raw) || {}
+    };
+  }
+  function dedupeFixed(days){
+    const map = new Map();
+    (days || []).forEach(src => {
+      const d = compactDayFixed(src);
+      if(!d.date || !isWorkDay(d.date)) return;
+      const old = map.get(d.date);
+      if(!old){ map.set(d.date, d); return; }
+      old.type = textMerge([old.type, d.type]) || old.type || d.type;
+      old.loc = textMerge([old.loc, d.loc]) || old.loc || d.loc;
+      old.tasks = textMerge([old.tasks, d.tasks]);
+      old.note = textMerge([old.note, d.note]);
+      old.missing = old.missing && d.missing;
+    });
+    return Array.from(map.values()).sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  function completeRange(allDays, a, b){
+    const actual = dedupeFixed(allDays);
+    const byDate = new Map(actual.map(d => [d.date, d]));
+    return workDatesBetween(a,b).map(date => byDate.get(date) || {
+      date,
+      name: dayName(date),
+      week: safeWeekOfMonth(date),
+      month: date.slice(5,7),
+      type: '—',
+      loc: '—',
+      tasks: '',
+      note: 'لا يوجد سجل محفوظ لهذا اليوم في قاعدة البيانات.',
+      missing: true,
+      raw: {}
+    });
+  }
+  function monthBounds(mm){
+    const year = 2026;
+    const m = Number(mm);
+    if(!m) return ['', ''];
+    return [`${year}-${String(m).padStart(2,'0')}-01`, fmtDate(new Date(year, m, 0))];
+  }
+
+  // Replace all date helpers used by reports with one reliable local-calendar logic.
+  window.iso = cleanISO;
+  window.dObj = localDate;
+  window.addDays = addLocal;
+  window.dayNo = dayIndex;
+  window.arDay = dayName;
+  window.isWork = isWorkDay;
+  window.mondayOf = mondayOfLocal;
+  window.dmy = dmyLocal;
+  window.dedupeDays = dedupeFixed;
+
+  window.selectDaysByPeriod = function(allDays, s){
+    if(s.day) return completeRange(allDays, s.day, s.day);
+    if(s.from || s.to) return completeRange(allDays, s.from, s.to);
+    if(s.weekFrom || s.weekTo){
+      const start = cleanISO(s.weekFrom) || mondayOfLocal(s.weekTo);
+      const end = cleanISO(s.weekTo) || (start ? addLocal(start, 4) : '');
+      return completeRange(allDays, start, end);
+    }
+    if(s.month){
+      const [a,b] = monthBounds(s.month);
+      return completeRange(allDays, a, b);
+    }
+    return [];
+  };
+
+  window.groupWeeks = function(days, monthFilter=''){
+    const map = new Map();
+    dedupeFixed(days).filter(d => !monthFilter || d.date.slice(5,7) === monthFilter).forEach(d => {
+      const start = mondayOfLocal(d.date);
+      if(!map.has(start)) map.set(start, {seq:0, monthSeq:0, start, end:addLocal(start,4), days:[]});
+      map.get(start).days.push(d);
+    });
+    const arr = Array.from(map.values()).sort((a,b)=>a.start.localeCompare(b.start));
+    const perMonth = {};
+    arr.forEach((g,i)=>{
+      g.seq = i + 1;
+      const mm = (g.days[0] && g.days[0].date || g.start).slice(5,7);
+      perMonth[mm] = (perMonth[mm] || 0) + 1;
+      g.monthSeq = perMonth[mm];
+      g.days = dedupeFixed(g.days).filter(d => d.date >= g.start && d.date <= g.end && isWorkDay(d.date));
+    });
+    return arr;
+  };
+
+  window.dayHTML = function(d){
+    const action = textMerge([d.tasks, d.note]);
+    return `<div class="day-card"><b>${(window.esc||((x)=>x))(dayName(d.date))} — ${dmyLocal(d.date)}</b><br><b>نوع اليوم:</b> ${(window.esc||((x)=>x))(d.type || '—')}<br><b>الموقع/الزيارة:</b> ${(window.esc||((x)=>x))(d.loc || '—')}<br><b>الأعمال التي تمت:</b> ${(window.esc||((x)=>x))(action || 'لا توجد مهام مكتوبة لهذا اليوم.')}</div>`;
+  };
+
+  window.details = function(days, s){
+    days = dedupeFixed(days);
+    if(!days.length) return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';
+    if(s.day) return `<h2>تفاصيل اليوم المختار</h2>${days.map(window.dayHTML).join('')}`;
+    const groups = window.groupWeeks(days, s.month || '');
+    const head = s.month ? 'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع' : ((s.weekFrom || s.weekTo) ? 'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة' : 'تفاصيل الفترة المختارة');
+    return `<h2>${head}</h2>${groups.map(g => `<div class="week-box"><div class="week-title">الأسبوع ${s.month ? g.monthSeq : g.seq} — ${dmyLocal(g.start)} إلى ${dmyLocal(g.end)}</div>${g.days.map(window.dayHTML).join('')}</div>`).join('')}`;
+  };
+})();
+</script>
+
 </body></html>
