@@ -1284,31 +1284,28 @@ var ScheduleImportPreview = (function(){
     var wn = parseInt(String(d.wnum||d.week_number||"").replace(/[^0-9]/g,""),10);
     if(!wn) throw new Error("رقم الأسبوع غير موجود داخل الملف.");
     var now = new Date().toISOString();
+    var weekStart = d.wstart || d.work_date || null;
+    var weekTitle = d.week_title || ("الأسبوع رقم "+wn);
+    d.week_number = wn;
+    d.week_title = weekTitle;
+    d.work_date = weekStart;
+    d._savedAt = now;
+    d._savedAtAr = new Date(now).toLocaleString("ar-AE");
     var payload = {
       week_number: wn,
-      week_title: d.week_title || ("الأسبوع رقم "+wn),
-      work_date: d.wstart || d.work_date || null,
+      week_title: weekTitle,
+      work_date: weekStart,
       work_type: d.wstatus || d.work_type || "دوام كامل",
       tasks: JSON.stringify(d),
       notes: JSON.stringify(d),
       full_data: d,
       updated_at: now
     };
-    var existing = null;
-    try{
-      var q = await sb.from("daily_work_logs").select("id").eq("week_number",wn).limit(1);
-      if(!q.error && q.data && q.data.length) existing = q.data[0].id;
-    }catch(_e){}
-    var res;
-    if(d._db_id || existing){
-      res = await sb.from("daily_work_logs").update(payload).eq("id", d._db_id || existing).select();
-    }else{
-      res = await sb.from("daily_work_logs").insert(payload).select();
-    }
+    var res = await sb.from("daily_work_logs")
+      .upsert(payload,{onConflict:"week_number"})
+      .select();
     if(res.error) throw res.error;
     if(res.data && res.data[0] && res.data[0].id) d._db_id = res.data[0].id;
-    d._savedAt = now;
-    d._savedAtAr = new Date(now).toLocaleString("ar-AE");
     localStorage.setItem("falah_week_"+wn, JSON.stringify(d));
     localStorage.setItem("falah_wp_final", JSON.stringify(d));
     return res.data && res.data[0];
