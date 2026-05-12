@@ -447,9 +447,15 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
     <!-- EVAL -->
     <div class="pg" id="page-ev">
       <div class="hero"><div class="hi"><h2>📋 نموذج التقييم الميداني</h2><p>اختر المدرسة — البيانات تُحفظ تلقائياً وقابلة للتعديل في أي وقت</p></div></div>
-      <div class="card">
-        <div class="cardh"><div class="cnum">🏫</div><div><div class="ctitle">اختر المدرسة</div></div></div>
-        <div class="fld"><label>المدرسة / الفرع</label><select id="esch" onchange="onSch()"><option value="">— اختر المدرسة —</option></select></div>
+      <!-- esch hidden — selection is via table buttons -->
+      <select id="esch" style="display:none" onchange="onSch()"><option value="">— اختر المدرسة —</option></select>
+      <!-- Current school indicator -->
+      <div id="current-school-bar" style="display:none;background:linear-gradient(135deg,#0c447c,#185fa5);color:#fff;border-radius:16px;padding:12px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;opacity:.8">المدرسة الحالية</div>
+          <div id="current-school-name" style="font-size:18px;font-weight:900"></div>
+        </div>
+        <button onclick="goBack()" style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:10px;padding:8px 16px;color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:700;cursor:pointer">← العودة للقائمة</button>
       </div>
       <div id="eform" style="display:none">
 
@@ -1224,7 +1230,22 @@ function uHome(){
     return`<tr><td>${i+1}</td><td>${s.name}</td><td>${s.city}</td><td>${s.day} ${s.date}</td><td>${st}</td><td><button class="btn bp bxs" onclick="goEv('${s.id}')">تقييم</button></td></tr>`;
   }).join("");
 }
-function goEv(sid){document.getElementById("esch").value=sid;onSch();pg("page-ev","نموذج التقييم","nav-ev");}
+function goEv(sid){
+  document.getElementById('esch').value=sid;
+  onSch();
+  // Show current school bar
+  const s=SCH.find(x=>x.id===sid);
+  const bar=document.getElementById('current-school-bar');
+  const nm=document.getElementById('current-school-name');
+  if(bar){ bar.style.display='flex'; }
+  if(nm && s){ nm.textContent=s.name+' — '+s.city; }
+  pg('page-ev','نموذج التقييم','nav-ev');
+}
+function goBack(){
+  pg('page-home','الرئيسية','nav-home');
+  const bar=document.getElementById('current-school-bar');
+  if(bar) bar.style.display='none';
+}
 function uSch(){
   const today=new Date().toISOString().split("T")[0];
   document.getElementById("stbl").innerHTML=SCH.map((s,i)=>{
@@ -1320,6 +1341,10 @@ function onSch(){
   const sid=document.getElementById("esch").value;const w=document.getElementById("eform");
   if(!sid){w.style.display="none";return;}
   w.style.display="block";
+  // Load existing evaluation data if available
+  const existingData = (db && db().ev && db().ev[sid]) || DB.ev[sid];
+  if(existingData && typeof setEv === 'function') setEv(existingData);
+
   const s=SCH.find(x=>x.id===sid);
   if(s){document.getElementById("f-city").value=s.city;document.getElementById("f-sname").value=s.name;}
   ldEv(sid);
@@ -1845,11 +1870,19 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   async function loadRemote({replace=true}={}){
     const rows=await fetchRows();
     if(rows===null){ refresh(); return; }
-    if(replace) db().ev={};
+    // NEVER wipe local data — always merge Supabase into existing
     const seen=new Set();
     for(const row of rows){
       const sid=sidFromRow(row); if(!sid || seen.has(sid)) continue;
-      seen.add(sid); db().ev[sid]=dataFromRow(row);
+      seen.add(sid);
+      const remote=dataFromRow(row);
+      // Only update if remote is newer or local is empty
+      const local=db().ev[sid];
+      const remoteTime=remote?.savedAt ? new Date(remote.savedAt).getTime() : 0;
+      const localTime=local?.savedAt ? new Date(local.savedAt).getTime() : 0;
+      if(!local || remoteTime >= localTime){
+        db().ev[sid]=remote;
+      }
     }
     saveLocal(); refresh();
   }
@@ -1910,12 +1943,28 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   window.pushAllEvaluationsToSupabase = pushAllRemote;
 
   window.saveEval = async function(){
-    const sid=document.getElementById('esch')?.value||''; if(!sid) return alert('اختر المدرسة!');
+    const sid=document.getElementById('esch')?.value||'';
+    if(!sid) return alert('اختر المدرسة!');
+    // 1. Read form
     const d=(typeof getEv==='function')?getEv():(db().ev[sid]||{});
-    d.saved=true; d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores);
-    db().ev[sid]=d; saveLocal(); refresh();
-    try{ await saveOneRemote(sid,d); await loadRemote({replace:true}); toast('✅ تم حفظ التقييم في القاعدة'); }
-    catch(e){ console.error(e); alert('تم الحفظ محلياً، لكن فشل الحفظ في القاعدة: '+(e.message||e)); }
+    d.saved=true;
+    d.savedAt=new Date().toISOString();
+    d._axisScores=axisScores(d,null);
+    d.total_score=totalFromScores(d._axisScores);
+    d.score_percent=Math.round((d.total_score/6)*100);
+    // 2. Save locally FIRST — never loses data
+    db().ev[sid]=d;
+    saveLocal();
+    refresh();
+    toast('💾 جاري الحفظ...');
+    // 3. Save to Supabase (doesn't affect local data)
+    try{
+      await saveOneRemote(sid,d);
+      toast('✅ تم الحفظ في قاعدة البيانات');
+    } catch(e){
+      console.error('Supabase save error:',e);
+      toast('✅ محفوظ محلياً — تحقق من الاتصال للحفظ السحابي');
+    }
   };
   window.saveAll = async function(){
     const sid=document.getElementById('esch')?.value||'';
@@ -2601,208 +2650,6 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     setTimeout(applyAiButtons,1600);
     setTimeout(applyAiButtons,3000);
   });
-})();
-</script>
-
-
-
-<script>
-/* === ALFALAH ROOT FIX — one source, one open route, full JSON/Supabase save — 2026-05-13 === */
-(function(){
-  if(window.__ALFALAH_ROOT_FIX_20260513__) return;
-  window.__ALFALAH_ROOT_FIX_20260513__ = true;
-
-  const TABLE = 'library_evaluations';
-  const LOCAL_KEY = (typeof LSK !== 'undefined') ? LSK : 'falah_lib_v6';
-  const SCHOOL_DB_ID = {dan:1,mzd:2,bny:3,khb:4,jmi:5,shj:6};
-  const DB_ID_TO_SID = Object.fromEntries(Object.entries(SCHOOL_DB_ID).map(([k,v])=>[String(v),k]));
-  const RATING_KEYS = ['uae','cd','cc','cco','sh','cr','sp','se','at','in','rch','tu','cu','ri','pa','co','ts','ss','sb','sc','sst','si','ste','scol','marc','ils','dg','te','un'];
-  const ALIASES = {
-    'f-lib':'lib','f-date':'date','f-stg':'stg','f-ltyp':'ltyp','f-stu':'stu','f-stf':'stf','f-ldesc':'ldesc',
-    'f-uae-cov':'uae_cov','f-uae-disp':'uae_disp','f-uaen':'uaen','f-bt':'bt','f-bar':'bar','f-ben':'ben','f-dig':'dig',
-    'f-ardict':'ardict','f-endict':'endict','f-encyc':'encyc','f-atlas':'atlas','f-dirs':'dirs','f-guides':'guides',
-    'f-pol':'pol','f-age':'age','f-cls':'cls','f-cat':'cat','f-cir':'cir','f-inv':'inv','f-loans':'loans','f-vis':'vis','f-techn':'techn',
-    'f-envn':'envn','f-rpt':'rpt','f-ext':'ext','f-actn':'actn','f-parn':'parn','f-ils-name':'ils_name','f-arab-cat':'arab_cat',
-    'f-tech-know':'tech_know','f-tr':'tr','f-edu':'edu','f-spc':'spc','f-exp':'exp','f-crs':'crs','f-cred':'cred','f-sdev':'sdev',
-    'f-suff':'suff','f-train-rec':'train_rec','f-sstr':'sstr','f-lsy':'lsy','f-tecn':'tecn','f-feats-desc':'feats_desc',
-    'f-ovr':'overall','f-pri':'priority','f-chal':'chal','f-str':'str','f-wk':'wk','f-rec':'rec','f-plan':'plan','f-plan-s':'plan_s','f-plan-m':'plan_m','f-plan-l':'plan_l'
-  };
-  const AXES = ['المجموعات','مجموعات الإمارات','التنظيم الفني','البيئة','الأنشطة','الشراكات','الكادر والمؤهلات','التقنية'];
-
-  function $(id){ return document.getElementById(id); }
-  function txt(v){ return String(v ?? '').trim(); }
-  function client(){ return window.alfalahSupabase || window.supabaseClient || null; }
-  function ensureDB(){ if(typeof window.DB==='undefined' || !window.DB) window.DB={ev:{}}; if(!DB.ev) DB.ev={}; return DB; }
-  function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(ensureDB())); }catch(e){ console.warn(e); } }
-  function school(sid){ return (window.SCH||[]).find(s=>s.id===sid) || null; }
-  function toast(msg,bg='#0c447c'){
-    let t=$('root-fix-toast');
-    if(!t){ t=document.createElement('div'); t.id='root-fix-toast'; t.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:999999;background:#0c447c;color:white;padding:13px 22px;border-radius:20px;font-family:Cairo,Tahoma,sans-serif;font-weight:900;box-shadow:0 8px 28px rgba(0,0,0,.25);max-width:94%;text-align:center'; document.body.appendChild(t); }
-    t.style.background=bg; t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',3200);
-  }
-  function normalizeLevel(v){ v=txt(v); if(!v) return ''; if(v.includes('ضعيف جداً')) return 'ضعيف جداً'; if(v.includes('ضعيف')) return 'ضعيف'; if(v.includes('مقبول')) return 'مقبول'; if(v.includes('جيد جداً')) return 'جيد جداً'; if(v.includes('جيد')) return 'جيد'; if(v.includes('متميز')) return 'متميز'; return v; }
-  function score(v){ const n=Number(v); return Number.isFinite(n) ? Math.max(0,Math.min(6,n)) : 0; }
-  function axisScores(d){
-    try{ if(typeof window.calcSc==='function'){ const sc=window.calcSc(d||{}); if(sc && Object.values(sc).some(x=>score(x)>0)) return sc; } }catch(e){}
-    const sc = (d && (d._axisScores || d.axis_scores || d.axisScores || d.sc || d.scores)) || {};
-    const out={}; AXES.forEach(a=>out[a]=score(sc[a]));
-    return out;
-  }
-  function total(sc){ const vals=Object.values(sc||{}).map(score).filter(Boolean); return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10 : 0; }
-  function allFIds(){ return Array.from(document.querySelectorAll('#eform [id^="f-"]')).map(x=>x.id); }
-  function setVal(id,v){ const x=$(id); if(x && v!==undefined && v!==null) x.value=v; }
-  function getVal(id){ const x=$(id); return x ? x.value : ''; }
-
-  function inferSid(d){
-    const selected = $('esch')?.value; if(selected && SCHOOL_DB_ID[selected]) return selected;
-    const candidates=[d?.school_code,d?.school_id,d?.esch,d?.sid,d?.['school_code'],d?.['f-school-code']].map(txt).filter(Boolean);
-    for(const c of candidates){ if(SCHOOL_DB_ID[c]) return c; if(DB_ID_TO_SID[c]) return DB_ID_TO_SID[c]; }
-    const name = txt(d?.school_name || d?.sname || d?.['f-sname'] || getVal('f-sname'));
-    if(name){
-      const found=(window.SCH||[]).find(s=>name.includes(s.name) || s.name.includes(name) || name.includes(s.short));
-      if(found) return found.id;
-    }
-    return '';
-  }
-
-  function collectFullEvaluation(sid){
-    let d={};
-    try{ if(typeof window.getEv==='function') d = Object.assign({}, window.getEv()||{}); }catch(e){ d={}; }
-    allFIds().forEach(id=>{ d[id]=getVal(id); });
-    Object.entries(ALIASES).forEach(([fid,key])=>{ d[key]=getVal(fid) || d[key] || d[fid] || ''; });
-    Array.from(document.querySelectorAll('#eform input[type="checkbox"][id]')).forEach(x=>{ d[x.id]=!!x.checked; });
-    try{ RATING_KEYS.forEach(k=>{ d['r_'+k]=(window.RS && RS[k]) ? RS[k] : (d['r_'+k]||0); }); }catch(e){}
-    try{ if(typeof collectLibraryUnits==='function'){ d.libraries=collectLibraryUnits(); d.hasEx=(d.libraries||[]).length>0; } }catch(e){}
-    sid = sid || inferSid(d);
-    const s=school(sid);
-    const fixedDate = s?.date || txt(d.date || d['f-date']).slice(0,10);
-    d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid] || d.school_db_id || null; d.school_name=s?.name || d.school_name || d['f-sname'] || '';
-    d.date=fixedDate; d['f-date']=fixedDate; d['f-city']=s?.city || d['f-city'] || ''; d['f-sname']=s?.name || d['f-sname'] || '';
-    d.saved=true; d.savedAt=new Date().toISOString(); d.form_version='root-fix-single-source-full-save-2026-05-13';
-    d._axisScores=axisScores(d); d.total_score=total(d._axisScores); d.score_percent=Math.round((score(d.total_score)/6)*100);
-    return d;
-  }
-
-  function applyEvaluationToForm(sid,d){
-    d=d||{}; const s=school(sid);
-    if($('esch')) $('esch').value=sid || '';
-    if($('eform')) $('eform').style.display = sid ? 'block' : 'none';
-    try{ if(typeof window.ldEv==='function') window.ldEv(sid); }catch(e){ console.warn('base ldEv skipped',e); }
-    allFIds().forEach(id=>{
-      if(d[id]!==undefined) setVal(id,d[id]);
-      else if(ALIASES[id] && d[ALIASES[id]]!==undefined) setVal(id,d[ALIASES[id]]);
-    });
-    if(s){ setVal('f-city',s.city); setVal('f-sname',s.name); if(!txt(getVal('f-date'))) setVal('f-date',s.date); }
-    Array.from(document.querySelectorAll('#eform input[type="checkbox"][id]')).forEach(x=>{ if(d[x.id]!==undefined) x.checked=!!d[x.id]; });
-    try{ RATING_KEYS.forEach(k=>{ if(d['r_'+k]!==undefined && typeof window.sR==='function') window.sR(k,Number(d['r_'+k])||0,null); }); }catch(e){}
-    try{ if(d.libraries && typeof window.loadLibraryUnits==='function') window.loadLibraryUnits(d.libraries,d); }catch(e){}
-  }
-
-  async function fetchOne(sid){
-    const c=client(); const s=school(sid); if(!c || !sid || !s) return null;
-    const res = await c.from(TABLE).select('*').eq('school_id',SCHOOL_DB_ID[sid]).eq('visit_date',s.date).maybeSingle();
-    if(res.error) throw res.error;
-    if(!res.data) return null;
-    const row=res.data; const d=(row.full_data && typeof row.full_data==='object') ? JSON.parse(JSON.stringify(row.full_data)) : {};
-    d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid]; d.school_name=s.name; d.date=row.visit_date || s.date; d['f-date']=d.date; d['f-city']=s.city; d['f-sname']=s.name;
-    d.lib=d.lib || d['f-lib'] || row.librarian_name || ''; d['f-lib']=d['f-lib'] || d.lib;
-    d.overall=d.overall || d['f-ovr'] || row.final_level || ''; d['f-ovr']=d['f-ovr'] || d.overall;
-    d.str=d.str || d['f-str'] || row.strengths || ''; d['f-str']=d['f-str'] || d.str;
-    d.wk=d.wk || d['f-wk'] || row.weaknesses || ''; d['f-wk']=d['f-wk'] || d.wk;
-    d.rec=d.rec || d['f-rec'] || row.recommendations || ''; d['f-rec']=d['f-rec'] || d.rec;
-    d.saved=true; d._dbRowId=row.id||null; d._axisScores=axisScores(d); d.total_score=score(row.total_score)||total(d._axisScores);
-    return d;
-  }
-
-  async function upsertOne(sid,d){
-    const c=client(); const s=school(sid); if(!c) throw new Error('لم يتم الاتصال بـ Supabase.'); if(!s || !SCHOOL_DB_ID[sid]) throw new Error('المدرسة غير محددة.');
-    d = collectFullEvaluation(sid);
-    const now=new Date().toISOString(); d.savedAt=now;
-    const row={
-      school_id:SCHOOL_DB_ID[sid], school_code:sid, visit_date:s.date,
-      librarian_name:d.lib || d['f-lib'] || '', total_score:d.total_score||0,
-      final_level:normalizeLevel(d.overall || d['f-ovr']),
-      strengths:d.str || d['f-str'] || '', weaknesses:d.wk || d['f-wk'] || d.chal || d['f-chal'] || '', recommendations:d.rec || d['f-rec'] || '',
-      full_data:d, updated_at:now
-    };
-    const res=await c.from(TABLE).upsert(row,{onConflict:'school_id,visit_date'}).select('id').single();
-    if(res.error) throw res.error;
-    if(res.data?.id) d._dbRowId=res.data.id;
-    ensureDB().ev[sid]=d; saveLocal();
-    return d;
-  }
-
-  window.goEv = async function(sid){
-    sid = sid || $('esch')?.value || '';
-    if(!sid || !school(sid)) return alert('اختر المدرسة من جدول الزيارات.');
-    try{
-      if(typeof window.pg==='function') window.pg('page-ev','نموذج التقييم','nav-ev');
-      if($('esch')) $('esch').value=sid;
-      if($('eform')) $('eform').style.display='block';
-      let d=null;
-      try{ d=await fetchOne(sid); }catch(e){ console.warn('fetch selected from supabase failed',e); }
-      if(!d) d=ensureDB().ev[sid] || {date:school(sid).date};
-      ensureDB().ev[sid]=d; saveLocal();
-      applyEvaluationToForm(sid,d);
-      setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),80);
-    }catch(e){ console.error(e); alert('تعذر فتح التقييم: '+(e.message||e)); }
-  };
-
-  window.onSch = function(){ const sid=$('esch')?.value||''; if(!sid){ if($('eform')) $('eform').style.display='none'; return; } return window.goEv(sid); };
-
-  window.saveEval = async function(){
-    const sid = inferSid({});
-    if(!sid) return alert('افتح التقييم من جدول الزيارات أولاً، ثم احفظ.');
-    try{ await upsertOne(sid); try{ if(typeof uHome==='function') uHome(); if(typeof uSch==='function') uSch(); if(typeof uDat==='function') uDat(); if(typeof uCmp==='function') uCmp(); }catch(e){} toast('✅ تم حفظ التقييم كاملًا في نفس سجل المدرسة والتاريخ','#0f6e56'); }
-    catch(e){ console.error('root save failed',e); alert('فشل الحفظ في القاعدة: '+(e.message||e)); }
-  };
-  window.saveAll = window.saveEval;
-
-  window.impData = function(){
-    const input=$('impF'); const f=input && input.files && input.files[0]; if(!f) return;
-    const reader=new FileReader();
-    reader.onload=async function(ev){
-      try{
-        const p=JSON.parse(ev.target.result); const incoming=p.ev || p.data?.ev || p.evaluations || {};
-        const keys=Object.keys(incoming); if(!keys.length) throw new Error('ملف JSON لا يحتوي على ev.');
-        let count=0; ensureDB().ev=ensureDB().ev||{};
-        for(const sid of keys){
-          if(!school(sid)) continue;
-          const s=school(sid); const d=Object.assign({}, incoming[sid]||{});
-          d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid]; d.school_name=s.name; d['f-sname']=s.name; d['f-city']=s.city; d.date=s.date; d['f-date']=s.date; d.saved=true;
-          ensureDB().ev[sid]=d; saveLocal();
-          await upsertOne(sid,d); count++;
-        }
-        try{ if(typeof popSel==='function') popSel(); if(typeof uHome==='function') uHome(); if(typeof uSch==='function') uSch(); if(typeof uDat==='function') uDat(); }catch(e){}
-        toast('✅ تم استيراد وحفظ '+count+' تقييم/تقييمات في قاعدة البيانات','#0f6e56');
-        if($('esch')?.value) await window.goEv($('esch').value);
-      }catch(e){ console.error(e); alert('فشل استيراد JSON: '+(e.message||e)); }
-      if(input) input.value='';
-    };
-    reader.readAsText(f);
-  };
-
-  function finalizeUI(){
-    const style=document.createElement('style');
-    style.textContent=`
-      .action-strip .abtn:first-child{display:none!important}
-      #hcards.scards{display:none!important}
-      .ai-field-btn,#aiFillAllTop,#aiFillAllBottom{display:none!important}
-      #page-home #hcards + .card .cardh::after{content:'افتح التقييم من زر تقييم في الجدول فقط لضمان سجل واحد';font-size:12px;color:#0f6e56;font-weight:900;margin-right:auto}
-    `;
-    document.head.appendChild(style);
-    const navEv=$('nav-ev');
-    if(navEv){ navEv.onclick=function(ev){ ev.preventDefault(); const sid=$('esch')?.value; if(sid) return window.goEv(sid); if(typeof pg==='function') pg('page-sch','جدول الزيارات','nav-sch'); toast('اختر المدرسة من جدول الزيارات فقط.','#ba7517'); }; }
-    setTimeout(()=>{
-      document.querySelectorAll('button').forEach(b=>{
-        const t=txt(b.textContent);
-        if(t==='💾 حفظ في قاعدة البيانات' || t==='حفظ في قاعدة البيانات') b.style.display='none';
-        if(t.includes('حفظ التقييم في قاعدة البيانات')) b.onclick=function(ev){ev.preventDefault(); return window.saveEval();};
-      });
-      const smart=$('smartSummaryInlineButton'); if(smart){ smart.style.display='inline-flex'; smart.textContent='🤖 توليد خلاصة التقييم الذكية'; }
-    },900);
-  }
-  document.addEventListener('DOMContentLoaded',finalizeUI);
 })();
 </script>
 
