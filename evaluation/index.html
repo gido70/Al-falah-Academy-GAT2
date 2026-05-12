@@ -1401,6 +1401,29 @@ function getEv(){
   ["y","s","d","m","u","a"].forEach(k=>d["ft-"+k]=gk("ft-"+k));
   ["cls","lib","dig","rd","ch","ref","sys","res","uae","ai","ld","ot"].forEach(k=>d["cr-"+k]=gk("cr-"+k));
   ["uae","cd","cc","cco","sh","cr","sp","se","at","in","rch","tu","cu","ri","pa","co","ts","ss","sb","sc","sst","si","ste","dg","te","un"].forEach(k=>d["r_"+k]=RS[k]||0);
+
+  // حقول إضافية مفقودة
+  d.plan_s    = gv("f-plan-s");
+  d.plan_m    = gv("f-plan-m");
+  d.plan_l    = gv("f-plan-l");
+  d.ils_name  = gv("f-ils-name");
+  d.arab_cat  = gv("f-arab-cat");
+  d.tech_know = gv("f-tech-know");
+  d.uae_cov   = gv("f-uae-cov");
+  d.uae_disp  = gv("f-uae-disp");
+  d.suff      = gv("f-suff");
+  d.train_rec = gv("f-train-rec");
+  d.age       = gv("f-age");
+  d.pol       = gv("f-pol");
+  d.ardict    = gv("f-ardict");
+  d.endict    = gv("f-endict");
+  d.encyc     = gv("f-encyc");
+  d.atlas     = gv("f-atlas");
+  d.dirs      = gv("f-dirs");
+  d.guides    = gv("f-guides");
+  d.feats_desc= gv("f-feats-desc");
+  d.il_name   = gv("f-ils-name");
+  d.marc_cat  = gv("f-arab-cat");
   return d;
 }
 function saveEval(){
@@ -2514,142 +2537,308 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
 
 
 <script>
-/* === Alfalah Visible AI Fill Buttons — 2026-05-13 ===
-   يضيف أزرار ذكاء اصطناعي واضحة لكل خانة كتابة يدوية داخل نموذج التقييم.
-   لا يمسح النص المكتوب؛ يملأ الخانات الفارغة فقط، ويمكن الضغط على زر كل خانة لتوليد نصها وحدها.
+/* === AI Smart Fill — Analysis Fields Only — 2026 ===
+   يملأ فقط حقول التحليل (نقاط القوة/الضعف/التوصيات/الخطط)
+   بناءً على الاختيارات والتقييمات التي أدخلها المستخدم.
+   لا يلمس حقول البيانات (الاسم، التاريخ، الإحصاءات، الوصف).
 */
 (function(){
-  if(window.__alfalahVisibleAiButtons) return;
-  window.__alfalahVisibleAiButtons = true;
+  if(window.__alfalahSmartAi) return;
+  window.__alfalahSmartAi = true;
 
-  function $(id){return document.getElementById(id)}
-  function clean(v){return String(v||'').trim()}
-  function fieldLabel(el){
-    const fld = el.closest('.fld');
-    const lbl = fld ? fld.querySelector('label') : null;
-    return clean(lbl ? lbl.textContent : (el.getAttribute('placeholder')||el.id||'الخانة'));
-  }
-  function selectedTexts(selector){
-    return Array.from(document.querySelectorAll(selector+':checked')).map(x=>clean(x.closest('label')?.textContent||x.parentElement?.textContent||x.value)).filter(Boolean);
-  }
-  function getVal(id){const x=$(id); return x?clean(x.value):''}
-  function ratingValue(id){
-    try{ if(window.RS){ const k=id.replace(/^f-/,'').replace(/-/g,'_'); return RS[k] || 0; } }catch(e){}
-    return 0;
-  }
-  function detectContext(){
-    const school = getVal('f-sname') || clean(document.querySelector('#esch option:checked')?.textContent) || 'المكتبة';
-    const ltyp = getVal('f-ltyp') || 'المكتبة المدرسية';
-    const city = getVal('f-city') || '';
-    const date = getVal('f-date') || '';
-    return {school,ltyp,city,date};
-  }
-  function smartLineFor(el){
-    const id=el.id||'';
-    const label=fieldLabel(el);
-    const c=detectContext();
-    const common=`في ${c.school}، يظهر أن ${label} يحتاج إلى توثيق أكثر بناءً على بيانات الزيارة، مع إمكانية تعديل النص يدويًا حسب الشواهد الفعلية.`;
-    const map={
-      'f-ldesc':`تخدم ${c.ltyp} في ${c.school} فئة من الطلبة والمعلمين، وتحتاج إلى متابعة دورية لتحديث المجموعات وتنظيم الخدمات وتوثيق الشواهد.`,
-      'f-uaen':'تتوفر بعض مصادر الإمارات، ويُوصى بتعزيز العناوين المرتبطة بتاريخ الدولة والهوية الوطنية والسير والخرائط والقصص الإماراتية، مع إبرازها في ركن واضح داخل المكتبة.',
-      'f-loans':'تحتاج إجراءات الإعارة والزيارات إلى توثيق منتظم يوضح عدد المستفيدين، نوعية الاستخدام، وأكثر الفئات تفاعلًا مع خدمات المكتبة.',
-      'f-vis':'تحتاج الزيارات الصفية والفردية إلى سجل متابعة واضح يربط بين الأنشطة القرائية، استخدام المصادر، ومخرجات التعلم.',
-      'f-techn':'تحتاج عمليات التنظيم الفني إلى استكمال التوثيق في التصنيف، الفهرسة، الجرد، وسياسات الإعارة بما يضمن سهولة الوصول للمصادر.',
-      'f-envn':'البيئة المكتبية تحتاج إلى متابعة عناصر الجاذبية، وضوح اللوحات الإرشادية، مناطق القراءة، وسهولة الوصول للمصادر بما يناسب المراحل الدراسية.',
-      'f-actn':'تحتاج الأنشطة المكتبية إلى خطة شهرية واضحة تشمل القراءة، البحث، المسابقات، ومبادرات دعم المناهج، مع توثيق الأثر والشواهد.',
-      'f-parn':'تحتاج الشراكات إلى توثيق فرص التعاون مع المعلمين والإدارة وأولياء الأمور لدعم القراءة والبحث والمشاريع المدرسية.',
-      'f-train-rec':'يوصى بتدريب الكادر على أنظمة المكتبات، MARC21، الفهرسة الإلكترونية، أدوات الذكاء الاصطناعي، وإعداد التقارير الإحصائية.',
-      'f-sstr':'يمتلك الكادر معرفة أولية بأنظمة المكتبات وبعض أدوات التطوير، ويمكن تعزيز نقاط القوة عبر التدريب العملي وتوثيق الممارسات الناجحة.',
-      'f-tecn':'تحتاج الجاهزية التقنية إلى مراجعة نظام المكتبة، توفر الأجهزة، الربط الإلكتروني، وإمكانية استخراج التقارير الداعمة للتطوير.',
-      'f-feats-desc':'توجد بعض الخصائص والمرافق الداعمة داخل المكتبة، ويمكن تعميم ما يصلح منها على بقية الفروع بعد توثيق الاحتياج، آلية التشغيل، والشواهد.',
-      'f-chal':'• الحاجة إلى استكمال توثيق الشواهد والبيانات الناقصة.\n• متابعة المحاور ذات الدرجات المتوسطة أو المنخفضة.\n• ربط نتائج التقييم بخطة تطوير عملية قابلة للتنفيذ.',
-      'f-str':'• وجود أساس تنظيمي يمكن البناء عليه.\n• توفر بعض الممارسات الداعمة للقراءة وخدمات المستفيدين.\n• قابلية المكتبة للتطوير عند توفر المتابعة والتوثيق.',
-      'f-wk':'• نقص في بعض البيانات أو الشواهد.\n• الحاجة إلى تحسين التوثيق، المتابعة، أو الربط التقني.\n• تفاوت مستوى اكتمال بعض محاور التقييم.',
-      'f-rec':'• استكمال البيانات الناقصة والشواهد.\n• إعداد خطة متابعة قصيرة للمحاور الأضعف.\n• تعزيز التوثيق الرقمي والتقارير الدورية.\n• تنفيذ تدريب موجه للكادر حسب الاحتياج.',
-      'f-plan':'تبدأ خطة التطوير باستكمال النواقص العاجلة، ثم تحسين المحاور المتوسطة خلال الفصل الدراسي، مع متابعة النتائج من خلال مؤشرات واضحة وتقارير دورية.',
-      'f-plan-s':'• استكمال البيانات والشواهد الناقصة.\n• توثيق الصور والنماذج الأساسية.\n• معالجة الملاحظات العاجلة خلال شهر.',
-      'f-plan-m':'• تنفيذ تدريب عملي للكادر.\n• تطوير الأنشطة والمجموعات وربطها بالمناهج.\n• متابعة الإعارة والزيارات خلال فصل دراسي.',
-      'f-plan-l':'• اعتماد خطة تطوير سنوية للمكتبة.\n• ربط المكتبة بنظام تقارير موحد.\n• مقارنة نتائج التحسن بين الفروع سنويًا.'
+  // ── الحقول التحليلية فقط ───────────────────────────────────────
+  // هذه هي الحقول التي يمكن للذكاء ملؤها بناءً على التقييمات
+  var AI_FIELDS = [
+    {id:'f-str',    label:'نقاط القوة'},
+    {id:'f-wk',     label:'نقاط الضعف والفجوات'},
+    {id:'f-chal',   label:'أبرز التحديات'},
+    {id:'f-rec',    label:'مقترحات التطوير والتوصيات'},
+    {id:'f-plan',   label:'ملخص خطة العمل'},
+    {id:'f-plan-s', label:'خطة قصيرة المدى (1-3 أشهر)'},
+    {id:'f-plan-m', label:'خطة متوسطة المدى (فصل دراسي)'},
+    {id:'f-plan-l', label:'خطة طويلة المدى (سنة+)'},
+    {id:'f-ovr',    label:'التقييم العام'},
+    {id:'f-pri',    label:'أولوية التدخل'},
+    {id:'f-sstr',   label:'نقاط قوة الكادر'},
+    {id:'f-sdev',   label:'احتياجات التطوير المهني'},
+    {id:'f-train-rec', label:'توصيات التدريب'},
+    {id:'f-tecn',   label:'ملاحظات التقنية'},
+    {id:'f-feats-desc', label:'وصف المميزات الخاصة'},
+    {id:'f-uaen',   label:'ملاحظات مجموعات الإمارات'},
+  ];
+
+  // ── قراءة السياق من التقييمات المُدخلة ────────────────────────
+  function getContext(){
+    var school = val('f-sname') || val('f-city') || 'المكتبة';
+    var city   = val('f-city') || '';
+    var ltyp   = val('f-ltyp') || 'مكتبة مدرسية';
+    var edu    = val('f-edu')  || '';
+    var exp    = val('f-exp')  || '';
+    var crs    = val('f-crs')  || '';
+
+    // التقييمات من مقياس الأداء
+    var scores = {};
+    var axisKeys = {
+      'المجموعات':       ['uae','cd','cc','cco'],
+      'البيئة':          ['sh','at','in'],
+      'التقنية':         ['dg','te','un'],
+      'الكادر':          ['ss','sb','sc','sst','si','ste','scol'],
+      'الأنشطة':         ['rch','tu','cu','ri','pa'],
+      'الشراكات':        ['co','ts'],
     };
-    if(map[id]) return map[id];
-    if(label.includes('عدد')) return '0';
-    if(label.includes('ملاحظات')) return `تحتاج هذه الملاحظات إلى استكمال بناءً على الشواهد الفعلية في ${c.school}، مع ربطها بنتائج التقييم وخطة التطوير.`;
-    if(label.includes('وصف')) return `وصف أولي قابل للتعديل: ${common}`;
-    if(label.includes('تقييم')) return 'مقبول، مع الحاجة إلى استكمال الشواهد والتطوير التدريجي.';
-    return common;
+    try {
+      var RS = window.RS || {};
+      Object.entries(axisKeys).forEach(function(entry){
+        var axis = entry[0], keys = entry[1];
+        var vals = keys.map(function(k){ return Number(RS[k]||0); }).filter(function(v){ return v>0; });
+        if(vals.length) scores[axis] = (vals.reduce(function(a,b){return a+b;},0)/vals.length).toFixed(1);
+      });
+    } catch(e){}
+
+    // الاختيارات المُفعَّلة
+    var uaeItems = checked('[id^="uae-"]');
+    var envItems = checked('[id^="env-"]');
+    var actItems = checked('[id^="act-"]');
+    var crItems  = checked('[id^="cr-"]');
+    var knowItems= checked('[id^="know-"]');
+
+    return {school,city,ltyp,edu,exp,crs,scores,uaeItems,envItems,actItems,crItems,knowItems};
   }
-  function fillOne(el, force=false){
-    if(!el || el.readOnly) return false;
-    if(!force && clean(el.value)) return false;
-    el.value=smartLineFor(el);
-    el.dispatchEvent(new Event('input',{bubbles:true}));
-    el.dispatchEvent(new Event('change',{bubbles:true}));
-    return true;
+
+  function val(id){ var el=document.getElementById(id); return el?(el.value||'').trim():''; }
+  function checked(selector){
+    return Array.from(document.querySelectorAll(selector+':checked'))
+      .map(function(x){ return (x.closest('label')?.textContent||'').trim().replace(/\s+/g,' '); })
+      .filter(Boolean);
   }
-  function candidateFields(){
-    return Array.from(document.querySelectorAll('#eform textarea, #eform input[type="text"], #eform input:not([type])')).filter(el=>{
-      if(el.readOnly || el.disabled) return false;
-      if(['esch','f-date','f-city','f-sname'].includes(el.id)) return false;
-      const type=(el.getAttribute('type')||'text').toLowerCase();
-      if(['checkbox','radio','file','button','submit','date','time','number'].includes(type)) return false;
-      return true;
-    });
-  }
-  window.fillAllManualFieldsSmart = function(force=false){
-    let n=0;
-    candidateFields().forEach(el=>{ if(fillOne(el,force)) n++; });
-    if(typeof window.generateEvaluationSmartSummary==='function'){
-      try{ window.generateEvaluationSmartSummary(); }catch(e){}
+
+  // ── توليد النص التحليلي لكل حقل ──────────────────────────────
+  function generateText(fieldId){
+    var ctx = getContext();
+    var sc  = ctx.scores;
+    var axes = Object.entries(sc);
+    var strong = axes.filter(function(e){ return Number(e[1])>=4; }).map(function(e){ return e[0]; });
+    var weak   = axes.filter(function(e){ return Number(e[1])<4; }).map(function(e){ return e[0]; });
+    var school = ctx.school;
+
+    switch(fieldId){
+      case 'f-str':
+        var lines = strong.map(function(ax,i){
+          return '• أعلى محاور الأداء: '+ax+' ('+sc[ax]+'/6).';
+        });
+        if(ctx.uaeItems.length) lines.push('• توافر مجموعات الإمارات: '+ctx.uaeItems.slice(0,3).join('، ')+'.');
+        if(ctx.actItems.length) lines.push('• أنشطة مفعّلة: '+ctx.actItems.slice(0,3).join('، ')+'.');
+        if(!lines.length) lines.push('• الأداء العام في مستوى يستوجب المتابعة والتطوير.');
+        return lines.join('\n');
+
+      case 'f-wk':
+        var lines = weak.map(function(ax){
+          return '• يحتاج محور '+ax+' إلى تطوير ملموس ('+sc[ax]+'/6).';
+        });
+        if(ctx.envItems.indexOf('التكييف') < 0) lines.push('• بعض جوانب البيئة تحتاج مراجعة.');
+        if(!lines.length) lines.push('• لم تُرصد نقاط ضعف جوهرية، يُوصى بالمحافظة على المستوى.');
+        return lines.join('\n');
+
+      case 'f-chal':
+        var lines = [];
+        if(weak.length) lines.push('• المحاور الأقل أداءً: '+weak.join('، ')+' — تحتاج خطة واضحة.');
+        lines.push('• الحاجة إلى توثيق الشواهد وربطها بمؤشرات قياس.');
+        if(ctx.knowItems.length < 3) lines.push('• تعزيز مهارات الكادر في المجالات التقنية والرقمية.');
+        return lines.join('\n');
+
+      case 'f-rec':
+        var lines = ['• رفع درجة المحاور الأقل أداءً عبر خطة تطوير مُجدوَلة.'];
+        if(weak.includes('التقنية')) lines.push('• الارتقاء بالجاهزية التقنية وربط المكتبة بنظام إلكتروني موحد.');
+        if(weak.includes('الشراكات')) lines.push('• تفعيل الشراكات المجتمعية والأكاديمية لدعم برامج المكتبة.');
+        if(weak.includes('الأنشطة')) lines.push('• تطوير خطة أنشطة قرائية مرتبطة بالمنهج ومناسبات القراءة.');
+        lines.push('• توثيق مؤشرات الأداء (الإعارة، الزيارات، الفعاليات) بشكل دوري.');
+        return lines.join('\n');
+
+      case 'f-plan':
+        var level = 'متوسط';
+        var avgArr = axes.map(function(e){ return Number(e[1]); }).filter(Boolean);
+        if(avgArr.length){
+          var avg = avgArr.reduce(function(a,b){return a+b;},0)/avgArr.length;
+          level = avg>=5?'ممتاز':avg>=4?'جيد':avg>=3?'مقبول':'يحتاج تحسيناً';
+        }
+        return 'ملخص الخطة: '+school+' — '+ctx.ltyp+' — المستوى العام: '+level+'.'
+          +'\nيُبنى التطوير على تعزيز نقاط القوة وعلاج نقاط الضعف المُحددة في هذا التقرير.';
+
+      case 'f-plan-s':
+        return '• استكمال النواقص العاجلة في المحاور الأقل نتيجة ('+weak.slice(0,2).join('، ')||'—'+').'
+          +'\n• توثيق الشواهد والصور والنماذج داخل ملف المدرسة.'
+          +'\n• تحديث بيانات النظام والمجموعات الأساسية خلال 1-3 أشهر.';
+
+      case 'f-plan-m':
+        return '• تنفيذ تدريب عملي للكادر حسب نقاط الضعف المُحددة.'
+          +'\n• تطوير مصادر الإمارات والأنشطة القرائية وربطها بالمناهج.'
+          +'\n• متابعة مؤشرات الإعارة والزيارات والمستفيدين خلال فصل دراسي.';
+
+      case 'f-plan-l':
+        return '• اعتماد خطة تطوير سنوية للمكتبة مع مؤشرات قياس واضحة.'
+          +'\n• ربط المكتبة بنظام موحد للتقارير والإحصاءات.'
+          +'\n• تحويل نتائج التقييم إلى مقارنة سنوية بين المدارس.';
+
+      case 'f-ovr':
+        var avg2 = axes.map(function(e){return Number(e[1]);}).filter(Boolean);
+        if(!avg2.length) return 'مقبول';
+        var a = avg2.reduce(function(s,v){return s+v;},0)/avg2.length;
+        return a>=5?'ممتاز':a>=4?'جيد جداً':a>=3?'مقبول':'يحتاج تحسيناً';
+
+      case 'f-pri':
+        var avgP = axes.map(function(e){return Number(e[1]);}).filter(Boolean);
+        if(!avgP.length) return 'متوسطة';
+        var aP = avgP.reduce(function(s,v){return s+v;},0)/avgP.length;
+        return aP<3?'عالية جداً':aP<4?'مرتفعة':aP<5?'متوسطة':'منخفضة';
+
+      case 'f-sstr':
+        var lines = [];
+        if(ctx.edu) lines.push('• المؤهل العلمي: '+ctx.edu+(ctx.crs?' — دورات تدريبية: '+ctx.crs:'')+'.');
+        if(ctx.knowItems.length) lines.push('• معارف تقنية: '+ctx.knowItems.slice(0,4).join('، ')+'.');
+        if(!lines.length) lines.push('• يمتلك الكادر قدرات أساسية تحتاج إلى تطوير مستمر.');
+        return lines.join('\n');
+
+      case 'f-sdev':
+        return val('f-train-rec') || '• تدريب على المهارات التقنية والرقمية.'
+          +'\n• تعزيز مهارات الفهرسة الإلكترونية وإعداد التقارير.';
+
+      case 'f-train-rec':
+        return '• دورة في نظام '+( val('f-ils-name')||'المكتبة الإلكتروني')+'.'
+          +'\n• تدريب على معايير MARC 21 والفهرسة الإلكترونية.';
+
+      case 'f-uaen':
+        var uae = ctx.uaeItems;
+        if(!uae.length) return 'تحتاج مجموعات الإمارات إلى تعزيز ملحوظ، خاصة في مجالات التاريخ والهوية الوطنية والسير.';
+        return 'مجموعات الإمارات المتوفرة: '+uae.join('، ')+'.'
+          +'\nيُوصى بتعزيز العناوين في المجالات الأقل توافراً وربطها بأنشطة قرائية وطنية.';
+
+      case 'f-tecn':
+        return val('f-lsy')==='لا يوجد'?
+          'المكتبة لا تعمل بنظام إلكتروني متكامل؛ يُوصى بتبني نظام KOHA أو ما يعادله لتنظيم الفهرسة والإعارة.':
+          'نظام المكتبة الحالي ('+val('f-ils-name')+'): يعمل بصورة جزئية ويحتاج إلى تحديث وتطوير.';
+
+      case 'f-feats-desc':
+        var env = ctx.envItems;
+        if(!env.length) return 'لا توجد مميزات خاصة موثقة حالياً؛ يُوصى بتوثيق أي مرفق أو خاصية إضافية للمكتبة.';
+        return 'المرافق والمميزات المتوفرة: '+env.join('، ')+'.'
+          +'\nيمكن تعميم ما يصلح منها على بقية الفروع.';
+
+      default:
+        return '';
     }
-    toastAi(n?`✅ تم ملء ${n} خانة ذكيًا. راجع النصوص ثم احفظ.`:'لا توجد خانات فارغة تحتاج تعبئة.');
-  };
-  function toastAi(msg){
-    let t=$('alfalah-ai-visible-toast');
+  }
+
+  // ── إضافة زر ذكاء بجانب كل حقل تحليلي فقط ────────────────────
+  function addAiBtn(fieldId, label){
+    var el = document.getElementById(fieldId);
+    if(!el) return;
+    var fld = el.closest('.fld');
+    if(!fld || fld.querySelector('.ai-smart-btn')) return;
+    var lbl = fld.querySelector('label');
+    if(!lbl) return;
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ai-smart-btn';
+    btn.title = 'اضغط لتوليد '+label+' من التقييمات المُدخلة';
+    btn.innerHTML = '🤖';
+    btn.style.cssText = 'float:left;margin:0 0 4px 6px;border:none;border-radius:10px;'
+      +'padding:4px 8px;background:#0f9d8a;color:#fff;font-size:13px;cursor:pointer;'
+      +'box-shadow:0 2px 8px rgba(0,0,0,.15);transition:.15s';
+    btn.onmouseenter = function(){ this.style.background='#0c7a6c'; };
+    btn.onmouseleave = function(){ this.style.background='#0f9d8a'; };
+
+    btn.onclick = function(ev){
+      ev.preventDefault();
+      var text = generateText(fieldId);
+      if(!text){ aiToast('لم يتم إدخال اختيارات كافية لتوليد النص.'); return; }
+      // لا يمسح النص الموجود — يضيف فقط إذا فارغ أو يُعوّض إذا ضُغط مرتين
+      if(el.value.trim()){
+        if(!confirm('هذه الخانة بها نص. هل تريد استبداله بالنص المُولَّد ذكياً؟')) return;
+      }
+      el.value = text;
+      el.dispatchEvent(new Event('input', {bubbles:true}));
+      // Highlight the field temporarily
+      el.style.border = '2px solid #0f9d8a';
+      setTimeout(function(){ el.style.border = ''; }, 2000);
+      aiToast('✅ تم توليد '+label+'. راجع النص وعدّل حسب ما تراه.');
+    };
+
+    lbl.appendChild(btn);
+  }
+
+  function aiToast(msg){
+    var t = document.getElementById('ai-smart-toast');
     if(!t){
-      t=document.createElement('div'); t.id='alfalah-ai-visible-toast';
-      t.style.cssText='position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:999999;background:#0f6e56;color:#fff;padding:12px 20px;border-radius:18px;font-family:Cairo,Tahoma,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22);max-width:94%;text-align:center;display:none';
+      t = document.createElement('div');
+      t.id = 'ai-smart-toast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);'
+        +'z-index:999999;background:#0f6e56;color:#fff;padding:10px 18px;border-radius:16px;'
+        +'font-family:Cairo,Tahoma,sans-serif;font-size:13px;font-weight:900;'
+        +'box-shadow:0 6px 20px rgba(0,0,0,.22);max-width:92%;text-align:center;display:none;'
+        +'white-space:pre-line';
       document.body.appendChild(t);
     }
-    t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',3000);
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._h);
+    t._h = setTimeout(function(){ t.style.display='none'; }, 3500);
   }
-  function addButtonNear(el){
-    const fld=el.closest('.fld'); if(!fld || fld.querySelector('.ai-field-btn')) return;
-    const label=fld.querySelector('label'); if(!label) return;
-    const btn=document.createElement('button');
-    btn.type='button'; btn.className='ai-field-btn'; btn.textContent='🤖 ملء ذكي';
-    btn.style.cssText='float:left;margin:0 0 5px 6px;border:none;border-radius:14px;padding:5px 10px;background:#0f9d8a;color:#fff;font-family:Cairo,Tahoma,sans-serif;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.12)';
-    btn.onclick=function(ev){ev.preventDefault(); fillOne(el,true); toastAi('✅ تم ملء هذه الخانة. يمكنك تعديل النص قبل الحفظ.');};
-    label.appendChild(btn);
+
+  // ── زر واحد لملء كل الحقول التحليلية دفعة واحدة ────────────
+  function addFillAllBtn(){
+    // نضعه قبل زر الحفظ مباشرة
+    var saveBtn = document.querySelector('button[onclick="saveEval()"], button[onclick*="saveEval"]');
+    if(!saveBtn || document.getElementById('ai-fill-all-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'ai-fill-all-btn';
+    btn.innerHTML = '🤖 ملء التحليل بالذكاء الاصطناعي';
+    btn.style.cssText = 'padding:10px 18px;background:linear-gradient(135deg,#0f9d8a,#0f6e56);'
+      +'color:#fff;border:none;border-radius:14px;font-family:Cairo,Tahoma,sans-serif;'
+      +'font-size:14px;font-weight:900;cursor:pointer;margin-left:8px;'
+      +'box-shadow:0 4px 14px rgba(15,157,138,.3)';
+    btn.onclick = function(){
+      var filled = 0;
+      AI_FIELDS.forEach(function(f){
+        var el = document.getElementById(f.id);
+        if(!el) return;
+        if(el.value.trim()) return; // لا يتجاوز النص الموجود
+        var text = generateText(f.id);
+        if(text){ el.value = text; filled++; }
+      });
+      aiToast(filled > 0
+        ? '✅ تم ملء '+filled+' حقل تحليلي.\nراجع النصوص وعدّل قبل الحفظ.'
+        : 'أدخل التقييمات والاختيارات أولاً ثم اضغط مجدداً.');
+    };
+    saveBtn.parentNode.insertBefore(btn, saveBtn);
   }
-  function addGlobalAiButtons(){
-    if(!$('aiFillAllTop')){
-      const hero=document.querySelector('#page-eval .hero') || document.querySelector('.hero');
-      if(hero){
-        const box=document.createElement('div');
-        box.id='aiFillAllTop';
-        box.style.cssText='display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0';
-        box.innerHTML='<button type="button" class="btn bt" onclick="fillAllManualFieldsSmart(false)">🤖 ملء كل الخانات الفارغة بالذكاء</button><button type="button" class="btn bo" onclick="fillAllManualFieldsSmart(true)">♻️ إعادة توليد كل النصوص</button>';
-        hero.appendChild(box);
-      }
-    }
-    const saveBar=document.querySelector('#page-eval .abar') || document.querySelector('.abar');
-    if(saveBar && !$('aiFillAllBottom')){
-      const b=document.createElement('button');
-      b.type='button'; b.id='aiFillAllBottom'; b.className='btn bt';
-      b.textContent='🤖 ملء الخانات الفارغة';
-      b.onclick=function(ev){ev.preventDefault(); fillAllManualFieldsSmart(false);};
-      saveBar.insertBefore(b, saveBar.firstChild);
-    }
+
+  // ── تهيئة (يعمل عند فتح النموذج) ─────────────────────────────
+  function init(){
+    if(!document.getElementById('eform')) return;
+    AI_FIELDS.forEach(function(f){ addAiBtn(f.id, f.label); });
+    addFillAllBtn();
   }
-  function applyAiButtons(){
-    candidateFields().forEach(addButtonNear);
-    addGlobalAiButtons();
+
+  // تشغيل عند تحميل الصفحة وعند كل فتح للنموذج
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){setTimeout(init, 800);});
+  } else {
+    setTimeout(init, 800);
   }
-  document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(applyAiButtons,600);
-    setTimeout(applyAiButtons,1600);
-    setTimeout(applyAiButtons,3000);
-  });
+  // إعادة التهيئة عند كل ضغطة على زر تقييم
+  var origGoEv = window.goEv;
+  window.goEv = function(sid){
+    if(origGoEv) origGoEv(sid);
+    setTimeout(init, 600);
+  };
+
+  // CSS للأزرار
+  var style = document.createElement('style');
+  style.textContent = '.ai-smart-btn:hover{transform:scale(1.05)} #ai-fill-all-btn:hover{filter:brightness(1.1)}';
+  document.head.appendChild(style);
+
 })();
 </script>
 
