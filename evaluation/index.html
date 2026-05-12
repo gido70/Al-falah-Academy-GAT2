@@ -1827,9 +1827,9 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   }
   async function fetchRows(){
     const c=sb(); if(!c) return null;
-    const {data,error}=await c.from(TABLE).select('*').order('created_at',{ascending:false});
+    const {data,error}=await c.from(TABLE).select('*').order('updated_at',{ascending:false});
     if(error){ console.error('load evaluations error', error); toast('تعذر تحميل التقييمات من القاعدة'); return null; }
-    return Array.isArray(data)?data:[];
+    return Array.isArray(data)?data.filter(r=>r && r.school_id && r.visit_date):[];
   }
   function refresh(){
     try{ if(typeof popSel==='function') popSel(); }catch(e){}
@@ -1874,24 +1874,32 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   }
   async function saveOneRemote(sid,d){
     const c=sb(); if(!c) return false;
+    if(!sid || !SCHOOL_DB_ID[sid]) throw new Error('لا يمكن الحفظ: المدرسة غير محددة أو غير معروفة.');
+    const visitDate = (d && d.date) ? String(d.date).slice(0,10) : new Date().toISOString().slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)) throw new Error('لا يمكن الحفظ: تاريخ الزيارة غير صحيح.');
     const s=school(sid); const scores=axisScores(d,null); const total=totalFromScores(scores);
-    d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid]||null; d.school_name=s?.name||'';
-    d.saved=true; d.savedAt=new Date().toISOString(); d._axisScores=scores; d.total_score=total;
-    await deleteRowsForSchool(sid);
+    const now=new Date().toISOString();
+    d.school_id=sid; d.school_code=sid; d.school_db_id=SCHOOL_DB_ID[sid]; d.school_name=s?.name||'';
+    d.date=visitDate; d.saved=true; d.savedAt=now; d._axisScores=scores; d.total_score=total;
     const row={
-      school_id:SCHOOL_DB_ID[sid]||null,
+      school_id:SCHOOL_DB_ID[sid],
       school_code:sid,
-      visit_date:d.date||new Date().toISOString().slice(0,10),
+      visit_date:visitDate,
       librarian_name:d.lib||'',
       total_score:total,
       final_level:normalizeLevel(d.overall),
       strengths:d.str||'',
       weaknesses:d.wk||d.chal||'',
       recommendations:d.rec||'',
-      full_data:d
+      full_data:d,
+      updated_at:now
     };
-    const {error}=await c.from(TABLE).insert(row);
+    const {data,error}=await c.from(TABLE)
+      .upsert(row,{onConflict:'school_id,visit_date'})
+      .select('id')
+      .single();
     if(error) throw error;
+    if(data && data.id) d._dbRowId=data.id;
     return true;
   }
   async function pushAllRemote(){
