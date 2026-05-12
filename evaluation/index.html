@@ -1890,24 +1890,19 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
     try{ if(typeof popEmailSchool==='function') popEmailSchool(); }catch(e){}
     try{ if(typeof popEmSch==='function') popEmSch(); }catch(e){}
   }
-  async function loadRemote({replace=true}={}){
-    const rows=await fetchRows();
-    if(rows===null){ refresh(); return; }
-    // NEVER wipe local data — always merge Supabase into existing
-    const seen=new Set();
-    for(const row of rows){
-      const sid=sidFromRow(row); if(!sid || seen.has(sid)) continue;
-      seen.add(sid);
-      const remote=dataFromRow(row);
-      // Only update if remote is newer or local is empty
-      const local=db().ev[sid];
-      const remoteTime=remote?.savedAt ? new Date(remote.savedAt).getTime() : 0;
-      const localTime=local?.savedAt ? new Date(local.savedAt).getTime() : 0;
-      if(!local || remoteTime >= localTime){
-        db().ev[sid]=remote;
-      }
+  async function loadRemote(opts){
+    var rows=await fetchRows();
+    if(rows===null){refresh();return;}
+    var ldb=db(),seen={};
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i],sid=sidFromRow(row);
+      if(!sid||seen[sid])continue;seen[sid]=true;
+      var remote=dataFromRow(row),local=ldb.ev[sid];
+      var rt=remote&&remote.savedAt?new Date(remote.savedAt).getTime():0;
+      var lt=local&&local.savedAt?new Date(local.savedAt).getTime():0;
+      if(!local||rt>lt)ldb.ev[sid]=remote;
     }
-    saveLocal(); refresh();
+    saveLocal();refresh();
   }
   window.loadEvaluationsFromSupabase = loadRemote;
 
