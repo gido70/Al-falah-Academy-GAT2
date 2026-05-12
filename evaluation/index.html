@@ -2104,7 +2104,7 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     out.plan_s = val('f-plan-s'); out.plan_m = val('f-plan-m'); out.plan_l = val('f-plan-l');
     allCheckboxIds().forEach(id=>{ out[id] = checked(id); });
     const ratingKeys = ['uae','cd','cc','cco','sh','cr','sp','se','at','in','rch','tu','cu','ri','pa','co','ts','ss','sb','sc','sst','si','ste','scol','marc','ils','dg','te','un'];
-    ratingKeys.forEach(k=>{ out['r_'+k] = (window.RS && window.RS[k]) ? Number(window.RS[k]) : 0; });
+    ratingKeys.forEach(k=>{ out['r_'+k] = (typeof RS !== 'undefined' && RS && RS[k]) ? Number(RS[k]) : 0; });
     try{ out.libraries = (typeof collectLibraryUnits === 'function') ? collectLibraryUnits() : []; }catch(e){ out.libraries = []; }
     out.hasEx = Array.isArray(out.libraries) && out.libraries.length>0;
     const first = out.libraries[0] || {};
@@ -2197,52 +2197,10 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     };
   }
 
-  function buildAllSmartTexts(d){
-    const s = buildSmartTexts(d);
-    const sc = baseScores(d);
-    const lowAxes = weakest(sc,5).map(([k,v])=>`${k} (${score(v)}/6)`).join('، ');
-    const highAxes = strongest(sc,5).map(([k,v])=>`${k} (${score(v)}/6)`).join('، ');
-    const librariesCount = Array.isArray(d.libraries) ? d.libraries.length : 0;
-    const hasUae = checked('uae-display') || checked('uae-corner') || checked('uae-activity') || checked('uae-national');
-    const hasReading = checked('feat-club') || checked('feat-competitions') || checked('feat-reading-corner') || checked('feat-story');
-    const hasTech = checked('sys-ils') || checked('sys-db') || checked('sys-digital') || clean(val('f-ils-name')) || clean(val('f-lsy'));
-
-    const extra = {
-      uaen: bullets([
-        hasUae ? 'توجد مؤشرات أولية للعناية بمصادر الإمارات، ويُفضّل توثيقها وربطها بأنشطة واضحة للطلبة.' : 'تحتاج مصادر الإمارات إلى إبراز أوضح داخل المكتبة وربطها بخطة أنشطة وطنية وقرائية.',
-        'يوصى بتحديث قائمة مصادر الإمارات وتحديد مكان عرض ثابت لها داخل المكتبة.'
-      ]),
-      loans: bullets(['توثيق حركة الإعارة والزيارات بصورة دورية يساعد في قياس أثر المكتبة.', 'ينصح بربط الإعارة بتقارير شهرية مختصرة توضح أكثر الفئات استفادة.']),
-      vis: bullets(['تحتاج الزيارات إلى سجل منتظم يوضح عدد الطلبة، نوع النشاط، والمخرجات.', 'يفضل اعتماد نموذج زيارة موحد لتسهيل المقارنة بين المدارس.']),
-      techn: bullets(['يُوصى باستكمال التصنيف والفهرسة والجرد وفق إجراءات موحدة.', 'توثيق حالة التنظيم الفني يساعد في بناء خطة تحسين دقيقة.']),
-      envn: bullets(['تحتاج البيئة المكتبية إلى متابعة مستمرة من حيث الجاذبية، ترتيب المساحات، وسهولة الوصول للمصادر.', 'يُقترح تحسين مناطق القراءة والعرض بما يتناسب مع المراحل الدراسية.']),
-      actn: bullets([hasReading ? 'توجد مؤشرات لأنشطة قرائية يمكن تطويرها وربطها بخطة شهرية.' : 'تحتاج المكتبة إلى خطة أنشطة قرائية واضحة ومجدولة.', 'يوصى بتوثيق كل نشاط بالصور، عدد المستفيدين، والمخرجات التعليمية.']),
-      parn: bullets(['تعزيز الشراكات مع المعلمين والإدارة يدعم حضور المكتبة في العملية التعليمية.', 'يمكن ربط المكتبة بالمناهج عبر أنشطة مشتركة مع الأقسام الأكاديمية.']),
-      tecn: bullets([hasTech ? 'توجد مؤشرات تقنية يمكن البناء عليها، مع الحاجة إلى توثيق النظام المستخدم ومستوى التفعيل.' : 'تحتاج المكتبة إلى تحديد واضح للنظام الإلكتروني وخطة للتحول الرقمي.', 'يوصى بربط التقنية بالتقارير، الفهرسة، الإعارة، وقواعد البيانات.']),
-      feats_desc: bullets([
-        librariesCount ? `توجد ${librariesCount} مكتبة/وحدة مكتبية داخل المدرسة، ويجب توحيد آلية المتابعة والتوثيق بينها.` : 'تحتاج الخصائص الخاصة بالمكتبة إلى توثيق واضح يبرز ما يميزها عن بقية الفروع.',
-        'يمكن تعميم التجارب الناجحة بعد توثيق أثرها وعدد المستفيدين منها.'
-      ]),
-      train_rec: bullets(['تدريب عملي في MARC21 والفهرسة الإلكترونية وأنظمة إدارة المكتبات.', 'تدريب على إعداد التقارير، مؤشرات الأداء، وتوثيق الشواهد.', 'تدريب على تصميم أنشطة قرائية وربطها بالمناهج ومصادر الإمارات.']),
-      sstr: bullets(['وجود كادر يمكن البناء عليه في تنفيذ خطة التطوير.', 'قابلية تطوير المهارات المهنية من خلال تدريب قصير ومتابعة تطبيقية.']),
-      sdev: bullets(['إعداد خطة تطوير مهني فصلية مرتبطة بنتائج التقييم.', 'قياس أثر التدريب من خلال تحسن مؤشرات التنظيم، التقنية، والأنشطة.']),
-      creds: bullets(['توثيق الشهادات والدورات المهنية للكادر داخل ملف المكتبة.', 'تحديد الدورات ذات الأولوية حسب فجوات التقييم الحالية.']),
-      rpt: bullets(['إصدار تقرير شهري مختصر عن الزيارات، الإعارة، الأنشطة، ونقاط التحسين.', 'استخدام مؤشرات رقمية ورسوم بيانية لتوضيح أثر المكتبة للإدارة.']),
-      ext: bullets(['اقتراح برامج قرائية وأنشطة إثرائية مرتبطة بالمناهج والمناسبات الوطنية.', 'تفعيل مسابقات ومبادرات قصيرة قابلة للقياس والتوثيق.']),
-      ldesc: bullets(['وصف المكتبة حسب المساحة، المراحل المستفيدة، عدد المصادر، مستوى التنظيم، ومناطق القراءة.', 'إضافة ملاحظة عن أبرز احتياج تطويري ظهر أثناء الزيارة.']),
-      final_note: bullets([`أعلى محاور الأداء: ${highAxes || 'غير محدد'}.`, `أكثر المحاور احتياجًا للتحسين: ${lowAxes || 'غير محدد'}.`])
-    };
-    return Object.assign({}, s, extra);
-  }
-
   function fillSmartSummary({force=false}={}){
     const d = collectAllFields();
-    const smart = buildAllSmartTexts(d);
-    const targets = [
-      ['f-chal','chal'],['f-str','str'],['f-wk','wk'],['f-rec','rec'],['f-plan','plan'],['f-plan-s','plan_s'],['f-plan-m','plan_m'],['f-plan-l','plan_l'],
-      ['f-uaen','uaen'],['f-loans','loans'],['f-vis','vis'],['f-techn','techn'],['f-envn','envn'],['f-actn','actn'],['f-parn','parn'],['f-tecn','tecn'],
-      ['f-feats-desc','feats_desc'],['f-train-rec','train_rec'],['f-sstr','sstr'],['f-sdev','sdev'],['f-cred','creds'],['f-rpt','rpt'],['f-ext','ext'],['f-ldesc','ldesc']
-    ];
+    const smart = buildSmartTexts(d);
+    const targets = [['f-chal','chal'],['f-str','str'],['f-wk','wk'],['f-rec','rec'],['f-plan','plan'],['f-plan-s','plan_s'],['f-plan-m','plan_m'],['f-plan-l','plan_l']];
     targets.forEach(([id,k])=>{
       const x = el(id);
       if(x && (force || !clean(x.value))) x.value = smart[k] || '';
@@ -2290,43 +2248,63 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
       };
       Object.entries(aliases).forEach(([fid,key])=>{ if(d[key]!==undefined && !clean(val(fid))) setVal(fid,d[key]); });
       allCheckboxIds().forEach(id=>{ if(d[id] !== undefined) setChecked(id,d[id]); });
+      // Restore ALL rating buttons, including professional/staff fields added later (scol, marc, ils).
+      const ratingKeys = ['uae','cd','cc','cco','sh','cr','sp','se','at','in','rch','tu','cu','ri','pa','co','ts','ss','sb','sc','sst','si','ste','scol','marc','ils','dg','te','un'];
+      ratingKeys.forEach(k=>{
+        if(d['r_'+k] !== undefined && typeof sR === 'function') sR(k, Number(d['r_'+k]) || 0, null);
+      });
       if(d.libraries && typeof loadLibraryUnits === 'function') loadLibraryUnits(d.libraries,d);
       if(typeof updateLibraryUnitsSummary === 'function') updateLibraryUnitsSummary();
     }catch(e){ console.warn('full load patch skipped', e); }
   };
 
-  function createSmartButton(id){
-    const btn=document.createElement('button');
-    btn.type='button'; btn.id=id; btn.className='btn bt';
-    btn.innerHTML='🤖 توليد التقييم الذكي وملء الخانات';
-    btn.onclick=function(){ window.generateEvaluationSmartSummary(); };
-    return btn;
-  }
-
   function addSmartButton(){
-    // زر واضح فوق خانات التقييم النهائي مباشرة.
+    if(el('smartSummaryButton')) return;
+    const saveBar = document.querySelector('#page-eval .abar');
+    if(saveBar){
+      const btn=document.createElement('button');
+      btn.type='button'; btn.id='smartSummaryButton'; btn.className='btn bt';
+      btn.innerHTML='🤖 توليد الخلاصة الذكية';
+      btn.onclick=()=>window.generateEvaluationSmartSummary();
+      saveBar.insertBefore(btn, saveBar.firstChild);
+    }
+    // Add helper text above final section if present.
     const finalField = el('f-chal');
     const finalCard = finalField ? finalField.closest('.g2') : null;
     if(finalCard && !el('smartSummaryNote')){
       const note=document.createElement('div'); note.id='smartSummaryNote'; note.className='al ali full';
-      note.innerHTML='🤖 بعد تعبئة الدرجات والاختيارات اضغط الزر التالي ليتم ملء خانات الكتابة تلقائيًا، ثم عدّل النص يدويًا قبل الحفظ.';
-      const wrap=document.createElement('div'); wrap.id='smartSummaryTopWrap'; wrap.className='full';
-      wrap.style.cssText='display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 14px';
-      wrap.appendChild(createSmartButton('smartSummaryButtonTop'));
-      finalCard.insertBefore(wrap, finalCard.firstChild);
+      note.innerHTML='🤖 بعد تعبئة الدرجات والاختيارات اضغط الزر التالي لملء خانات الكتابة تلقائيًا، ثم عدّل النص يدويًا قبل الحفظ.';
       finalCard.insertBefore(note, finalCard.firstChild);
     }
-    // زر إضافي في شريط الحفظ السفلي.
-    const saveBar = document.querySelector('#page-eval .abar');
-    if(saveBar && !el('smartSummaryButtonBar')){
-      saveBar.insertBefore(createSmartButton('smartSummaryButtonBar'), saveBar.firstChild);
+    if(finalCard && !el('smartSummaryInlineButton')){
+      const wrap=document.createElement('div'); wrap.className='full'; wrap.style.cssText='display:flex;justify-content:center;margin:10px 0 14px;';
+      const b=document.createElement('button'); b.type='button'; b.id='smartSummaryInlineButton'; b.className='btn bt';
+      b.innerHTML='🤖 توليد التقييم الذكي وملء الخانات';
+      b.onclick=()=>window.generateEvaluationSmartSummary();
+      wrap.appendChild(b);
+      const note=el('smartSummaryNote');
+      if(note && note.nextSibling) finalCard.insertBefore(wrap, note.nextSibling); else finalCard.insertBefore(wrap, finalCard.firstChild);
     }
   }
+
+  // حفظ احتياطي تلقائي عند الانتقال بين المدارس حتى لا تُصفّر شاشة مكتوبة قبل حفظها.
+  let __currentEvaluationSchool = null;
+  const __oldOnSch = window.onSch;
+  window.onSch = function(){
+    try{
+      if(__currentEvaluationSchool && el('eform') && el('eform').style.display !== 'none'){
+        if(typeof DB !== 'undefined' && DB && DB.ev){ DB.ev[__currentEvaluationSchool] = window.getEv(); saveLocal(); }
+      }
+    }catch(e){ console.warn('auto-preserve before school switch skipped', e); }
+    if(typeof __oldOnSch === 'function') __oldOnSch();
+    __currentEvaluationSchool = el('esch') ? el('esch').value : null;
+  };
 
   // Ensure old save button uses patched getEv through existing saveEval override.
   document.addEventListener('DOMContentLoaded',()=>{
     addSmartButton();
     setTimeout(addSmartButton,800);
+    setTimeout(()=>{ __currentEvaluationSchool = el('esch') ? el('esch').value : null; },1000);
   });
 })();
 </script>
