@@ -2041,6 +2041,246 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
 document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummary(); updateLibraryUnitsSummary();}catch(e){console.warn(e);}});
 </script>
 
+
+<script>
+/* === Alfalah Evaluation Full Save + Smart Summary Patch — 2026-05-12 ===
+   الهدف:
+   1) حفظ كل حقول النموذج f-* وليس جزءاً منها فقط.
+   2) إعادة تعبئة كل الحقول عند فتح تقييم محفوظ.
+   3) توليد خلاصة ذكية داخل حقول: التحديات، القوة، الضعف، التوصيات، وخطط العمل عند تركها فارغة.
+   4) عدم تغيير بنية الصفحة أو Supabase؛ الحفظ الكامل يتم داخل full_data في جدول library_evaluations.
+*/
+(function(){
+  if(window.__alfalahFullEvaluationPatchApplied) return;
+  window.__alfalahFullEvaluationPatchApplied = true;
+
+  const RATING_LABEL = {1:'ضعيف جداً',2:'ضعيف',3:'مقبول',4:'جيد',5:'جيد جداً',6:'متميز'};
+  const AXIS_KEYS = ['المجموعات','مجموعات الإمارات','التنظيم الفني','البيئة','الأنشطة','الشراكات','الكادر والمؤهلات','التقنية'];
+
+  function el(id){ return document.getElementById(id); }
+  function val(id){ const x=el(id); return x ? x.value : ''; }
+  function setVal(id,v){ const x=el(id); if(x && v!==undefined && v!==null) x.value = v; }
+  function checked(id){ const x=el(id); return !!(x && x.checked); }
+  function setChecked(id,v){ const x=el(id); if(x) x.checked = !!v; }
+  function clean(s){ return String(s||'').trim(); }
+  function score(v){ const n=Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(6, n)) : 0; }
+  function percent(v){ return Math.round((score(v)/6)*100); }
+  function esc(s){ return String(s||'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+
+  const FIELD_LABELS = {
+    'f-lib':'اسم أمين / أخصائي مصادر التعلم','f-date':'تاريخ الزيارة','f-stg':'المرحلة التي تخدمها المكتبة','f-ltyp':'نوع المكتبة','f-stu':'عدد الطلبة','f-stf':'عدد العاملين','f-ldesc':'وصف مختصر للمكتبة','f-bt':'عدد الكتب التقريبي','f-bar':'هل يوجد باركود','f-ben':'عدد المستفيدين','f-uae-cov':'تغطية مصادر الإمارات','f-uae-disp':'عرض مصادر الإمارات','f-uaen':'ملاحظات مصادر الإمارات','f-dig':'مصادر رقمية','f-ardict':'قواميس عربية','f-endict':'قواميس إنجليزية','f-encyc':'موسوعات','f-atlas':'أطالس','f-dirs':'أدلة','f-guides':'مرشدات','f-pol':'سياسة التزويد','f-age':'حداثة المجموعة','f-cls':'التصنيف','f-cat':'الفهرسة','f-cir':'الإعارة','f-inv':'الجرد','f-loans':'ملاحظات الإعارة','f-vis':'ملاحظات الزيارات','f-techn':'ملاحظات التنظيم الفني','f-envn':'ملاحظات البيئة المكتبية','f-rpt':'التقارير','f-ext':'البرامج الإضافية','f-actn':'ملاحظات الأنشطة','f-parn':'ملاحظات الشراكات','f-ils-name':'اسم نظام المكتبة المستخدم','f-arab-cat':'معايير الفهرسة العربية','f-tech-know':'المعرفة التقنية','f-tr':'جاهزية التحول الرقمي','f-edu':'المؤهل العلمي','f-spc':'التخصص','f-exp':'سنوات الخبرة','f-crs':'الدورات التدريبية','f-cred':'الشهادات المهنية','f-sdev':'التطوير المهني','f-suff':'كفاية الكادر','f-train-rec':'احتياج التدريب','f-sstr':'نقاط قوة الكادر','f-lsy':'نظام المكتبة','f-tecn':'ملاحظات التقنية','f-feats-desc':'وصف المميزات','f-ovr':'التقييم العام للمكتبة','f-pri':'أولوية التدخل','f-chal':'أبرز التحديات','f-str':'نقاط القوة','f-wk':'نقاط الضعف والفجوات','f-rec':'مقترحات التطوير والتوصيات','f-plan':'خطة العمل الإجمالية','f-plan-s':'خطة قصيرة المدى','f-plan-m':'خطة متوسطة المدى','f-plan-l':'خطة طويلة المدى'
+  };
+
+  const GROUPS = {
+    'المجموعات والمصادر':['المجموعات','مجموعات الإمارات'],
+    'الإدارة والتنظيم':['التنظيم الفني'],
+    'البيئة والخدمات':['البيئة'],
+    'الأنشطة والشراكات':['الأنشطة','الشراكات'],
+    'الكادر المهني':['الكادر والمؤهلات'],
+    'التقنية والابتكار':['التقنية']
+  };
+
+  function allFIds(){
+    return Array.from(document.querySelectorAll('#eform [id^="f-"]')).map(x=>x.id);
+  }
+  function allCheckboxIds(){
+    return Array.from(document.querySelectorAll('#eform input[type="checkbox"][id]')).map(x=>x.id);
+  }
+  function collectAllFields(){
+    const out = {};
+    allFIds().forEach(id=>{ out[id] = val(id); });
+    // Aliases used by older reports
+    out.lib = val('f-lib'); out.date = val('f-date'); out.stg = val('f-stg'); out.ltyp = val('f-ltyp');
+    out.stu = val('f-stu'); out.stf = val('f-stf'); out.ldesc = val('f-ldesc');
+    out.bt = val('f-bt'); out.bar = val('f-bar'); out.ben = val('f-ben'); out.dig = val('f-dig');
+    out.cls = val('f-cls'); out.cat = val('f-cat'); out.cir = val('f-cir'); out.inv = val('f-inv');
+    out.loans = val('f-loans'); out.vis = val('f-vis'); out.techn = val('f-techn');
+    out.envn = val('f-envn'); out.actn = val('f-actn'); out.rpt = val('f-rpt'); out.ext = val('f-ext'); out.parn = val('f-parn');
+    out.edu = val('f-edu'); out.spc = val('f-spc'); out.exp = val('f-exp'); out.crs = val('f-crs');
+    out.cred = val('f-cred'); out.sdev = val('f-sdev'); out.sstr = val('f-sstr'); out.tr = val('f-tr');
+    out.lsy = val('f-lsy'); out.tecn = val('f-tecn');
+    out.overall = val('f-ovr'); out.priority = val('f-pri');
+    out.chal = val('f-chal'); out.str = val('f-str'); out.wk = val('f-wk'); out.rec = val('f-rec'); out.plan = val('f-plan');
+    out.plan_s = val('f-plan-s'); out.plan_m = val('f-plan-m'); out.plan_l = val('f-plan-l');
+    allCheckboxIds().forEach(id=>{ out[id] = checked(id); });
+    const ratingKeys = ['uae','cd','cc','cco','sh','cr','sp','se','at','in','rch','tu','cu','ri','pa','co','ts','ss','sb','sc','sst','si','ste','scol','marc','ils','dg','te','un'];
+    ratingKeys.forEach(k=>{ out['r_'+k] = (window.RS && window.RS[k]) ? Number(window.RS[k]) : 0; });
+    try{ out.libraries = (typeof collectLibraryUnits === 'function') ? collectLibraryUnits() : []; }catch(e){ out.libraries = []; }
+    out.hasEx = Array.isArray(out.libraries) && out.libraries.length>0;
+    const first = out.libraries[0] || {};
+    out.et = first.type || ''; out.es = first.specialist || ''; out.eb = first.books || ''; out.er = first.rating || ''; out.en = first.notes || '';
+    out.saved = true;
+    out.savedAt = new Date().toISOString();
+    out.form_version = 'full-evaluation-save-2026-05-12';
+    return out;
+  }
+
+  function baseScores(d){
+    try{ if(typeof calcSc === 'function') return calcSc(d||{}); }catch(e){}
+    return {};
+  }
+  function totalScore(sc){
+    try{ if(typeof tot === 'function') return tot(sc||{}); }catch(e){}
+    const vals = Object.values(sc||{}).map(score).filter(x=>x>0);
+    return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10 : 0;
+  }
+  function weakest(sc, limit=3){
+    return Object.entries(sc||{}).filter(([,v])=>score(v)>0).sort((a,b)=>score(a[1])-score(b[1])).slice(0,limit);
+  }
+  function strongest(sc, limit=3){
+    return Object.entries(sc||{}).filter(([,v])=>score(v)>0).sort((a,b)=>score(b[1])-score(a[1])).slice(0,limit);
+  }
+  function bullets(items){ return items.filter(Boolean).map(x=>'• '+x).join('\n'); }
+
+  function buildSmartTexts(d){
+    const sc = baseScores(d);
+    const overall = totalScore(sc);
+    const weak = weakest(sc,4);
+    const strong = strongest(sc,4);
+    const weakNames = weak.map(([k,v])=>`${k} (${score(v)}/6)`);
+    const strongNames = strong.map(([k,v])=>`${k} (${score(v)}/6)`);
+    const low = weak.filter(([,v])=>score(v)>0 && score(v)<3).map(([k])=>k);
+    const mid = weak.filter(([,v])=>score(v)>=3 && score(v)<4).map(([k])=>k);
+    const schoolName = val('f-sname') || (document.querySelector('#esch option:checked')?.textContent||'المكتبة');
+    const libType = val('f-ltyp') || 'المكتبة';
+    const hasExtra = (d.libraries||[]).length;
+    const uae = score(sc['مجموعات الإمارات']);
+    const tech = score(sc['التقنية']);
+    const staff = score(sc['الكادر والمؤهلات']);
+    const env = score(sc['البيئة']);
+    const org = score(sc['التنظيم الفني']);
+    const collections = score(sc['المجموعات']);
+
+    const strengthLines = [];
+    if(strongNames.length) strengthLines.push(`أعلى محاور الأداء: ${strongNames.join('، ')}.`);
+    if(env>=4) strengthLines.push('البيئة المكتبية تظهر بمستوى مناسب يدعم استخدام المكتبة بصورة أفضل.');
+    if(org>=4) strengthLines.push('يوجد مستوى جيد في التنظيم الفني وإجراءات ترتيب مصادر المعلومات.');
+    if(collections>=4) strengthLines.push('المجموعات المتاحة مناسبة نسبيًا لاحتياجات المستفيدين.');
+    if(hasExtra) strengthLines.push(`وجود ${hasExtra} مكتبة إضافية داخل المدرسة يرفع أهمية تنظيم المتابعة الداخلية بين المكتبات.`);
+    if(!strengthLines.length) strengthLines.push('توجد قاعدة أولية يمكن البناء عليها، لكنها تحتاج إلى تطوير منظم في المحاور الأساسية.');
+
+    const weaknessLines = [];
+    if(weakNames.length) weaknessLines.push(`أكثر المحاور احتياجًا للتحسين: ${weakNames.join('، ')}.`);
+    if(uae>0 && uae<4) weaknessLines.push('تحتاج مجموعات الإمارات إلى تعزيز التغطية، الإبراز، وربطها بالأنشطة القرائية والوطنية.');
+    if(tech>0 && tech<4) weaknessLines.push('تحتاج الجاهزية التقنية إلى تحسين في النظام الإلكتروني، الفهرسة، أو أدوات الوصول الرقمي.');
+    if(staff>0 && staff<4) weaknessLines.push('الكادر المهني يحتاج إلى دعم تدريبي أو توثيق أوضح للمهارات المكتبية والتقنية.');
+    if(!weaknessLines.length) weaknessLines.push('لم تظهر فجوات حرجة من الدرجات الحالية، ويُوصى بالاستمرار في التحسين الدوري.');
+
+    const challengeLines = [];
+    if(low.length) challengeLines.push(`انخفاض مستوى: ${low.join('، ')}.`);
+    if(mid.length) challengeLines.push(`محاور متوسطة تحتاج متابعة: ${mid.join('، ')}.`);
+    if(!clean(val('f-ils-name')) && !clean(val('f-lsy'))) challengeLines.push('لم يتم توثيق نظام إدارة المكتبة المستخدم بشكل واضح.');
+    if(!clean(val('f-feats-desc')) && tech<4) challengeLines.push('الحاجة إلى توثيق الوضع التقني وربطه بخطة تطوير واضحة.');
+    if(!challengeLines.length) challengeLines.push('أبرز التحدي الحالي هو المحافظة على مستوى الأداء وتوثيق الشواهد بانتظام.');
+
+    const recLines = [];
+    if(uae<4) recLines.push('تعزيز مصادر الإمارات عبر قائمة تزويد واضحة، ركن عرض مخصص، وأنشطة تعريفية للطلبة.');
+    if(org<4) recLines.push('استكمال التنظيم الفني للمصادر من حيث التصنيف، الفهرسة، الجرد، وسياسة الإعارة.');
+    if(env<4) recLines.push('تحسين البيئة المكتبية من حيث التهيئة، الجاذبية، سهولة الحركة، ومناطق القراءة.');
+    if(staff<4) recLines.push('إعداد خطة تدريب قصيرة للكادر في MARC21، أنظمة إدارة المكتبات، والفهرسة الإلكترونية.');
+    if(tech<4) recLines.push('رفع الجاهزية التقنية وربط المكتبة بنظام موحد قابل للتقارير والمتابعة.');
+    if(!recLines.length) recLines.push('اعتماد خطة متابعة فصلية للمحافظة على المستوى الحالي وتطوير المؤشرات النوعية.');
+
+    const priority = clean(val('f-pri')) || (overall<3 ? 'مرتفعة' : overall<4 ? 'متوسطة' : 'منخفضة');
+    const overallText = clean(val('f-ovr')) || (overall>=5?'جيد جداً':overall>=4?'جيد':overall>=3?'مقبول':'ضعيف');
+    const plan = `ملخص الخطة: ${schoolName} (${libType}) حصلت على متوسط ${overall||0}/6 بمستوى ${overallText}. الأولوية: ${priority}. يبدأ التطوير بالمحاور الأقل نتيجة، مع توثيق الشواهد ومتابعة التحسن في التقرير القادم.`;
+
+    return {
+      chal: bullets(challengeLines),
+      str: bullets(strengthLines),
+      wk: bullets(weaknessLines),
+      rec: bullets(recLines),
+      plan,
+      plan_s: bullets(['استكمال النواقص العاجلة في المحاور الأقل نتيجة.', 'توثيق الشواهد والصور والنماذج داخل ملف المدرسة.', 'تحديث بيانات النظام والمجموعات الأساسية خلال 1-3 أشهر.']),
+      plan_m: bullets(['تنفيذ تدريب عملي للكادر حسب نقاط الضعف.', 'تطوير مصادر الإمارات والأنشطة القرائية وربطها بالمناهج.', 'متابعة مؤشرات الإعارة والزيارات والمستفيدين خلال فصل دراسي.']),
+      plan_l: bullets(['اعتماد خطة تطوير سنوية للمكتبة مع مؤشرات قياس واضحة.', 'ربط المكتبة بنظام موحد للتقارير والإحصاءات.', 'تحويل نتائج التقييم إلى مقارنة سنوية بين المدارس والمكتبات.'])
+    };
+  }
+
+  function fillSmartSummary({force=false}={}){
+    const d = collectAllFields();
+    const smart = buildSmartTexts(d);
+    const targets = [['f-chal','chal'],['f-str','str'],['f-wk','wk'],['f-rec','rec'],['f-plan','plan'],['f-plan-s','plan_s'],['f-plan-m','plan_m'],['f-plan-l','plan_l']];
+    targets.forEach(([id,k])=>{
+      const x = el(id);
+      if(x && (force || !clean(x.value))) x.value = smart[k] || '';
+    });
+    return collectAllFields();
+  }
+  window.generateEvaluationSmartSummary = function(){ fillSmartSummary({force:true}); toastSmart('✅ تم توليد الخلاصة الذكية من درجات التقييم'); };
+
+  function toastSmart(msg){
+    let t=el('smart-summary-toast');
+    if(!t){
+      t=document.createElement('div'); t.id='smart-summary-toast';
+      t.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:999999;background:#0f6e56;color:#fff;padding:12px 20px;border-radius:18px;font-family:Cairo,Tahoma,sans-serif;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.22);display:none;text-align:center;max-width:92%';
+      document.body.appendChild(t);
+    }
+    t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2600);
+  }
+
+  const oldGetEv = window.getEv;
+  window.getEv = function(){
+    // يولد الخلاصة فقط إذا كانت مربعاتها فارغة، ثم يجمع كل f-* وكل checkboxes وكل ratings.
+    try{ fillSmartSummary({force:false}); }catch(e){ console.warn('smart summary skipped', e); }
+    const d = collectAllFields();
+    try{
+      const sc = baseScores(d);
+      d._axisScores = sc;
+      d.total_score = totalScore(sc);
+      d.score_percent = percent(d.total_score);
+    }catch(e){}
+    return d;
+  };
+
+  const oldLdEv = window.ldEv;
+  window.ldEv = function(sid){
+    if(typeof oldLdEv === 'function') oldLdEv(sid);
+    try{
+      const d = (window.DB && DB.ev && DB.ev[sid]) ? DB.ev[sid] : {};
+      // Restore every saved f-* field by id.
+      allFIds().forEach(id=>{
+        if(d[id] !== undefined) setVal(id,d[id]);
+      });
+      // Restore aliases when old data does not include f-* ids.
+      const aliases = {
+        'f-lib':'lib','f-date':'date','f-stg':'stg','f-ltyp':'ltyp','f-stu':'stu','f-stf':'stf','f-ldesc':'ldesc','f-bt':'bt','f-bar':'bar','f-ben':'ben','f-dig':'dig','f-cls':'cls','f-cat':'cat','f-cir':'cir','f-inv':'inv','f-loans':'loans','f-vis':'vis','f-techn':'techn','f-envn':'envn','f-actn':'actn','f-rpt':'rpt','f-ext':'ext','f-parn':'parn','f-edu':'edu','f-spc':'spc','f-exp':'exp','f-crs':'crs','f-cred':'cred','f-sdev':'sdev','f-sstr':'sstr','f-tr':'tr','f-lsy':'lsy','f-tecn':'tecn','f-ovr':'overall','f-pri':'priority','f-chal':'chal','f-str':'str','f-wk':'wk','f-rec':'rec','f-plan':'plan','f-plan-s':'plan_s','f-plan-m':'plan_m','f-plan-l':'plan_l'
+      };
+      Object.entries(aliases).forEach(([fid,key])=>{ if(d[key]!==undefined && !clean(val(fid))) setVal(fid,d[key]); });
+      allCheckboxIds().forEach(id=>{ if(d[id] !== undefined) setChecked(id,d[id]); });
+      if(d.libraries && typeof loadLibraryUnits === 'function') loadLibraryUnits(d.libraries,d);
+      if(typeof updateLibraryUnitsSummary === 'function') updateLibraryUnitsSummary();
+    }catch(e){ console.warn('full load patch skipped', e); }
+  };
+
+  function addSmartButton(){
+    if(el('smartSummaryButton')) return;
+    const saveBar = document.querySelector('#page-eval .abar');
+    if(saveBar){
+      const btn=document.createElement('button');
+      btn.type='button'; btn.id='smartSummaryButton'; btn.className='btn bt';
+      btn.innerHTML='🤖 توليد الخلاصة الذكية';
+      btn.onclick=()=>window.generateEvaluationSmartSummary();
+      saveBar.insertBefore(btn, saveBar.firstChild);
+    }
+    // Add helper text above final section if present.
+    const finalField = el('f-chal');
+    const finalCard = finalField ? finalField.closest('.g2') : null;
+    if(finalCard && !el('smartSummaryNote')){
+      const note=document.createElement('div'); note.id='smartSummaryNote'; note.className='al ali full';
+      note.innerHTML='🤖 يمكن توليد نقاط القوة والضعف والتوصيات وخطة العمل تلقائيًا من درجات التقييم، ثم تعديل النص يدويًا قبل الحفظ.';
+      finalCard.insertBefore(note, finalCard.firstChild);
+    }
+  }
+
+  // Ensure old save button uses patched getEv through existing saveEval override.
+  document.addEventListener('DOMContentLoaded',()=>{
+    addSmartButton();
+    setTimeout(addSmartButton,800);
+  });
+})();
+</script>
+
 <script src="../assets/reset-demo-data.js?v=20260510f"></script>
 </body>
 </html>
