@@ -1375,6 +1375,26 @@ function ldEv(sid){
   ["ar","en","st","ua","bf","cl"].forEach(k=>sk("act-"+k,d["act-"+k]));
   ["y","s","d","m","u","a"].forEach(k=>sk("ft-"+k,d["ft-"+k]));
   ["cls","lib","dig","rd","ch","ref","sys","res","uae","ai","ld","ot"].forEach(k=>sk("cr-"+k,d["cr-"+k]));
+  // الحقول المُضافة — كانت لا تُحمَّل
+  sv('f-plan-s', d.plan_s||d['f-plan-s']||'');
+  sv('f-plan-m', d.plan_m||d['f-plan-m']||'');
+  sv('f-plan-l', d.plan_l||d['f-plan-l']||'');
+  sv('f-ils-name', d.ils_name||d['f-ils-name']||'');
+  sv('f-arab-cat', d.arab_cat||d['f-arab-cat']||'');
+  sv('f-tech-know', d.tech_know||d['f-tech-know']||'');
+  sv('f-uae-cov', d.uae_cov||d['f-uae-cov']||'');
+  sv('f-uae-disp', d.uae_disp||d['f-uae-disp']||'');
+  sv('f-suff', d.suff||d['f-suff']||'');
+  sv('f-train-rec', d.train_rec||d['f-train-rec']||'');
+  sv('f-age', d.age||d['f-age']||'');
+  sv('f-pol', d.pol||d['f-pol']||'');
+  sv('f-ardict', d.ardict||d['f-ardict']||'');
+  sv('f-endict', d.endict||d['f-endict']||'');
+  sv('f-encyc', d.encyc||d['f-encyc']||'');
+  sv('f-atlas', d.atlas||d['f-atlas']||'');
+  sv('f-dirs', d.dirs||d['f-dirs']||'');
+  sv('f-guides', d.guides||d['f-guides']||'');
+  sv('f-feats-desc', d.feats_desc||d['f-feats-desc']||'');
   ldRS(d);
 }
 function getEv(){
