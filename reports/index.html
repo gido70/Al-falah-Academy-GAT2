@@ -44,32 +44,104 @@ document.addEventListener('click',e=>{let p=$('schoolPicker');if(p&&!p.contains(
 function selected(){return{type:val('type'),schools:getSchoolChecks().filter(c=>c.checked).map(c=>c.value),month:val('month'),weekFrom:val('weekFrom'),weekTo:val('weekTo'),day:val('day'),from:val('from'),to:val('to'),level:val('level')||'full',title:val('title'),note:val('note')}}
 function hasSelection(s){return !!(s.type||s.schools.length||s.month||s.weekFrom||s.weekTo||s.day||s.from||s.to||s.title||s.note)}
 function schoolScopeText(arr){if(!arr||!arr.length)return 'غير محدد';if(arr.includes('all'))return 'كل المدارس';return arr.map(x=>SCHOOL_NAMES[x]||x).join('، ')}
-function schoolMatch(name,sid,filters){
-  if(!filters.length||filters.includes('all'))return true;
+function normalizeSid(sid,name=''){
   const DBID={1:'dan',2:'mzd',3:'bny',4:'khb',5:'jmi',6:'shj'};
-  // حوّل sid الرقمي إلى كود نصي إذا كان رقماً
-  let resolvedSid=sid;
-  if(/^\d+$/.test(String(sid))) resolvedSid=DBID[sid]||sid;
-  let t=(resolvedSid+' '+name).toLowerCase();
+  let s=String(sid||'').trim();
+  if(/^\d+$/.test(s)) s=DBID[s]||s;
+  if(!s && name){
+    const n=String(name||'').toLowerCase();
+    if(n.includes('الشارقة')||n.includes('الدخيلات')) s='shj';
+    else if(n.includes('الخبيصي')) s='khb';
+    else if(n.includes('الجيمي')) s='jmi';
+    else if(n.includes('بني ياس')) s='bny';
+    else if(n.includes('محمد بن زايد')) s='mzd';
+    else if(n.includes('الدانة')) s='dan';
+  }
+  return s;
+}
+function schoolMatch(name,sid,filters){
+  if(!filters.length||filters.includes('all')) return true;
+  const resolvedSid=normalizeSid(sid,name);
+  const t=(resolvedSid+' '+(name||'')).toLowerCase();
   return filters.some(function(f){
-    return t.includes(f) || 
-           resolvedSid===f || 
-           t.includes((SCHOOL_NAMES[f]||'').toLowerCase());
+    const label=(SCHOOL_NAMES[f]||'').toLowerCase();
+    return resolvedSid===f || t.includes(f) || (label && t.includes(label));
   });
 }
-async function loadEvaluations(){let rows=[];try{let c=sb();if(c){let r=await c.from('library_evaluations').select('*').order('created_at',{ascending:false});if(!r.error&&Array.isArray(r.data))rows=r.data}}catch(e){console.warn('eval db',e)}if(!rows.length){
+function unwrapEvalData(row){
+  let candidates=[row.full_data,row.evaluation_data,row.data,row.form_data,row.json_data,row.content,row.payload,row.report_data,row];
+  for(const c of candidates){
+    let d=parseObj(c);
+    if(!d || typeof d!=='object' || Array.isArray(d)) continue;
+    if(d.ev && typeof d.ev==='object'){
+      let sid=normalizeSid(row.school_id||row.school_code||d.school_id||d.school_code||d.branch_code||'', row.school_name||d.school_name||d['f-sname']||'');
+      if(sid && d.ev[sid]) return Object.assign({school_code:sid}, parseObj(d.ev[sid]));
+      let vals=Object.entries(d.ev).filter(([k,v])=>v&&typeof v==='object');
+      if(vals.length){
+        let [k,v]=vals[0];
+        return Object.assign({school_code:k}, parseObj(v));
+      }
+    }
+    if(Object.keys(d).length) return d;
+  }
+  return {};
+}
+function evalSchoolName(row,d,sid){
+  return row.school_name || d.school_name || d['f-sname'] || d.sname || d.branch || d.school || d.city || d['f-city'] || SCHOOL_NAMES[sid] || sid || 'غير محدد';
+}
+function evalScore(row,d){
+  let nums=[];
+  ['score','average','avg','total_score','rating_score','score_percent'].forEach(k=>{
+    let n=Number(row[k]??d[k]??0);
+    if(n>0){ if(k==='score_percent') n=(n/100)*6; nums.push(n); }
+  });
+  if(!nums.length && d._axisScores && typeof d._axisScores==='object'){
+    for(const v of Object.values(d._axisScores)){let n=Number(v);if(n>0)nums.push(n)}
+  }
+  if(!nums.length){
+    for(const [k,v] of Object.entries(d)){
+      let n=Number(v);
+      if((/^r[_-]/.test(k)||/^rating/.test(k)) && n>=1 && n<=6) nums.push(n);
+    }
+  }
+  if(!nums.length){
+    for(const v of Object.values(d)){let n=Number(v);if(n>=1&&n<=6)nums.push(n)}
+  }
+  let score=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0;
+  return Math.round(score*10)/10;
+}
+async function loadEvaluations(){
+  let rows=[];
+  try{
+    let c=sb();
+    if(c){
+      let r=await c.from('library_evaluations').select('*').order('created_at',{ascending:false});
+      if(!r.error&&Array.isArray(r.data)) rows=r.data;
+      if(r.error) console.warn('eval db error',r.error.message||r.error);
+    }
+  }catch(e){console.warn('eval db',e)}
+  if(!rows.length){
     let ev=loadLS('falah_lib_v6',{ev:{}}).ev||{};
-    rows=Object.entries(ev)
-      .filter(([k,v])=>Boolean(v))
-      .map(([k,v])=>{
-        // نحقن school_code من الـ key مباشرة
-        let obj=Object.assign({},v);
-        if(!obj.school_code) obj.school_code=k;
-        if(!obj.school_id)   obj.school_id=k;
-        if(!obj.school_name) obj.school_name=SCHOOL_NAMES[k]||k;
-        return obj;
-      });
-  }let out=[];for(const r of rows){let d=parseObj(r.full_data||r.data||r);let sid=String(r.school_id||r.school_code||d.school_id||d.school_code||d.branch_code||'');let school=r.school_name||d.school_name||d.branch||d.school||SCHOOL_NAMES[sid]||sid||'غير محدد';let nums=[];['score','average','avg','total_score','rating_score'].forEach(k=>{let n=Number(r[k]||d[k]||0);if(n>0)nums.push(n)});if(!nums.length){for(const v of Object.values(d)){let n=Number(v);if(n>=1&&n<=6)nums.push(n)}}let score=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0;out.push({sid,school,score:Math.round(score*10)/10,data:d,created_at:r.created_at||d.created_at||''})}let latest=new Map();out.forEach(e=>{let k=e.sid||e.school;if(!latest.has(k))latest.set(k,e)});return [...latest.values()]}
+    rows=Object.entries(ev).filter(([k,v])=>Boolean(v)).map(([k,v])=>Object.assign({school_code:k,school_id:k,school_name:SCHOOL_NAMES[k]||k},v));
+  }
+  let out=[];
+  for(const r of rows){
+    let d=unwrapEvalData(r);
+    let rawSid=r.school_code||r.school_id||d.school_code||d.school_id||d.branch_code||'';
+    let sid=normalizeSid(rawSid, r.school_name||d.school_name||d['f-sname']||d['f-city']||'');
+    let school=evalSchoolName(r,d,sid);
+    let score=evalScore(r,d);
+    let visitDate=iso(r.visit_date||r.date||d.visit_date||d['f-date']||d.date||'');
+    out.push({sid,school,score,data:d,visit_date:visitDate,created_at:r.updated_at||r.created_at||d.savedAt||d.exported||d.created_at||''});
+  }
+  let latest=new Map();
+  out.forEach(e=>{
+    let k=(e.sid||e.school)+'|'+(e.visit_date||'');
+    if(!latest.has(k)) latest.set(k,e);
+  });
+  return [...latest.values()];
+}
+
 function dayFromWeekData(d,i,row={}){let base=iso(d.wstart||d.work_date||row.work_date||row.date||row.day_date);let monday=base?mondayOf(base):'';let date=iso(d['date'+i]||d['day_date'+i])||(monday?addDays(monday,i):'');return{date,name:WORK_DAYS[i],week:Number(d.wnum||d.week_number||row.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:d['atype'+i]||d['work_type'+i]||d.wstatus||row.work_type||'دوام رسمي',loc:d['dloc'+i]||d['loc'+i]||d.location||row.location||'—',tasks:d['task'+i]||d['tasks'+i]||d['anote'+i]||d['story'+i]||'',note:d['note'+i]||d['dnote'+i]||'',raw:d}}
 function normalizeSingle(row){let d=parseObj(row.full_data||row.data||row.tasks||row.notes||{});let date=iso(pick(row,['work_date','date','day_date','log_date'])||pick(d,['work_date','date','day_date','log_date','wstart']));return{date,name:arDay(date),week:Number(row.week_number||d.wnum||d.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:row.work_type||d.work_type||d.wstatus||'دوام رسمي',loc:row.location||d.location||d.dloc0||'—',tasks:(typeof row.tasks==='string'&&!row.tasks.trim().startsWith('{')?row.tasks:'')||d.tasks||d.task||d.anote0||'',note:(typeof row.notes==='string'&&!row.notes.trim().startsWith('{')?row.notes:'')||d.notes||d.note||d.dnote0||'',raw:d}}
 async function loadWorkDays(){let rows=[];try{let c=sb();if(c){let r=await c.from('daily_work_logs').select('*').order('work_date',{ascending:true});if(!r.error&&Array.isArray(r.data))rows=r.data}}catch(e){console.warn('work db',e)}if(!rows.length){for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('falah_week_'))rows.push(parseObj(localStorage.getItem(k)))}}let days=[];for(const row of rows){let d=parseObj(row.full_data||row.data||row.tasks||row.notes||row);let hasWeekFields=['atype0','anote0','dloc0','atype1','anote1','dloc1','wstart','wnum'].some(k=>d[k]!==undefined);if(hasWeekFields){for(let i=0;i<5;i++)days.push(dayFromWeekData(d,i,row))}else{let one=normalizeSingle(row);if(one.date)days.push(one)}}return days.filter(x=>x.date&&isWork(x.date))}
