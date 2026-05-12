@@ -397,7 +397,6 @@ body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--text);direc
   </nav>
   <!-- ACTION STRIP -->
   <div class="action-strip">
-    <button class="abtn abtn-teal" onclick="saveAll()">💾 حفظ في قاعدة البيانات</button>
     <button class="abtn" onclick="expWord()">Word 📄</button>
     <button class="abtn abtn-gold" onclick="expAll()">📤 تصدير JSON</button>
     <button class="abtn abtn-gold" onclick="expCSV()">📊 تصدير CSV</button>
@@ -1382,7 +1381,11 @@ function saveEval(){
   const sid=document.getElementById("esch").value;if(!sid)return alert("اختر المدرسة!");
   DB.ev[sid]=getEv();sdb();popSel();uHome();alert("✅ تم حفظ التقييم بنجاح!");
 }
-function saveAll(){const sid=document.getElementById("esch").value;if(sid&&document.getElementById("eform").style.display!=="none")DB.ev[sid]=getEv();sdb();alert("✅ تم الحفظ");}
+function saveAll(){
+  const sid=document.getElementById("esch")?.value||"";
+  if(sid && document.getElementById("eform")?.style.display!=="none" && typeof window.saveEval==='function') return window.saveEval();
+  sdb();alert("✅ تم الحفظ محلياً");
+}
 function clrEval(){if(!confirm("مسح بيانات النموذج الحالي؟"))return;ldEv(document.getElementById("esch").value||"");}
 function uDat(){
   const el=document.getElementById("dtbl");
@@ -1872,10 +1875,37 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
     const {error}=await c.from(TABLE).delete().neq('id',0);
     if(error) throw error;
   }
+  function inferSidFromData(sid,d){
+    sid=String(sid||'').trim();
+    if(sid && SCHOOL_DB_ID[sid]) return sid;
+    const raw=[d?.school_code,d?.school_id,d?.school_db_id,d?.esch,d?.sid].filter(Boolean).map(x=>String(x).trim());
+    for(const x of raw){
+      if(SCHOOL_DB_ID[x]) return x;
+      const found=Object.entries(SCHOOL_DB_ID).find(([,v])=>String(v)===x);
+      if(found) return found[0];
+    }
+    const name=String(d?.school_name||d?.sname||d?.['f-sname']||document.getElementById('f-sname')?.value||'').trim();
+    if(name){
+      const found=SCH.find(s=>name===s.name || name===s.short || name.includes(s.short) || name.includes(s.name));
+      if(found) return found.id;
+    }
+    const selectSid=document.getElementById('esch')?.value||'';
+    if(selectSid && SCHOOL_DB_ID[selectSid]) return selectSid;
+    return '';
+  }
+  function ensureEvaluationDate(sid,d){
+    let visitDate=(d && d.date) ? String(d.date).slice(0,10) : '';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)){
+      const s=school(sid);
+      visitDate=(s && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) ? s.date : new Date().toISOString().slice(0,10);
+    }
+    return visitDate;
+  }
   async function saveOneRemote(sid,d){
     const c=sb(); if(!c) return false;
-    if(!sid || !SCHOOL_DB_ID[sid]) throw new Error('لا يمكن الحفظ: المدرسة غير محددة أو غير معروفة.');
-    const visitDate = (d && d.date) ? String(d.date).slice(0,10) : new Date().toISOString().slice(0,10);
+    sid=inferSidFromData(sid,d||{});
+    if(!sid || !SCHOOL_DB_ID[sid]) throw new Error('لا يمكن الحفظ: المدرسة غير محددة أو غير معروفة. اختر المدرسة من القائمة ثم احفظ.');
+    const visitDate = ensureEvaluationDate(sid,d||{});
     if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)) throw new Error('لا يمكن الحفظ: تاريخ الزيارة غير صحيح.');
     const s=school(sid); const scores=axisScores(d,null); const total=totalFromScores(scores);
     const now=new Date().toISOString();
@@ -1910,8 +1940,18 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   window.pushAllEvaluationsToSupabase = pushAllRemote;
 
   window.saveEval = async function(){
-    const sid=document.getElementById('esch')?.value||''; if(!sid) return alert('اختر المدرسة!');
-    const d=(typeof getEv==='function')?getEv():(db().ev[sid]||{});
+    let sid=document.getElementById('esch')?.value||'';
+    let d=(typeof getEv==='function')?getEv():(db().ev[sid]||{});
+    sid=inferSidFromData(sid,d);
+    if(!sid) return alert('اختر المدرسة أولاً من القائمة، أو افتح التقييم من بطاقة المدرسة/جدول الزيارات.');
+    const s=school(sid);
+    if(document.getElementById('esch')) document.getElementById('esch').value=sid;
+    d.school_id=sid;
+    d.school_code=sid;
+    d.school_db_id=SCHOOL_DB_ID[sid];
+    d.school_name=s?.name||d.school_name||'';
+    d.date=ensureEvaluationDate(sid,d);
+    if(!d['f-date']) d['f-date']=d.date;
     d.saved=true; d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores);
     db().ev[sid]=d; saveLocal(); refresh();
     try{ await saveOneRemote(sid,d); await loadRemote({replace:true}); toast('✅ تم حفظ التقييم في القاعدة'); }
@@ -2215,7 +2255,39 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     });
     return collectAllFields();
   }
-  window.generateEvaluationSmartSummary = function(){ fillSmartSummary({force:true}); toastSmart('✅ تم توليد الخلاصة الذكية من درجات التقييم'); };
+  function fieldLabelFor(elm){
+    try{return (elm.closest('.fld')?.querySelector('label')?.textContent || elm.previousElementSibling?.textContent || elm.getAttribute('placeholder') || elm.id || '').trim();}catch(e){return elm.id||'';}
+  }
+  function smartTextForField(id,label,d){
+    const schoolName = val('f-sname') || (document.querySelector('#esch option:checked')?.textContent||'المكتبة');
+    const level = clean(val('f-ovr')) || normalizeLevel(d.overall) || 'جيد';
+    const priority = clean(val('f-pri')) || 'متوسطة';
+    const generic = `تحتاج ${schoolName} إلى متابعة هذا البند وفق نتائج التقييم، مع توثيق الشواهد وتحديث البيانات بشكل دوري.`;
+    if(/ملاحظات التقنية|التقنية/.test(label)) return `يوصى بتوثيق واقع النظام الإلكتروني والأجهزة المتاحة، وتحديد الاحتياجات التقنية التي تدعم إدارة المكتبة والخدمات الرقمية.`;
+    if(/وصف الخصائص|خصائص خاصة|المرافق/.test(label)) return `توجد خصائص قابلة للتطوير داخل المكتبة، ويمكن تعميم التجارب الناجحة بعد توثيقها وربطها بخطة تشغيل واضحة.`;
+    if(/توصيات تدريبية|تدريب/.test(label)) return `تنفيذ تدريب عملي للكادر على أنظمة المكتبات، أدوات الذكاء الاصطناعي، الفهرسة الإلكترونية، وإدارة التقارير والمؤشرات.`;
+    if(/نقاط قوة|قوة/.test(label)) return buildSmartTexts(d).str || `توجد مؤشرات إيجابية في بعض محاور التقييم يمكن البناء عليها في تطوير خدمات المكتبة.`;
+    if(/ضعف|فجوات/.test(label)) return buildSmartTexts(d).wk || `تحتاج بعض المحاور إلى تحسين ومتابعة، خصوصاً المحاور ذات الدرجات الأقل في نتائج التقييم.`;
+    if(/تحديات/.test(label)) return buildSmartTexts(d).chal || `توجد تحديات تشغيلية تحتاج إلى متابعة وتوثيق وإجراءات تحسين واضحة.`;
+    if(/توصيات|مقترحات/.test(label)) return buildSmartTexts(d).rec || `اعتماد خطة متابعة واضحة، وتوثيق الشواهد، وتحسين المحاور الأقل نتيجة خلال فترة محددة.`;
+    if(/خطة/.test(label)) return buildSmartTexts(d).plan || `خطة التطوير المقترحة لمستوى ${level}: معالجة الأولويات ${priority}، ثم متابعة التحسن شهرياً وفصلياً.`;
+    if(/ملاحظات|وصف|تفاصيل/.test(label)) return generic;
+    return generic;
+  }
+  function fillAllEmptyNarrativeFields({force=false}={}){
+    const d=collectAllFields();
+    document.querySelectorAll('#eform textarea').forEach(t=>{
+      if(!t.id) return;
+      const label=fieldLabelFor(t);
+      if(force || !clean(t.value)) t.value=smartTextForField(t.id,label,d);
+    });
+    return collectAllFields();
+  }
+  window.generateEvaluationSmartSummary = function(){
+    fillSmartSummary({force:false});
+    fillAllEmptyNarrativeFields({force:false});
+    toastSmart('✅ تم توليد النصوص الذكية للخانات الفارغة فقط، ويمكنك تعديلها قبل الحفظ');
+  };
 
   function toastSmart(msg){
     let t=el('smart-summary-toast');
@@ -2272,7 +2344,7 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     if(saveBar){
       const btn=document.createElement('button');
       btn.type='button'; btn.id='smartSummaryButton'; btn.className='btn bt';
-      btn.innerHTML='🤖 توليد الخلاصة الذكية';
+      btn.innerHTML='🤖 تعبئة الخانات الفارغة بالذكاء';
       btn.onclick=()=>window.generateEvaluationSmartSummary();
       saveBar.insertBefore(btn, saveBar.firstChild);
     }
@@ -2281,13 +2353,13 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     const finalCard = finalField ? finalField.closest('.g2') : null;
     if(finalCard && !el('smartSummaryNote')){
       const note=document.createElement('div'); note.id='smartSummaryNote'; note.className='al ali full';
-      note.innerHTML='🤖 بعد تعبئة الدرجات والاختيارات اضغط الزر التالي لملء خانات الكتابة تلقائيًا، ثم عدّل النص يدويًا قبل الحفظ.';
+      note.innerHTML='🤖 بعد تعبئة الدرجات والاختيارات اضغط الزر التالي لملء كل خانات الكتابة الفارغة تلقائيًا، ثم عدّل النص يدويًا قبل الحفظ.';
       finalCard.insertBefore(note, finalCard.firstChild);
     }
     if(finalCard && !el('smartSummaryInlineButton')){
       const wrap=document.createElement('div'); wrap.className='full'; wrap.style.cssText='display:flex;justify-content:center;margin:10px 0 14px;';
       const b=document.createElement('button'); b.type='button'; b.id='smartSummaryInlineButton'; b.className='btn bt';
-      b.innerHTML='🤖 توليد التقييم الذكي وملء الخانات';
+      b.innerHTML='🤖 توليد التقييم الذكي وملء الخانات الفارغة';
       b.onclick=()=>window.generateEvaluationSmartSummary();
       wrap.appendChild(b);
       const note=el('smartSummaryNote');
