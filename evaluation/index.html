@@ -1452,7 +1452,17 @@ function saveEval(){
   const sid=document.getElementById("esch").value;if(!sid)return alert("اختر المدرسة!");
   DB.ev[sid]=getEv();sdb();popSel();uHome();alert("✅ تم حفظ التقييم بنجاح!");
 }
-function saveAll(){const sid=document.getElementById("esch").value;if(sid&&document.getElementById("eform").style.display!=="none")DB.ev[sid]=getEv();sdb();alert("✅ تم الحفظ");}
+function saveAll(){
+  const sid=document.getElementById("esch").value;
+  if(!sid){alert("اختر المدرسة أولاً");return;}
+  const d=getEv();
+  d.saved=true; d.savedAt=new Date().toISOString();
+  d.school_code=sid; d.school_id=sid;
+  DB.ev[sid]=d; sdb();
+  // حاول الحفظ في Supabase
+  if(typeof saveEval==='function') saveEval();
+  else alert("✅ تم الحفظ محلياً");
+}
 function clrEval(){if(!confirm("مسح بيانات النموذج الحالي؟"))return;ldEv(document.getElementById("esch").value||"");}
 function uDat(){
   const el=document.getElementById("dtbl");
@@ -2420,7 +2430,18 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     t.textContent=msg; t.style.background=bg||'#0c447c'; t.style.display='block'; clearTimeout(t._x); t._x=setTimeout(()=>t.style.display='none',3200);
   }
   function clientFix(){
-    return window.alfalahSupabase || (window.AlfalahDBSync && window.AlfalahDBSync.client && window.AlfalahDBSync.client()) || window.supabaseClient || null;
+    // جرب كل المصادر الممكنة للاتصال
+    if(window.alfalahSupabase) return window.alfalahSupabase;
+    if(window.supabaseClient) return window.supabaseClient;
+    if(window.AlfalahDBSync && window.AlfalahDBSync.client) return window.AlfalahDBSync.client();
+    // جرب إنشاء اتصال جديد من supabase-config
+    if(window.supabase && window.ALFALAH_SUPABASE_URL && window.ALFALAH_SUPABASE_KEY){
+      try{
+        window.alfalahSupabase = window.supabase.createClient(window.ALFALAH_SUPABASE_URL, window.ALFALAH_SUPABASE_KEY);
+        return window.alfalahSupabase;
+      }catch(e){}
+    }
+    return null;
   }
   function schoolBySidFix(sid){ try{return (SCH||[]).find(s=>s.id===sid)||null;}catch(e){return null;} }
   function inferSidFix(d){
@@ -2450,8 +2471,15 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
     const sb=clientFix();
     if(!sb) throw new Error('لم يتم الاتصال بـ Supabase.');
     if(!sid || !SCHOOL_DB_ID_FIX[sid]) throw new Error('اختر المدرسة قبل الحفظ.');
-    const visitDate = txt(d.date || d['f-date']).slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)) throw new Error('تاريخ الزيارة غير صحيح أو فارغ.');
+    // التاريخ: استخدم المُدخل أو اليوم إذا كان فارغاً
+    let visitDate = txt(d.date || d['f-date'] || '').slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)){
+      visitDate = new Date().toISOString().slice(0,10);
+      d.date = visitDate; d['f-date'] = visitDate;
+      // تحديث حقل التاريخ في الفورم
+      const dfEl = document.getElementById('f-date');
+      if(dfEl && !dfEl.value) dfEl.value = visitDate;
+    }
     const sc=calcScoresFix(d);
     const total=totalFix(sc);
     const s=schoolBySidFix(sid);
@@ -2489,22 +2517,37 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
   window.saveEval = async function(){
     try{
       const d = (typeof window.getEv==='function') ? window.getEv() : {};
-      const sid = inferSidFix(d);
-      if(!sid) return alert('اختر المدرسة قبل الحفظ.');
+      const sid = inferSidFix(d) || (document.getElementById('esch')?.value||'');
+      if(!sid){ alert('اختر المدرسة قبل الحفظ.'); return; }
       const s=schoolBySidFix(sid);
-      if($id('esch')) $id('esch').value=sid;
-      if(s){ if($id('f-city')) $id('f-city').value=s.city||''; if($id('f-sname')) $id('f-sname').value=s.name||''; }
-      const saved=await upsertEvaluationFix(sid,d);
+      if(document.getElementById('esch')) document.getElementById('esch').value=sid;
+      if(s){
+        if(document.getElementById('f-city')) document.getElementById('f-city').value=s.city||'';
+        if(document.getElementById('f-sname')) document.getElementById('f-sname').value=s.name||'';
+      }
+      // حفظ محلي أولاً دائماً
+      d.saved=true; d.savedAt=new Date().toISOString();
+      d.school_code=sid; d.school_id=sid;
       if(typeof DB==='undefined') window.DB={ev:{}};
       if(!DB.ev) DB.ev={};
-      DB.ev[sid]=saved;
+      DB.ev[sid]=d;
       saveLocalFix();
       try{ if(typeof refresh==='function') refresh(); }catch(e){}
-      try{ if(typeof uHome==='function') uHome(); if(typeof uDat==='function') uDat(); if(typeof uCmp==='function') uCmp(); if(typeof uCh==='function') uCh(); }catch(e){}
-      toastFix('✅ تم حفظ كل بيانات التقييم في قاعدة البيانات لنفس المدرسة والتاريخ','#0f6e56');
+      toastFix('💾 محفوظ محلياً، جاري الرفع للقاعدة...','#1a73be');
+      // ثم رفع لـ Supabase
+      try{
+        const saved=await upsertEvaluationFix(sid,d);
+        DB.ev[sid]=saved;
+        saveLocalFix();
+        try{ if(typeof refresh==='function') refresh(); }catch(e){}
+        toastFix('✅ تم حفظ التقييم في قاعدة البيانات','#0f6e56');
+      }catch(supaErr){
+        console.warn('Supabase save error:',supaErr);
+        toastFix('✅ محفوظ محلياً — تحقق من الاتصال للحفظ السحابي','#ba7517');
+      }
     }catch(e){
       console.error('critical save failed',e);
-      alert('فشل الحفظ في القاعدة: '+(e.message||e));
+      toastFix('❌ خطأ: '+(e.message||e),'#c0392b');
     }
   };
 
