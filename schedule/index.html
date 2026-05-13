@@ -1301,10 +1301,29 @@ var ScheduleImportPreview = (function(){
       full_data: d,
       updated_at: now
     };
+    // جرّب upsert أولاً
     var res = await sb.from("daily_work_logs")
-      .upsert(payload,{onConflict:"week_number"})
+      .upsert(payload, {onConflict:"week_number"})
       .select();
-    if(res.error) throw res.error;
+    // إذا فشل (constraint غير موجود)، جرّب insert أو update
+    if(res.error){
+      // تحقق إذا كان الصف موجوداً
+      var existing = await sb.from("daily_work_logs")
+        .select("id").eq("week_number", wn).maybeSingle();
+      if(existing.data && existing.data.id){
+        // موجود → update
+        var upd = await sb.from("daily_work_logs")
+          .update(payload).eq("week_number", wn).select();
+        if(upd.error) throw upd.error;
+        res = upd;
+      } else {
+        // غير موجود → insert
+        var ins = await sb.from("daily_work_logs")
+          .insert(payload).select();
+        if(ins.error) throw ins.error;
+        res = ins;
+      }
+    }
     if(res.data && res.data[0] && res.data[0].id) d._db_id = res.data[0].id;
     localStorage.setItem("falah_week_"+wn, JSON.stringify(d));
     localStorage.setItem("falah_wp_final", JSON.stringify(d));
@@ -2461,8 +2480,15 @@ var WKM=(function(){
       ScheduleImportPreview._saveDataToDatabase(d).then(function(){
         _toast('💾 الأسبوع '+wn+' محفوظ في قاعدة البيانات','#0e7f70');
       }).catch(function(err){
-        console.error(err);
-        _toast('⚠️ حُفظ على الجهاز فقط، وفشل حفظ القاعدة: '+(err.message||err),'#991b1b');
+        console.error('DB save error:', err);
+        var msg = err.message || String(err);
+        if(msg.includes('unique') || msg.includes('duplicate')){
+          _toast('⚠️ شغّل ملف schedule_setup.sql في Supabase لإصلاح قاعدة البيانات','#b8720a');
+        } else if(msg.includes('Supabase') || msg.includes('connected')){
+          _toast('⚠️ تحقق من اتصال Supabase — البيانات محفوظة على الجهاز','#b8720a');
+        } else {
+          _toast('⚠️ خطأ: '+msg.slice(0,60),'#991b1b');
+        }
       });
     }else{
       _toast('✅ الأسبوع '+wn+' محفوظ على الجهاز','#0e7f70');
