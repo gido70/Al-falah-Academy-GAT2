@@ -2654,6 +2654,107 @@ loadDraft=function(){
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',WKM.init);}
 else{setTimeout(WKM.init,600);}
 </script>
+
+
+<!-- PATCH: accurate attendance statistics for manager/report outputs - 2026-05-13 -->
+<script>
+(function(){
+  function safeForm(){ try{return (typeof getFormData==='function') ? (getFormData()||{}) : {};}catch(e){return {};} }
+  function safeWork(){ try{return (typeof getSelectedWork==='function') ? (getSelectedWork()||[]) : [];}catch(e){return [];} }
+  function dayType(i,d){
+    var el=document.getElementById('atype'+i);
+    var v=(el && el.value) || (d && d['atype'+i]) || '';
+    return String(v||'دوام رسمي').trim();
+  }
+  function isBlankDay(i,d){
+    // اليوم يحسب طالما له نوع عمل أو وقت حضور/انصراف. هذا يمنع الاعتماد على حقول العد اليدوية فقط.
+    return !(dayType(i,d) || (d&&d['ain'+i]) || (d&&d['aout'+i]));
+  }
+  window._strictStats=function(){
+    var d=safeForm();
+    var s={official:0,field:0,mission:0,external:0,remote:0,excuse:0,leave:0,total:0};
+    var days=(typeof DAYS!=='undefined' && DAYS.length)?DAYS:[0,1,2,3,4];
+    days.forEach(function(_,i){
+      if(isBlankDay(i,d)) return;
+      var t=dayType(i,d);
+      s.total++;
+      if(t.indexOf('زيارة ميدانية')>=0 || t.indexOf('تقييم')>=0) s.field++;
+      else if(t.indexOf('مهمة رسمية')>=0) s.mission++;
+      else if(t.indexOf('اجتماع خارج')>=0 || t.indexOf('اجتماع في الديوان')>=0 || t.indexOf('اجتماع مع الإدارة')>=0) s.external++;
+      else if(t.indexOf('عمل عن بعد')>=0) s.remote++;
+      else if(t.indexOf('استئذان')>=0 || t.indexOf('خروج مبكر')>=0 || t.indexOf('تأخير')>=0) s.excuse++;
+      else if(t.indexOf('إجازة')>=0) s.leave++;
+      else if(t.indexOf('دوام رسمي')>=0 || !t) s.official++;
+      else s.official++;
+    });
+    return s;
+  };
+  function attendanceItems(){
+    var s=window._strictStats();
+    return [
+      {n:s.official,l:'دوام رسمي'},
+      {n:s.field,l:'زيارات ميدانية'},
+      {n:s.mission,l:'مهمات رسمية'},
+      {n:s.external,l:'اجتماع خارج المقر'},
+      {n:s.remote,l:'عمل عن بعد'},
+      {n:s.excuse,l:'استئذان / خروج'},
+      {n:s.leave,l:'إجازة'}
+    ];
+  }
+  function kpiHtml(cls){
+    var work=safeWork();
+    var items=attendanceItems().filter(function(x){return Number(x.n)>0;});
+    if(work.length) items.push({n:work.length,l:'أعمال منجزة'});
+    if(!items.length) items=[{n:0,l:'لا توجد بيانات مصنفة'}];
+    if(cls==='mgr'){
+      return items.map(function(k){return "<div class='mgr-kpi'><div class='mgr-kpi-n'>"+k.n+"</div><div class='mgr-kpi-l'>"+k.l+"</div></div>";}).join('');
+    }
+    return items.map(function(k){return "<div class='r-kpi'><span>"+k.l+"</span><strong>"+k.n+"</strong></div>";}).join('');
+  }
+  window.renderSmartBarsFinal=function(){
+    var el=document.getElementById('mgrSmartCharts'); if(!el) return;
+    var data=attendanceItems();
+    var max=Math.max(1, ...data.map(function(x){return Number(x.n)||0;}));
+    el.innerHTML=data.map(function(x){
+      var w=Math.round(((Number(x.n)||0)/max)*100);
+      return '<div class="smart-bar-row"><div>'+x.l+'</div><div class="smart-track"><div class="smart-fill" style="width:'+w+'%"></div></div><div>'+x.n+'</div></div>';
+    }).join('')+'<div class="chart-note">هذه المؤشرات محسوبة تلقائياً من نوع العمل المختار لكل يوم، ولا تعتمد على إدخال يدوي منفصل.</div>';
+  };
+  function applyAccurateReportNumbers(){
+    var r=document.getElementById('rKpis'); if(r) r.innerHTML=kpiHtml('r');
+    var m=document.getElementById('mgrKpis'); if(m) m.innerHTML=kpiHtml('mgr');
+    if(typeof renderSmartBarsFinal==='function') renderSmartBarsFinal();
+    if(typeof updateManagerLetterFinal==='function') updateManagerLetterFinal(true);
+  }
+  var oldGen=window.generateReport;
+  if(typeof oldGen==='function'){
+    window.generateReport=function(){
+      var res=oldGen.apply(this,arguments);
+      setTimeout(applyAccurateReportNumbers,120);
+      return res;
+    };
+  }
+  var oldMgr=window.generateMgrReport;
+  if(typeof oldMgr==='function'){
+    window.generateMgrReport=function(){
+      var res=oldMgr.apply(this,arguments);
+      setTimeout(applyAccurateReportNumbers,120);
+      return res;
+    };
+  }
+  var oldSync=window.syncToReport;
+  if(typeof oldSync==='function'){
+    window.syncToReport=function(){
+      var res=oldSync.apply(this,arguments);
+      setTimeout(applyAccurateReportNumbers,120);
+      return res;
+    };
+  }
+  document.addEventListener('change',function(e){ if(e.target && /^atype\d+$/.test(e.target.id||'')) setTimeout(applyAccurateReportNumbers,80); });
+  document.addEventListener('DOMContentLoaded',function(){ setTimeout(applyAccurateReportNumbers,900); });
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260502b"></script>
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
