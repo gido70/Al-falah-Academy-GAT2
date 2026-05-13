@@ -1373,8 +1373,9 @@ function ldEv(sid){
   ["h","c","p","s","g","e","r","a","l","d","n","o"].forEach(k=>sk("uae-"+k,d["uae-"+k]));
   ["tl","dp","ac","uc","dg","co"].forEach(k=>sk("env-"+k,d["env-"+k]));
   ["ar","en","st","ua","bf","cl"].forEach(k=>sk("act-"+k,d["act-"+k]));
-  ["y","s","d","m","u","a"].forEach(k=>sk("ft-"+k,d["ft-"+k]));
+  ["mob","cls","kg","big","puppet","story","quiet","act","dig","uae","teach","disp","club","comp","admin","makerspace","outdoor","other"].forEach(k=>sk("ft-"+k,d["ft-"+k]));
   ["cls","lib","dig","rd","ch","ref","sys","res","uae","ai","ld","ot"].forEach(k=>sk("cr-"+k,d["cr-"+k]));
+  ["marc","ils","opac","dewey","digital","db","barcode","report"].forEach(k=>sk("know-"+k,d["know-"+k]));
   // الحقول المُضافة — كانت لا تُحمَّل
   sv('f-plan-s', d.plan_s||d['f-plan-s']||'');
   sv('f-plan-m', d.plan_m||d['f-plan-m']||'');
@@ -1418,8 +1419,9 @@ function getEv(){
   ["h","c","p","s","g","e","r","a","l","d","n","o"].forEach(k=>d["uae-"+k]=gk("uae-"+k));
   ["tl","dp","ac","uc","dg","co"].forEach(k=>d["env-"+k]=gk("env-"+k));
   ["ar","en","st","ua","bf","cl"].forEach(k=>d["act-"+k]=gk("act-"+k));
-  ["y","s","d","m","u","a"].forEach(k=>d["ft-"+k]=gk("ft-"+k));
+  ["mob","cls","kg","big","puppet","story","quiet","act","dig","uae","teach","disp","club","comp","admin","makerspace","outdoor","other"].forEach(k=>d["ft-"+k]=gk("ft-"+k));
   ["cls","lib","dig","rd","ch","ref","sys","res","uae","ai","ld","ot"].forEach(k=>d["cr-"+k]=gk("cr-"+k));
+  ["marc","ils","opac","dewey","digital","db","barcode","report"].forEach(k=>d["know-"+k]=gk("know-"+k));
   ["uae","cd","cc","cco","sh","cr","sp","se","at","in","rch","tu","cu","ri","pa","co","ts","ss","sb","sc","sst","si","ste","dg","te","un"].forEach(k=>d["r_"+k]=RS[k]||0);
 
   // حقول إضافية مفقودة
@@ -1983,26 +1985,14 @@ document.addEventListener("DOMContentLoaded",()=>{popEmSch();});
   window.saveEval = async function(){
     const sid=document.getElementById('esch')?.value||'';
     if(!sid) return alert('اختر المدرسة!');
-    // 1. Read form
     const d=(typeof getEv==='function')?getEv():(db().ev[sid]||{});
-    d.saved=true;
-    d.savedAt=new Date().toISOString();
-    d._axisScores=axisScores(d,null);
-    d.total_score=totalFromScores(d._axisScores);
+    d.saved=true; d.savedAt=new Date().toISOString();
+    d._axisScores=axisScores(d,null); d.total_score=totalFromScores(d._axisScores);
     d.score_percent=Math.round((d.total_score/6)*100);
-    // 2. Save locally FIRST — never loses data
-    db().ev[sid]=d;
-    saveLocal();
-    refresh();
+    db().ev[sid]=d; saveLocal(); refresh();
     toast('💾 جاري الحفظ...');
-    // 3. Save to Supabase (doesn't affect local data)
-    try{
-      await saveOneRemote(sid,d);
-      toast('✅ تم الحفظ في قاعدة البيانات');
-    } catch(e){
-      console.error('Supabase save error:',e);
-      toast('✅ محفوظ محلياً — تحقق من الاتصال للحفظ السحابي');
-    }
+    try{ await saveOneRemote(sid,d); toast('✅ تم الحفظ في قاعدة البيانات'); }
+    catch(e){ toast('✅ محفوظ محلياً'); }
   };
   window.saveAll = async function(){
     const sid=document.getElementById('esch')?.value||'';
