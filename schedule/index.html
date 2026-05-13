@@ -2759,5 +2759,304 @@ else{setTimeout(WKM.init,600);}
 <script src="../supabase-config.js?v=20260502b"></script>
 <script src="../assets/db-sync.js?v=20260502b"></script>
 <script src="../assets/reset-demo-data.js?v=20260510f"></script>
+
+
+<!-- === Director Weekly Link Add-on: safe addition, does not change existing input screens === -->
+<script>
+(function(){
+  'use strict';
+
+  function q(id){ return document.getElementById(id); }
+  function txt(v){ return String(v==null?'':v); }
+  function esc(v){ return txt(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function toast2(msg){ if(typeof window.toast==='function') window.toast(msg); else alert(msg); }
+  function sb(){ return window.alfalahSupabase || window.supabaseClient || (window.AlfalahDBSync && window.AlfalahDBSync.client && window.AlfalahDBSync.client()) || null; }
+  function getD(){ try { return (typeof window.getFormData==='function') ? window.getFormData() : {}; } catch(e){ return {}; } }
+  function getW(){ try { return (typeof window.getSelectedWork==='function') ? window.getSelectedWork() : []; } catch(e){ return []; } }
+  function iso(v){
+    if(!v) return '';
+    var s=String(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+    var m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+    return m ? (m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0')) : s;
+  }
+  function dmy(v){
+    var s=iso(v); var m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? (m[3]+'-'+m[2]+'-'+m[1]) : (v||'—');
+  }
+  var DAYS_AR = (window.DAYS && window.DAYS.length) ? window.DAYS : ['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+
+  function normalizeRow(row){
+    if(!row) return null;
+    var d=row.full_data || row.data || row.tasks || row.notes || row;
+    if(typeof d==='string'){
+      try{ d=JSON.parse(d); }catch(e){ d={}; }
+    }
+    if(d && d.full_data) d=d.full_data;
+    if(!d || typeof d!=='object') d={};
+    if(row.week_number && !d.wnum) d.wnum=row.week_number;
+    if(row.week_title && !d.week_title) d.week_title=row.week_title;
+    if(row.work_date && !d.wstart) d.wstart=row.work_date;
+    return d;
+  }
+
+  function typeOf(d,i){ return txt(d['atype'+i] || 'دوام رسمي').trim() || 'دوام رسمي'; }
+  function locOf(d,i){ return txt(d['dloc'+i] || '').trim(); }
+  function tasksOf(d,i){ return txt(d['dtasks'+i] || '').trim(); }
+  function noteOf(d,i){ return txt(d['anote'+i] || '').trim(); }
+  function dayDate(d,i){
+    var base=iso(d.wstart || d.work_date || '');
+    if(!base) return '';
+    var date=new Date(base+'T00:00:00');
+    if(isNaN(date)) return base;
+    date.setDate(date.getDate()+i);
+    return date.toISOString().slice(0,10);
+  }
+  function weekNo(d){ return parseInt(String(d.wnum || d.week_number || '').replace(/[^0-9]/g,''),10) || ''; }
+
+  function statsFromData(d){
+    var st={official:0,field:0,mission:0,external:0,remote:0,excuse:0,leave:0,meeting:0,active:0};
+    for(var i=0;i<5;i++){
+      var t=typeOf(d,i);
+      if(t.indexOf('زيارة')>-1 || t.indexOf('ميدانية')>-1) st.field++;
+      else if(t.indexOf('مهمة')>-1) st.mission++;
+      else if(t.indexOf('خارج')>-1 || t.indexOf('ديوان')>-1 || t.indexOf('إدارة تعليمية')>-1) st.external++;
+      else if(t.indexOf('عن بعد')>-1) st.remote++;
+      else if(t.indexOf('استئذان')>-1 || t.indexOf('خروج')>-1 || t.indexOf('تأخير')>-1) st.excuse++;
+      else if(t.indexOf('إجازة')>-1) st.leave++;
+      else st.official++;
+      if(t.indexOf('اجتماع')>-1) st.meeting++;
+      if(tasksOf(d,i) || noteOf(d,i) || locOf(d,i)) st.active++;
+    }
+    return st;
+  }
+
+  function selectedWorkLabels(d){
+    var ids = Array.isArray(d._pills) ? d._pills : [];
+    var labels=[];
+    if(ids.length && window.PILL_GROUPS){
+      var flat=[];
+      window.PILL_GROUPS.forEach(function(g,gi){ (g.items||[]).forEach(function(item,ii){ flat.push({id:'pg'+gi+'i'+ii,label:item,group:g.t}); }); });
+      ids.forEach(function(id){ var f=flat.find(function(x){return x.id===id;}); if(f) labels.push(f); });
+    }
+    if(!labels.length && txt(d.other_work).trim()) labels.push({label:d.other_work,group:'أعمال أخرى'});
+    return labels;
+  }
+
+  function actionSummary(d){
+    var days=[];
+    for(var i=0;i<5;i++){
+      var t=typeOf(d,i), loc=locOf(d,i), task=tasksOf(d,i), note=noteOf(d,i);
+      if(t || loc || task || note){
+        days.push({i:i,day:DAYS_AR[i],date:dayDate(d,i),type:t,loc:loc,task:task,note:note});
+      }
+    }
+    return days;
+  }
+
+  function narrative(d){
+    var st=statsFromData(d), days=actionSummary(d), work=selectedWorkLabels(d);
+    var sentences=[];
+    sentences.push('يعرض هذا الرابط خلاصة تنفيذية للأسبوع رقم '+(weekNo(d)||'—')+'، ويجمع بين سجل الدوام، مواقع العمل، الأعمال اليومية، والملاحظات المكتوبة في النموذج.');
+    if(st.field) sentences.push('تضمن الأسبوع '+st.field+' يوم/أيام ذات طابع ميداني أو زيارة مباشرة، مما يعكس حضورًا عمليًا في المدارس أو مواقع المتابعة.');
+    if(st.remote) sentences.push('يوجد '+st.remote+' يوم عمل عن بُعد، وهو ما يشير إلى وجود أعمال متابعة أو إعداد أو توثيق تمت خارج المقر.');
+    if(st.external || st.meeting) sentences.push('توجد مهام تنسيقية أو اجتماعات خارجية تحتاج إلى توثيق مختصر للنتائج أو القرارات المرتبطة بها.');
+    if(work.length) sentences.push('تم تحديد '+work.length+' بند/بنود من الأعمال المنجزة في خطة الأسبوع.');
+    if(!work.length && days.some(function(x){return x.task;})) sentences.push('توجد تفاصيل يومية مكتوبة، ويُنصح بالاعتماد عليها في المتابعة بدل الاكتفاء بعدّاد المؤشرات.');
+    if(!sentences.length) sentences.push('لا توجد بيانات كافية لإنتاج قراءة أسبوعية واضحة؛ يُفضّل استكمال نوع الدوام وملاحظات الأيام قبل إرسال الرابط.');
+    return sentences.join(' ');
+  }
+
+  function bar(label,n,max){
+    max=max||5; var pct=Math.max(0,Math.min(100,Math.round((Number(n)||0)/max*100)));
+    return '<div class="dw-bar-row"><b>'+esc(label)+'</b><div class="dw-track"><div class="dw-fill" style="width:'+pct+'%"></div></div><strong>'+esc(n)+'</strong></div>';
+  }
+
+  function renderDirectorWeek(d, opts){
+    opts=opts||{};
+    var st=statsFromData(d), days=actionSummary(d), work=selectedWorkLabels(d);
+    var max=5;
+    var subtitle='الأسبوع '+(weekNo(d)||'—')+' | '+dmy(d.wstart||d.work_date)+' إلى '+dmy(d.wend||'');
+    var workHtml = work.length ? work.slice(0,14).map(function(w){return '<span class="dw-tag">'+esc(String(w.label||'').replace(/[🏫📊🏢🏛️🎓📞]/g,'').trim())+'</span>';}).join('') : '<div class="dw-muted">لم يتم اختيار بنود أعمال من قائمة الإنجاز، وسيعتمد التقرير على الملاحظات اليومية المكتوبة.</div>';
+    var dayHtml = days.map(function(x){
+      return '<article class="dw-day"><div class="dw-day-head"><span>'+esc(x.day)+'</span><b>'+esc(dmy(x.date))+'</b></div>'+
+        '<div class="dw-type">'+esc(x.type)+'</div>'+
+        '<p><b>الموقع:</b> '+esc(x.loc||'—')+'</p>'+
+        '<p><b>الأعمال:</b> '+esc(x.task||'—')+'</p>'+
+        '<p><b>ملاحظة:</b> '+esc(x.note||'—')+'</p></article>';
+    }).join('');
+    var html=''+
+    '<section class="dw-hero"><div class="dw-logo">أكاديمية الفلاح</div><h1>ملخص أسبوعي تنفيذي</h1><p>'+esc(subtitle)+'</p></section>'+
+    '<section class="dw-card dw-summary"><div><span class="dw-eyebrow">قراءة مختصرة</span><h2>ماذا حدث هذا الأسبوع؟</h2><p>'+esc(narrative(d))+'</p></div><div class="dw-status">'+(st.field||st.mission||st.external?'نشاط ميداني':'متابعة تشغيلية')+'</div></section>'+
+    '<section class="dw-kpis">'+
+      '<div><strong>'+st.official+'</strong><span>دوام رسمي</span></div><div><strong>'+st.field+'</strong><span>زيارات ميدانية</span></div><div><strong>'+st.remote+'</strong><span>عمل عن بعد</span></div><div><strong>'+st.excuse+'</strong><span>استئذان/خروج</span></div>'+ 
+    '</section>'+
+    '<section class="dw-grid"><div class="dw-card"><h2>مؤشرات الأسبوع</h2>'+bar('دوام رسمي',st.official,max)+bar('زيارات ميدانية',st.field,max)+bar('مهمات رسمية',st.mission,max)+bar('اجتماعات/خارج المقر',st.external+st.meeting,max)+bar('عمل عن بعد',st.remote,max)+bar('استئذان/خروج',st.excuse,max)+'</div>'+
+    '<div class="dw-card"><h2>الأعمال المحددة</h2><div class="dw-tags">'+workHtml+'</div><div class="dw-note">هذه البنود مأخوذة من اختيارات الأعمال داخل صفحة جدول الدوام، ولا تُكتب يدويًا في التقرير.</div></div></section>'+
+    '<section class="dw-card"><h2>تفاصيل الأيام الخمسة</h2><div class="dw-days">'+dayHtml+'</div></section>'+
+    '<section class="dw-card"><h2>أبرز ما كُتب في النموذج</h2><div class="dw-textcols">'+
+      '<div><h3>أبرز الإنجازات</h3><p>'+esc(d.achievements||'لم تُكتب إنجازات مستقلة لهذا الأسبوع. يمكن الرجوع لتفاصيل الأيام أعلاه.')+'</p></div>'+ 
+      '<div><h3>التحديات والملاحظات</h3><p>'+esc(d.challenges||'لا توجد تحديات مكتوبة في الحقل المخصص.')+'</p></div>'+ 
+      '<div><h3>متابعة الأسبوع القادم</h3><p>'+esc(d.next_week||'لم تُسجل خطة مكتوبة للأسبوع القادم.')+'</p></div>'+ 
+    '</div></section>'+
+    '<section class="dw-card dw-feedback"><h2>رد الإدارة</h2><p class="dw-muted">يمكن إضافة رد مختصر على هذا الملخص. سيُحفظ الرد داخل سجل الأسبوع نفسه في قاعدة البيانات عند توفر الاتصال.</p>'+ 
+      '<div class="dw-form"><label>القرار</label><select id="dwDecision"><option>معتمد</option><option>معتمد مع ملاحظات</option><option>يحتاج متابعة</option><option>يرجى التعديل</option><option>ملاحظة عامة</option></select>'+ 
+      '<label>تعليق اختياري</label><textarea id="dwComment" placeholder="اكتب التعليق هنا..."></textarea>'+ 
+      '<button type="button" class="dw-btn" id="dwSendFeedback">حفظ/إرسال الرد</button><div id="dwFbStatus" class="dw-muted"></div></div></section>';
+    return html;
+  }
+
+  async function fetchWeekData(week){
+    var client=sb();
+    if(client && week){
+      var res=await client.from('daily_work_logs').select('*').eq('week_number',Number(week)).maybeSingle();
+      if(!res.error && res.data) return normalizeRow(res.data);
+    }
+    var local=null;
+    try{ local=JSON.parse(localStorage.getItem('falah_week_'+week)||'null'); }catch(e){}
+    if(local) return normalizeRow(local);
+    var d=getD();
+    if(!week || String(weekNo(d))===String(week)) return d;
+    return d;
+  }
+
+  async function saveCurrentWeekToDatabase(d){
+    var client=sb();
+    if(!client) throw new Error('لم يتم الاتصال بقاعدة البيانات.');
+    var wn=weekNo(d);
+    if(!wn) throw new Error('رقم الأسبوع غير موجود.');
+    var now=new Date().toISOString();
+    d.week_number=wn;
+    d.week_title=d.week_title || ('الأسبوع رقم '+wn);
+    d.work_date=d.wstart || d.work_date || null;
+    d.updated_at=now;
+    var payload={
+      week_number:wn,
+      week_title:d.week_title,
+      work_date:d.work_date,
+      work_type:d.wstatus || d.work_type || 'دوام كامل',
+      tasks:JSON.stringify(d),
+      notes:JSON.stringify(d),
+      full_data:d,
+      updated_at:now
+    };
+    var res=await client.from('daily_work_logs').upsert(payload,{onConflict:'week_number'}).select();
+    if(res.error) throw res.error;
+    try{ localStorage.setItem('falah_week_'+wn, JSON.stringify(d)); localStorage.setItem('falah_wp_final', JSON.stringify(d)); }catch(e){}
+    return res.data && res.data[0];
+  }
+
+  function directorUrl(week){
+    var url=new URL(location.href);
+    url.search='';
+    url.hash='';
+    url.searchParams.set('director','1');
+    url.searchParams.set('week',week);
+    return url.toString();
+  }
+
+  function showDirectorLinkBox(link){
+    var old=q('dwLinkPanel'); if(old) old.remove();
+    var div=document.createElement('div'); div.id='dwLinkPanel';
+    div.innerHTML='<div class="dw-link-card"><h2>رابط العرض الأسبوعي للإدارة</h2><p>انسخ الرابط وأرسله. سيفتح للمدير صفحة قراءة فقط مع خانة رد في الأسفل.</p><textarea readonly id="dwLinkText">'+esc(link)+'</textarea><div class="dw-link-actions"><button type="button" id="dwCopyLink" class="dw-btn">نسخ الرابط</button><button type="button" id="dwOpenLink" class="dw-btn alt">معاينة</button><button type="button" id="dwCloseLink" class="dw-btn light">إغلاق</button></div></div>';
+    document.body.appendChild(div);
+    q('dwCopyLink').onclick=function(){ navigator.clipboard && navigator.clipboard.writeText(link); toast2('تم نسخ رابط المدير'); };
+    q('dwOpenLink').onclick=function(){ window.open(link,'_blank'); };
+    q('dwCloseLink').onclick=function(){ div.remove(); };
+  }
+
+  async function createDirectorWeeklyLink(){
+    try{
+      var d=getD();
+      var wn=weekNo(d);
+      if(!wn){ toast2('أدخل رقم الأسبوع أولاً.'); return; }
+      await saveCurrentWeekToDatabase(d);
+      var link=directorUrl(wn);
+      showDirectorLinkBox(link);
+    }catch(e){
+      console.error(e);
+      var d=getD(), wn=weekNo(d);
+      if(wn){ showDirectorLinkBox(directorUrl(wn)); toast2('تم إنشاء الرابط، لكن تأكد من حفظ الأسبوع في قاعدة البيانات حتى يراه المدير.'); }
+      else alert('تعذر إنشاء الرابط: '+(e.message||e));
+    }
+  }
+
+  async function saveDirectorFeedback(week){
+    var decision=q('dwDecision') ? q('dwDecision').value : '';
+    var comment=q('dwComment') ? q('dwComment').value : '';
+    var status=q('dwFbStatus');
+    var feedback={decision:decision, comment:comment, created_at:new Date().toISOString(), created_at_ar:new Date().toLocaleString('ar-AE')};
+    try{
+      var client=sb();
+      if(!client) throw new Error('لا يوجد اتصال بقاعدة البيانات.');
+      var res=await client.from('daily_work_logs').select('*').eq('week_number',Number(week)).maybeSingle();
+      if(res.error) throw res.error;
+      var d=normalizeRow(res.data||{});
+      d._director_feedbacks=Array.isArray(d._director_feedbacks)?d._director_feedbacks:[];
+      d._director_feedbacks.push(feedback);
+      d._last_director_feedback=feedback;
+      var up=await client.from('daily_work_logs').update({full_data:d, notes:JSON.stringify(d), updated_at:new Date().toISOString()}).eq('week_number',Number(week));
+      if(up.error) throw up.error;
+      if(status) status.innerHTML='✅ تم حفظ الرد في سجل الأسبوع.';
+    }catch(e){
+      console.error(e);
+      if(status) status.innerHTML='⚠️ لم يتم الحفظ المباشر. انسخ الرد وأرسله يدويًا:<br><b>'+esc(decision)+'</b><br>'+esc(comment);
+    }
+  }
+
+  async function activateDirectorMode(){
+    var params=new URLSearchParams(location.search);
+    if(params.get('director')!=='1') return;
+    document.body.classList.add('schedule-director-mode');
+    var week=params.get('week') || params.get('wnum') || '';
+    var view=document.createElement('main');
+    view.id='directorWeeklyView';
+    view.innerHTML='<div class="dw-loading">جاري تحميل التقرير الأسبوعي...</div>';
+    document.body.appendChild(view);
+    try{
+      var d=await fetchWeekData(week);
+      view.innerHTML=renderDirectorWeek(d,{director:true});
+      var btn=q('dwSendFeedback'); if(btn) btn.onclick=function(){ saveDirectorFeedback(weekNo(d)||week); };
+    }catch(e){
+      console.error(e);
+      view.innerHTML='<div class="dw-error">تعذر تحميل التقرير الأسبوعي. تأكد من أن الأسبوع محفوظ في قاعدة البيانات.</div>';
+    }
+  }
+
+  function addButtons(){
+    if(q('ha-director-week')) return;
+    var h=document.querySelector('.hdr-actions');
+    if(h){
+      var b=document.createElement('button'); b.type='button'; b.className='ha'; b.id='ha-director-week'; b.style.background='rgba(14,127,112,.35)'; b.style.borderColor='#6ee7b7'; b.textContent='🔗 رابط المدير الأسبوعي';
+      b.addEventListener('click',createDirectorWeeklyLink); h.insertBefore(b, q('ha-reset')||null);
+    }
+    var save=document.querySelector('.save-bar');
+    if(save && !q('btn-director-week')){
+      var b2=document.createElement('button'); b2.type='button'; b2.className='btn btn-teal bsm'; b2.id='btn-director-week'; b2.textContent='🔗 رابط المدير الأسبوعي';
+      b2.addEventListener('click',createDirectorWeeklyLink); save.insertBefore(b2, q('btn-email')||null);
+    }
+  }
+
+  function addCss(){
+    if(q('directorWeekCss')) return;
+    var css=document.createElement('style'); css.id='directorWeekCss';
+    css.textContent=`
+      #dwLinkPanel{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl}
+      .dw-link-card{background:#fff;max-width:780px;width:100%;border-radius:24px;border:1px solid #cbd5e1;box-shadow:0 24px 70px rgba(13,59,110,.32);padding:22px;font-family:Cairo,Tahoma,Arial,sans-serif;color:#1e293b}.dw-link-card h2{margin:0 0 8px;color:#0d3b6e}.dw-link-card textarea{width:100%;min-height:95px;margin-top:10px;border:2px solid #b8d4f0;border-radius:14px;padding:12px;font-family:Cairo,sans-serif;direction:ltr;text-align:left}.dw-link-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+      .dw-btn{border:0;border-radius:12px;padding:11px 18px;background:linear-gradient(135deg,#0d3b6e,#0e7f70);color:#fff;font-family:Cairo,sans-serif;font-weight:900;cursor:pointer}.dw-btn.alt{background:linear-gradient(135deg,#b8860b,#d4a017)}.dw-btn.light{background:#fff;color:#0d3b6e;border:2px solid #cbd5e1}
+      body.schedule-director-mode .wrap,body.schedule-director-mode .site-header,body.schedule-director-mode .save-bar,body.schedule-director-mode .alfalah-fixed-home,body.schedule-director-mode .platform-home-btn,body.schedule-director-mode #toast,body.schedule-director-mode #emailPanel{display:none!important}
+      body.schedule-director-mode{background:#e8f0fa!important}.dw-loading,.dw-error{max-width:960px;margin:80px auto;background:#fff;border:1px solid #b8d4f0;border-radius:22px;padding:30px;text-align:center;font-family:Cairo,sans-serif;color:#0d3b6e;font-weight:900}
+      #directorWeeklyView{max-width:1080px;margin:auto;padding:18px 18px 80px;font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#0c2a4a}.dw-hero{background:linear-gradient(135deg,#0d3b6e,#1a5f9e,#0e7f70);border-radius:26px;color:#fff;text-align:center;padding:32px 24px;margin-bottom:18px;box-shadow:0 12px 36px rgba(13,59,110,.25);position:relative;overflow:hidden}.dw-hero:before{content:'';position:absolute;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.1);left:-70px;bottom:-90px}.dw-logo{display:inline-block;background:#fff;color:#0d3b6e;border-radius:18px;padding:10px 22px;font-weight:900;margin-bottom:12px}.dw-hero h1{font-size:34px;margin:0 0 8px;font-weight:900}.dw-hero p{font-size:16px;opacity:.92}.dw-card{background:#fff;border:1.5px solid #b8d4f0;border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 5px 18px rgba(13,59,110,.1)}.dw-summary{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;border-right:7px solid #0e7f70}.dw-eyebrow{font-size:13px;color:#0e7f70;font-weight:900}.dw-card h2{margin:0 0 12px;color:#0d3b6e;font-size:24px;font-weight:900}.dw-card p{line-height:1.9}.dw-status{background:#ecfdf5;color:#0f6e56;border:1px solid #86efac;border-radius:999px;padding:12px 18px;font-weight:900}.dw-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.dw-kpis div{background:#fff;border:1.5px solid #b8d4f0;border-radius:20px;padding:20px;text-align:center;box-shadow:0 5px 18px rgba(13,59,110,.08)}.dw-kpis strong{display:block;font-size:34px;color:#0d3b6e}.dw-kpis span{font-weight:900;color:#5a7fa8}.dw-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.dw-bar-row{display:grid;grid-template-columns:140px 1fr 38px;gap:10px;align-items:center;margin:12px 0;color:#0d3b6e}.dw-track{height:15px;background:#e6eef7;border-radius:999px;overflow:hidden}.dw-fill{height:100%;background:linear-gradient(90deg,#0d3b6e,#0e7f70,#d4a017);border-radius:999px}.dw-tags{display:flex;gap:8px;flex-wrap:wrap}.dw-tag{background:#eef6ff;border:1px solid #b8d4f0;color:#0d3b6e;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:800}.dw-note,.dw-muted{color:#64748b;font-size:13px;line-height:1.8;margin-top:10px}.dw-days{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.dw-day{background:#f8fbff;border:1.5px solid #cbd5e1;border-radius:16px;padding:14px}.dw-day-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:8px;color:#0d3b6e;font-weight:900}.dw-type{display:inline-block;background:#fff8e6;border:1px solid #f3d27c;color:#7a4a00;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;margin-bottom:8px}.dw-day p{font-size:12px;margin:5px 0}.dw-textcols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.dw-textcols div{background:#f8fbff;border:1px solid #cbd5e1;border-radius:16px;padding:14px}.dw-textcols h3{margin:0 0 8px;color:#0d3b6e}.dw-feedback{border-right:7px solid #b8860b}.dw-form{display:grid;gap:10px}.dw-form label{font-weight:900;color:#0d3b6e}.dw-form select,.dw-form textarea{border:2px solid #b8d4f0;border-radius:14px;padding:12px;font-family:Cairo,sans-serif;background:#f8fbff}.dw-form textarea{min-height:110px}
+      @media(max-width:850px){.dw-kpis,.dw-grid,.dw-days,.dw-textcols,.dw-summary{grid-template-columns:1fr}.dw-hero h1{font-size:26px}.dw-bar-row{grid-template-columns:1fr}.dw-status{display:inline-block}}
+      @media print{#directorWeeklyView{max-width:100%;padding:0}.dw-card,.dw-kpis div{box-shadow:none;break-inside:avoid}.dw-feedback{display:none}.dw-hero{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    `;
+    document.head.appendChild(css);
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){ addCss(); addButtons(); activateDirectorMode(); });
+  window.createDirectorWeeklyLink = createDirectorWeeklyLink;
+})();
+</script>
+
 </body>
 </html>
