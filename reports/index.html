@@ -13,52 +13,45 @@ label{display:block;font-weight:900;color:var(--navy);margin-bottom:6px;font-siz
 @media(max-width:850px){.grid,.grid3,.grid4{grid-template-columns:1fr}.bar-row{grid-template-columns:1fr}.hero h1{font-size:26px}.wrap{padding:12px 10px 80px}.card{padding:16px}.multi-panel{position:absolute;right:0;left:0;top:calc(100% + 5px);bottom:auto;max-height:245px}.home{top:auto;bottom:12px;right:12px}}
 @media print{.home,.builder,.top-actions,.feedback,.no-print{display:none!important}.wrap{max-width:100%;padding:0}.card{box-shadow:none;break-inside:avoid}.hero{box-shadow:none}}
 
-
-/* === Notebook-style executive storytelling result layer فقط، دون تغيير منطقة الاختيارات === */
-.story-hero-report{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;background:linear-gradient(135deg,#f7fbff,#eefbf7);border:1.5px solid var(--border);border-right:7px solid var(--teal);border-radius:22px;padding:20px;margin:12px 0 18px;box-shadow:0 8px 25px rgba(12,68,124,.08)}
-.story-hero-report span{display:block;color:var(--muted);font-weight:900;font-size:13px}.story-hero-report b{display:block;color:var(--navy);font-size:22px;margin:4px 0}.story-hero-report p{margin:0;color:var(--text);line-height:1.9}.hero-grade{min-width:130px;text-align:center;border-radius:20px;padding:18px 14px;font-size:22px;font-weight:900;background:#fff;border:2px solid var(--border);color:var(--navy)}
-.hero-grade.excellent,.story-pill.excellent{background:#e2f7ef;color:#07513f;border-color:#28ad82}.hero-grade.verygood,.story-pill.verygood{background:#e8f4fd;color:#0c447c;border-color:#66aeea}.hero-grade.acceptable,.story-pill.acceptable{background:#fff8df;color:#775400;border-color:#e6bd34}.hero-grade.warning,.story-pill.warning{background:#fff0df;color:#944600;border-color:#e68a2e}.hero-grade.danger,.story-pill.danger{background:#fff0f0;color:#9c2222;border-color:#e36b6b}.hero-grade.neutral,.story-pill.neutral{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
-.story-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}.story-kpi{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:18px;text-align:center;box-shadow:0 6px 20px rgba(12,68,124,.07);position:relative;overflow:hidden}.story-kpi:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,var(--blue),var(--teal))}.story-kpi.highlight:before{background:linear-gradient(90deg,var(--gold),var(--amber))}.story-kpi .ico{font-size:28px}.story-kpi strong{display:block;font-size:30px;color:var(--navy);font-weight:900;margin-top:6px}.story-kpi span{display:block;color:var(--navy);font-weight:900}.story-kpi small{display:block;color:var(--muted);line-height:1.6;margin-top:6px}
-.story-card{background:#fff;border:1.5px solid var(--border);border-radius:22px;padding:22px;margin:18px 0;box-shadow:0 6px 24px rgba(12,68,124,.08)}.story-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border-bottom:1px solid #e3eefb;padding-bottom:12px;margin-bottom:16px}.story-head h3{font-size:24px;color:var(--navy);margin:0;font-weight:900}.story-head p{margin:3px 0 0;color:var(--muted);line-height:1.7}.lead-story{font-size:17px;line-height:2.1;background:#f8fbff;border-right:6px solid var(--teal);border-radius:16px;padding:16px;margin-bottom:16px}.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.insight{background:#f8fbff;border:1px solid var(--border);border-radius:18px;padding:16px}.insight h4{margin:0 0 10px;color:var(--navy);font-size:17px}.insight ul{margin:0;padding-right:20px;line-height:1.9}.insight.warn{background:#fff8eb;border-color:#f2d18c}.insight.action{background:#eefbf7;border-color:#a8ddca}
-.axis-row{display:grid;grid-template-columns:220px 1fr 1.3fr;gap:14px;align-items:center;margin:14px 0;padding:12px;border:1px solid #e2edf8;border-radius:16px;background:#fbfdff}.axis-label b{display:block;color:var(--navy)}.axis-label span{font-size:12px;color:var(--muted);font-weight:900}.axis-bar{height:16px;background:#e8f0fa;border-radius:999px;overflow:hidden}.axis-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--teal))}.axis-bar i.acceptable{background:linear-gradient(90deg,var(--gold),var(--amber))}.axis-bar i.warning,.axis-bar i.danger{background:linear-gradient(90deg,#d65a43,#f0a500)}.axis-note{font-size:13px;color:#35516f;line-height:1.6}.chart-explain{background:#fffdf2;border-right:5px solid var(--gold);padding:12px 14px;border-radius:14px;margin-top:12px;line-height:1.8;color:#5f3d00}
-.school-story-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.school-story{border:1.5px solid var(--border);border-radius:18px;padding:16px;background:#fbfdff}.school-story.excellent,.school-story.verygood{border-top:5px solid var(--teal)}.school-story.acceptable{border-top:5px solid var(--amber)}.school-story.warning,.school-story.danger{border-top:5px solid #d65a43}.school-top{display:flex;justify-content:space-between;gap:12px}.school-top h4{margin:0;color:var(--navy);font-size:17px}.school-top span{color:var(--muted);font-size:12px}.score-ring{--p:0%;width:86px;height:86px;border-radius:50%;display:grid;place-items:center;margin:12px auto;background:conic-gradient(var(--teal) var(--p),#e8f0fa 0);position:relative}.score-ring:after{content:"";position:absolute;inset:10px;background:#fff;border-radius:50%}.score-ring b,.score-ring small{position:relative;z-index:1;color:var(--navy);font-weight:900}.score-ring small{font-size:11px}.school-level{text-align:center;font-weight:900;color:var(--navy);margin-bottom:10px}.school-story p{line-height:1.8;margin:8px 0;color:#243b55}
-.timeline-story{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.timeline-story div{background:#f8fbff;border:1px solid var(--border);border-radius:18px;padding:16px;position:relative}.timeline-story span{display:inline-grid;place-items:center;width:34px;height:34px;background:var(--grad);color:#fff;border-radius:12px;font-weight:900}.timeline-story b{display:block;color:var(--navy);font-size:17px;margin:8px 0}.timeline-story p{margin:0;color:#35516f;line-height:1.8}.presentation-strip{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:12px;align-items:center;background:linear-gradient(135deg,#0c447c,#185fa5,#0f9d8a);color:#fff;border-radius:22px;padding:18px;margin:18px 0}.presentation-strip b{font-size:20px}.presentation-strip span{display:block;opacity:.85}.slide-mini{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:12px;text-align:center}.slide-mini strong{display:block;font-size:20px}.slide-mini small{opacity:.8}.soft-empty{background:#fff8e6;border-right:5px solid var(--gold);border-radius:14px;padding:14px;color:#603b06}.story-pill{display:inline-block;border:1.5px solid var(--border);border-radius:999px;padding:6px 12px;margin:3px;font-weight:900;font-size:13px}
-@media(max-width:900px){.story-kpis,.insight-grid,.school-story-grid,.timeline-story,.presentation-strip{grid-template-columns:1fr}.axis-row{grid-template-columns:1fr}.story-hero-report{grid-template-columns:1fr}.story-head{display:block}}
-@media print{.story-card,.story-kpi,.school-story{box-shadow:none!important;break-inside:avoid}.presentation-strip{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+.story-report{display:grid;gap:18px}.story-hero{background:linear-gradient(135deg,#f8fbff,#eefbf7);border:1.5px solid var(--border);border-right:7px solid var(--teal);border-radius:22px;padding:22px;display:grid;grid-template-columns:1.4fr .6fr;gap:16px;align-items:center}.story-eyebrow{font-size:13px;color:var(--teal);font-weight:900}.story-title{font-size:28px;color:var(--navy);font-weight:900;margin:4px 0}.story-lead{font-size:15px;line-height:1.9;color:var(--text)}.status-pill{display:inline-flex;align-items:center;justify-content:center;border:2px solid #f0c36a;background:#fff8e6;color:#8a5600;border-radius:18px;padding:13px 18px;font-size:20px;font-weight:900}.story-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.story-kpi{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 6px 18px #0c447c10;border-top:4px solid var(--blue)}.story-kpi:nth-child(2){border-top-color:var(--teal)}.story-kpi:nth-child(3){border-top-color:var(--amber)}.story-kpi:nth-child(4){border-top-color:var(--pink)}.story-kpi .n{font-size:30px;font-weight:900;color:var(--navy)}.story-kpi .l{font-size:13px;font-weight:800;color:var(--muted)}.story-kpi .ex{font-size:12px;color:var(--muted);line-height:1.6;margin-top:6px}.story-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.story-card{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 4px 16px #0c447c10}.story-card h3{font-size:21px;color:var(--navy);margin:0 0 12px;font-weight:900}.story-card p,.story-card li{line-height:1.9}.axis-row{display:grid;grid-template-columns:145px 1fr 54px;gap:10px;align-items:center;margin:10px 0}.axis-label{font-weight:900;color:var(--navy);font-size:13px}.axis-bar{height:16px;background:#e6eef7;border-radius:999px;overflow:hidden}.axis-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--teal),var(--amber))}.axis-score{font-weight:900;color:var(--navy)}.insight-list{display:grid;gap:10px}.insight{border:1px solid var(--border);border-right:5px solid var(--teal);background:#f8fbff;border-radius:14px;padding:12px}.insight.warn{border-right-color:var(--amber);background:#fffaf0}.insight.risk{border-right-color:#d9534f;background:#fff5f5}.insight b{display:block;color:var(--navy);margin-bottom:4px}.day-timeline{display:grid;gap:10px}.time-item{border:1px solid var(--border);border-radius:14px;background:#f8fbff;padding:13px;display:grid;grid-template-columns:130px 1fr;gap:12px}.time-date{font-weight:900;color:var(--navy)}.note-box{background:#fffdf4;border-right:6px solid var(--amber);border-radius:16px;padding:14px;line-height:1.9}.mini-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}.mini-legend span{background:#f8fbff;border:1px solid var(--border);border-radius:999px;padding:5px 10px}.presentation-strip{background:linear-gradient(135deg,#0c447c,#0f9d8a);color:#fff;border-radius:20px;padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.presentation-strip div{background:#ffffff18;border:1px solid #ffffff30;border-radius:16px;padding:14px}.presentation-strip b{display:block;font-size:15px;margin-bottom:5px}.presentation-strip span{font-size:13px;line-height:1.7}@media(max-width:850px){.story-hero,.story-grid,.story-kpis,.presentation-strip{grid-template-columns:1fr}.axis-row{grid-template-columns:1fr}.time-item{grid-template-columns:1fr}}
 
 </style>
 </head><body><a class="home" href="../index.html">🏠 الرئيسية</a><div class="wrap"><section class="hero"><img class="logo" src="../assets/logo.png" alt="شعار أكاديمية الفلاح" onerror="this.style.display='none'"><h1>التقرير التحليلي النهائي</h1><p>مركز التحليل الداخلي: التقييمات، الدوام، الزيارات، الأيام، الأسابيع، والشهور.</p></section><section class="card builder"><h2>خيارات التقرير التحليلي</h2><div class="grid3"><div><label>نوع التقرير</label><select id="type"><option value="">— بدون تحديد —</option><option value="all">تقرير شامل</option><option value="evaluation">تقييم المكتبات</option><option value="work">الدوام والزيارات</option><option value="school">مدرسة محددة</option><option value="special">موضوع خاص</option></select></div><div><label>المدرسة / المدارس</label><div class="multi" id="schoolPicker"><button type="button" class="multi-btn" onclick="toggleSchoolPicker(event)"><span id="schoolPickerText">— بدون تحديد —</span></button><div class="multi-panel" id="schoolPanel"><label><input type="checkbox" value="all" onchange="updateSchoolPicker()"> كل المدارس</label><label><input type="checkbox" value="khb" onchange="updateSchoolPicker()"> الخبيصي</label><label><input type="checkbox" value="jmi" onchange="updateSchoolPicker()"> الجيمي</label><label><input type="checkbox" value="shj" onchange="updateSchoolPicker()"> الشارقة</label><label><input type="checkbox" value="bny" onchange="updateSchoolPicker()"> بني ياس</label><label><input type="checkbox" value="mzd" onchange="updateSchoolPicker()"> محمد بن زايد</label><label><input type="checkbox" value="dan" onchange="updateSchoolPicker()"> الدانة</label></div></div><div class="hint">القائمة لا تبقى مفتوحة، ويمكن اختيار أكثر من مدرسة.</div></div><div><label>الشهر</label><select id="month"><option value="">— بدون تحديد —</option><option value="04">أبريل</option><option value="05">مايو</option><option value="06">يونيو</option><option value="07">يوليو</option><option value="08">أغسطس</option><option value="09">سبتمبر</option><option value="10">أكتوبر</option><option value="11">نوفمبر</option><option value="12">ديسمبر</option></select></div><div><label>بداية أسبوع العمل</label><input id="weekFrom" type="date"><div class="hint">اختر يوم الاثنين لبداية الأسبوع.</div></div><div><label>نهاية أسبوع العمل</label><input id="weekTo" type="date"><div class="hint">اختر يوم الجمعة لنهاية الأسبوع.</div></div><div><label>يوم محدد</label><input id="day" type="date"><div class="hint">إذا اخترت يومًا محددًا سيعرض هذا اليوم فقط.</div></div><div><label>من تاريخ</label><input id="from" type="date"></div><div><label>إلى تاريخ</label><input id="to" type="date"></div><div><label>مستوى العرض</label><select id="level"><option value="full">تفصيلي</option><option value="medium">متوسط</option><option value="brief">مختصر</option></select></div><div><label>عنوان خاص اختياري</label><input id="title" placeholder="مثال: تقرير شهر مايو"></div><div><label>ملاحظة تحليلية</label><input id="note" placeholder="مثال: التركيز على الزيارات"></div></div><div class="actions"><button class="btn teal" onclick="renderReport()">🔄 تحديث التقرير</button><button class="btn gold" onclick="window.print()">🖨️ طباعة / PDF</button><button class="btn outline" onclick="copyReportText()">📋 نسخ نص التقرير</button></div></section><section id="reportBody" class="card"><div class="empty">اختر الفلاتر ثم اضغط تحديث التقرير.</div></section></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260512root2"></script>
-<script src="../supabase-config.js?v=20260512root2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260513story"></script>
+<script src="../supabase-config.js?v=20260513story"></script>
 <script>
 const SCHOOL_NAMES={khb:'الخبيصي',jmi:'الجيمي',shj:'الشارقة',bny:'بني ياس',mzd:'محمد بن زايد',dan:'الدانة',all:'كل المدارس'};
-const SCHOOL_FULL={khb:'أكاديمية الفلاح فرع الخبيصي',jmi:'أكاديمية الفلاح فرع الجيمي',shj:'مدرسة الفلاح الخاصة - الدخيلات',bny:'أكاديمية الفلاح فرع بني ياس',mzd:'أكاديمية الفلاح فرع محمد بن زايد',dan:'أكاديمية الفلاح فرع الدانة'};
-const DBID={1:'dan',2:'mzd',3:'bny',4:'khb',5:'jmi',6:'shj'};
 const MONTHS={'04':'أبريل','05':'مايو','06':'يونيو','07':'يوليو','08':'أغسطس','09':'سبتمبر','10':'أكتوبر','11':'نوفمبر','12':'ديسمبر'};
 const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const WORK_DAYS=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
 function $(id){return document.getElementById(id)}
-function val(id){return $(id)?.value||''}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function parseObj(x){if(!x)return {}; if(typeof x==='object')return x; try{return JSON.parse(x)}catch(e){return {}}}
+function val(id){return $(id)?.value||''}
 function loadLS(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}}
+function parseObj(x){if(!x)return {}; if(typeof x==='object')return x; try{return JSON.parse(x)}catch(e){return {}}}
 function sb(){return window.alfalahSupabase||window.supabaseClient||(window.AlfalahDBSync&&window.AlfalahDBSync.client&&window.AlfalahDBSync.client())||null}
 function iso(v){if(!v)return '';let s=String(v).trim();if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);let m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:''}
-function dmy(s){if(!s)return '—';let p=String(s).slice(0,10).split('-');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s}
 function dObj(s){let d=new Date(String(s)+'T00:00:00');return isNaN(d)?null:d}
-function dayNo(s){let d=dObj(s);return d?d.getDay():-1}
-function arDay(s){let g=dayNo(s);return g>=0?DAY_NAMES[g]:'—'}
 function addDays(s,n){let d=dObj(s);if(!d)return '';d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
-function mondayOf(s){let d=dObj(s);if(!d)return '';let g=d.getDay();let diff=(g===0?-6:1-g);d.setDate(d.getDate()+diff);return d.toISOString().slice(0,10)}
+function dayNo(s){let d=dObj(s);return d?d.getDay():-1}
 function isWork(s){let g=dayNo(s);return g>=1&&g<=5}
+function mondayOf(s){let d=dObj(s);if(!d)return '';let g=d.getDay();let diff=(g===0?-6:1-g);d.setDate(d.getDate()+diff);return d.toISOString().slice(0,10)}
+function weekOfMonth(s){let d=dObj(s);if(!d)return 0;let first=new Date(d.getFullYear(),d.getMonth(),1);let firstG=first.getDay();let offset=(firstG===0?6:firstG-1);return Math.ceil((d.getDate()+offset)/7)}
+function dmy(s){if(!s)return '—';let p=s.slice(0,10).split('-');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s}
+function arDay(s){let g=dayNo(s);return g>=0?DAY_NAMES[g]:'—'}
+function pick(o,keys){for(const k of keys){let v=o?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return ''}
 function getSchoolChecks(){return [...document.querySelectorAll('#schoolPanel input[type=checkbox]')]}
-function toggleSchoolPicker(e){if(e)e.stopPropagation();$('schoolPicker')?.classList.toggle('open')}
-function updateSchoolPicker(){let selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);if(selected.includes('all'))getSchoolChecks().forEach(c=>{if(c.value!=='all')c.checked=false});selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);let t=$('schoolPickerText');if(t)t.textContent=selected.length?selected.map(x=>SCHOOL_NAMES[x]||x).join('، '):'— بدون تحديد —'}
+function toggleSchoolPicker(e){e&&e.stopPropagation();$('schoolPicker')?.classList.toggle('open')}
+function updateSchoolPicker(){let selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);if(selected.includes('all'))getSchoolChecks().forEach(c=>{if(c.value!=='all')c.checked=false});selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);$('schoolPickerText').textContent=selected.length?selected.map(x=>SCHOOL_NAMES[x]||x).join('، '):'— بدون تحديد —'}
 document.addEventListener('click',e=>{let p=$('schoolPicker');if(p&&!p.contains(e.target))p.classList.remove('open')});
 function selected(){return{type:val('type'),schools:getSchoolChecks().filter(c=>c.checked).map(c=>c.value),month:val('month'),weekFrom:val('weekFrom'),weekTo:val('weekTo'),day:val('day'),from:val('from'),to:val('to'),level:val('level')||'full',title:val('title'),note:val('note')}}
 function hasSelection(s){return !!(s.type||s.schools.length||s.month||s.weekFrom||s.weekTo||s.day||s.from||s.to||s.title||s.note)}
+function schoolScopeText(arr){if(!arr||!arr.length)return 'غير محدد';if(arr.includes('all'))return 'كل المدارس';return arr.map(x=>SCHOOL_NAMES[x]||x).join('، ')}
+
 function normalizeSid(sid,name=''){
   let s=String(sid||'').trim();
-  if(/^\d+$/.test(s)) s=DBID[Number(s)]||s;
+  const DBID_LOCAL={1:'dan',2:'mzd',3:'bny',4:'khb',5:'jmi',6:'shj'};
+  if(/^\d+$/.test(s)) s=DBID_LOCAL[Number(s)]||s;
   let t=(s+' '+String(name||'')).toLowerCase();
   if(t.includes('shj')||t.includes('الشارقة')||t.includes('الدخيلات')) return 'shj';
   if(t.includes('khb')||t.includes('الخبيصي')) return 'khb';
@@ -68,12 +61,16 @@ function normalizeSid(sid,name=''){
   if(t.includes('dan')||t.includes('الدانة')) return 'dan';
   return s;
 }
-function schoolMatch(name,sid,filters){if(!filters.length||filters.includes('all'))return true;let ns=normalizeSid(sid,name);let t=(ns+' '+String(name||'')).toLowerCase();return filters.some(f=>ns===f||t.includes(f)||t.includes(String(SCHOOL_NAMES[f]||'').toLowerCase()))}
-function pick(o,keys){for(const k of keys){let v=o?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return ''}
+function schoolMatch(name,sid,filters){
+  if(!filters.length||filters.includes('all'))return true;
+  let ns=normalizeSid(sid,name);
+  let t=(ns+' '+String(name||'')).toLowerCase();
+  return filters.some(f=>ns===f||t.includes(f)||t.includes(String(SCHOOL_NAMES[f]||'').toLowerCase()));
+}
 function unwrapEvalData(row){
   const keys=['full_data','evaluation_data','data','form_data','json_data','content','payload','report_data','raw_data','details'];
   for(const k of keys){let d=parseObj(row?.[k]);let un=unwrapCandidate(d,row);if(un&&Object.keys(un).length)return un}
-  let un=unwrapCandidate(row,row);return un||{};
+  return unwrapCandidate(row,row)||{};
 }
 function unwrapCandidate(d,row){
   if(!d||typeof d!=='object'||Array.isArray(d))return {};
@@ -96,149 +93,433 @@ function evalScore(row,d){
 async function loadEvaluations(){
   let rows=[];
   try{let c=sb();if(c){let r=await c.from('library_evaluations').select('*').order('updated_at',{ascending:false});if(!r.error&&Array.isArray(r.data))rows=r.data;else if(r.error)console.warn('library_evaluations error',r.error)}}catch(e){console.warn('library_evaluations',e)}
-  let ev=loadLS('falah_lib_v6',{ev:{}}).ev||{};
-  Object.entries(ev).forEach(([k,v])=>{if(v)rows.push(Object.assign({school_code:k,school_id:k,school_name:SCHOOL_FULL[k]||SCHOOL_NAMES[k]},v))});
+  if(!rows.length){let ev=loadLS('falah_lib_v6',{ev:{}}).ev||{};rows=Object.entries(ev).filter(([k,v])=>Boolean(v)).map(([k,v])=>Object.assign({school_code:k,school_id:k,school_name:SCHOOL_NAMES[k]||k},v));}
   let out=[];
-  for(const r of rows){let d=unwrapEvalData(r);let sid=normalizeSid(r.school_code||r.school_id||d.school_code||d.school_id||d.branch_code||'', r.school_name||d.school_name||d['f-sname']||d['f-city']||'');let school=r.school_name||d.school_name||d['f-sname']||d.sname||SCHOOL_FULL[sid]||SCHOOL_NAMES[sid]||sid||'غير محدد';let score=evalScore(r,d);let visitDate=iso(r.visit_date||r.date||d.visit_date||d['f-date']||d.date||'');out.push({sid,school,score,data:d,visit_date:visitDate,created_at:r.updated_at||r.created_at||d.savedAt||d.exported||''})}
+  for(const r of rows){
+    let d=unwrapEvalData(r);
+    let sid=normalizeSid(r.school_code||r.school_id||d.school_code||d.school_id||d.branch_code||'', r.school_name||d.school_name||d['f-sname']||d['f-city']||'');
+    let school=r.school_name||d.school_name||d['f-sname']||d.sname||SCHOOL_NAMES[sid]||sid||'غير محدد';
+    let score=evalScore(r,d);
+    let visitDate=iso(r.visit_date||r.date||d.visit_date||d['f-date']||d.date||'');
+    out.push({sid,school,score,data:d,visit_date:visitDate,created_at:r.updated_at||r.created_at||d.savedAt||d.exported||''});
+  }
   let latest=new Map();
   out.filter(e=>e.sid||e.school).forEach(e=>{let key=(e.sid||e.school)+'|'+(e.visit_date||'');if(!latest.has(key))latest.set(key,e)});
   return [...latest.values()];
 }
-async function loadWorkDays(){return []}
-function reportKind(s){if(s.type==='all')return 'all'; if(s.type==='evaluation'||s.type==='school')return 'evaluation'; if(s.type==='work')return 'work'; if(s.type==='special')return 'evaluation'; if(s.schools.length)return 'evaluation'; return 'evaluation'}
-function filterAll(evals,days,s){let kind=reportKind(s);let ev=(kind==='evaluation'||kind==='all')?evals.filter(e=>schoolMatch(e.school,e.sid,s.schools)):[];return{evals:ev,days:[],kind}}
-function libraryItems(evals){return evals.map(e=>({label:e.school+(e.visit_date?' — '+dmy(e.visit_date):''),score:e.score,pct:(e.score/6)*100}))}
-function metrics(evals,days){let schools=new Set(evals.map(e=>e.sid||e.school));let libs=evals.length;let avg=evals.length?evals.reduce((a,e)=>a+Number(e.score||0),0)/evals.length:0;return{schools:schools.size,libs,weeks:0,days:0,visits:0,avg:Math.round(avg*10)/10,best:[...evals].sort((a,b)=>b.score-a.score)[0],worst:[...evals].filter(e=>e.score>0).sort((a,b)=>a.score-b.score)[0],evalPct:Math.round((schools.size/6)*100)}}
-function schoolScopeText(arr){if(!arr||!arr.length)return 'كل المدارس';if(arr.includes('all'))return 'كل المدارس';return arr.map(x=>SCHOOL_NAMES[x]||x).join('، ')}
-function scopeText(s){let a=[];if(s.type)a.push(({all:'تقرير شامل',evaluation:'تقييم المكتبات',work:'الدوام والزيارات',school:'مدرسة محددة',special:'موضوع خاص'})[s.type]||s.type);if(s.schools.length)a.push('المدارس: '+schoolScopeText(s.schools));if(s.month)a.push('الشهر: '+(MONTHS[s.month]||s.month));return a.join(' — ')||'كل البيانات'}
-function kpis(m,kind){return `<div class="grid4"><div class="kpi"><strong>${m.schools}</strong><span>مدارس مقيّمة</span></div><div class="kpi"><strong>${m.libs}</strong><span>تقييمات/مكتبات</span></div><div class="kpi"><strong>${m.avg?m.avg+'/6':'—'}</strong><span>متوسط الأداء</span></div><div class="kpi"><strong>${m.evalPct}%</strong><span>نسبة الإنجاز</span></div></div>`}
-function bars(title,items){return `<div class="chart"><h3>${esc(title)}</h3>${items.length?items.map(x=>`<div class="bar-row"><b>${esc(x.label)}</b><div class="bar"><div class="fill" style="width:${Math.max(0,Math.min(100,x.pct||0))}%"></div></div><b>${esc(x.value)}</b></div>`).join(''):'<div class="empty">لا توجد بيانات كافية للرسم.</div>'}</div>`}
-function evalCharts(evals){let schools=evals.map(e=>({label:e.school,value:e.score?e.score.toFixed(1):'—',pct:e.score/6*100}));let libs=libraryItems(evals).map(x=>({label:x.label,value:x.score?Number(x.score).toFixed(1):'—',pct:x.pct||0}));return `<div class="grid">${bars('مقارنة المدارس بالنسب',schools)}${bars('تفصيل المكتبات الحالية فقط',libs)}</div>`}
-function donut(m){let p=Math.max(0,Math.min(100,m.evalPct||0));return `<div class="chart"><h3>إنجاز التقييم</h3><div class="donut" style="--p:${p}%" data-label="${p}%"></div><div class="legend"><span><b style="background:var(--teal)"></b>منجز</span><span><b style="background:var(--pink)"></b>متابعة</span><span><b style="background:var(--amber)"></b>فجوة</span></div></div>`}
-function evalDetails(evals){if(!evals.length)return '<div class="empty">لا توجد تقييمات مطابقة للاختيار.</div>';return `<h2>تفاصيل التقييمات المحفوظة</h2>${evals.map(e=>{let d=e.data||{};return `<div class="day-card"><b>${esc(e.school)}${e.visit_date?' — '+dmy(e.visit_date):''}</b><br><b>متوسط الأداء:</b> ${e.score?e.score+'/6':'—'}<br><b>نقاط القوة:</b><br>${esc(d['f-str']||d.str||'—').replace(/\n/g,'<br>')}<br><b>نقاط الضعف:</b><br>${esc(d['f-wk']||d.wk||'—').replace(/\n/g,'<br>')}<br><b>التوصيات:</b><br>${esc(d['f-rec']||d.rec||'—').replace(/\n/g,'<br>')}<br><b>الخطة:</b><br>${esc(d['f-plan']||d.plan||'—').replace(/\n/g,'<br>')}</div>`}).join('')}`}
-async function buildReportHTML(mode='full'){
-  let s=selected(); if(!hasSelection(s)) return '<div class="empty">اختر المدرسة أو نوع التقرير ثم اضغط تحديث التقرير.</div>';
-  let evals=await loadEvaluations(), f=filterAll(evals,[],s), m=metrics(f.evals,[]), title=s.title||(mode==='brief'?'ملخص تنفيذي':'تقرير تحليلي');
-  return `<h2>${esc(title)}</h2><div class="smart"><b>النطاق:</b> ${esc(scopeText(s))}<br>${s.note?'<b>ملاحظة:</b> '+esc(s.note):'يعرض هذا التقرير البيانات الفعلية حسب الاختيارات المحددة فقط.'}</div>${kpis(m,f.kind)}${evalCharts(f.evals)}<div class="grid">${donut(m)}<div class="chart"><h3>خلاصة تنفيذية</h3><p>الأعلى أداء: <b>${esc(m.best?.school||'—')}</b></p><p>الأكثر احتياجًا للتحسين: <b>${esc(m.worst?.school||'—')}</b></p><p>متوسط الأداء العام: <b>${m.avg?m.avg+'/6':'—'}</b></p></div></div>${mode==='brief'?'<div class="notice"><b>المطلوب إداريًا:</b> مراجعة المؤشرات واعتماد التوصيات ومتابعة خطة التطوير.</div>':evalDetails(f.evals)}`;
+
+function dayFromWeekData(d,i,row={}){let base=iso(d.wstart||d.work_date||row.work_date||row.date||row.day_date);let monday=base?mondayOf(base):'';let date=iso(d['date'+i]||d['day_date'+i])||(monday?addDays(monday,i):'');return{date,name:WORK_DAYS[i],week:Number(d.wnum||d.week_number||row.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:d['atype'+i]||d['work_type'+i]||d.wstatus||row.work_type||'دوام رسمي',loc:d['dloc'+i]||d['loc'+i]||d.location||row.location||'—',tasks:d['task'+i]||d['tasks'+i]||d['anote'+i]||d['story'+i]||'',note:d['note'+i]||d['dnote'+i]||'',raw:d}}
+function normalizeSingle(row){let d=parseObj(row.full_data||row.data||row.tasks||row.notes||{});let date=iso(pick(row,['work_date','date','day_date','log_date'])||pick(d,['work_date','date','day_date','log_date','wstart']));return{date,name:arDay(date),week:Number(row.week_number||d.wnum||d.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:row.work_type||d.work_type||d.wstatus||'دوام رسمي',loc:row.location||d.location||d.dloc0||'—',tasks:(typeof row.tasks==='string'&&!row.tasks.trim().startsWith('{')?row.tasks:'')||d.tasks||d.task||d.anote0||'',note:(typeof row.notes==='string'&&!row.notes.trim().startsWith('{')?row.notes:'')||d.notes||d.note||d.dnote0||'',raw:d}}
+async function loadWorkDays(){let rows=[];try{let c=sb();if(c){let r=await c.from('daily_work_logs').select('*').order('work_date',{ascending:true});if(!r.error&&Array.isArray(r.data))rows=r.data}}catch(e){console.warn('work db',e)}if(!rows.length){for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('falah_week_'))rows.push(parseObj(localStorage.getItem(k)))}}let days=[];for(const row of rows){let d=parseObj(row.full_data||row.data||row.tasks||row.notes||row);let hasWeekFields=['atype0','anote0','dloc0','atype1','anote1','dloc1','wstart','wnum'].some(k=>d[k]!==undefined);if(hasWeekFields){for(let i=0;i<5;i++)days.push(dayFromWeekData(d,i,row))}else{let one=normalizeSingle(row);if(one.date)days.push(one)}}return days.filter(x=>x.date&&isWork(x.date))}
+function sameMonth(d,m){return !m || (d.date&&d.date.slice(5,7)===m)}
+function compactDay(d){return {date:d.date,name:d.name||arDay(d.date),week:d.week||weekOfMonth(d.date),month:d.month||d.date.slice(5,7),type:d.type||'—',loc:d.loc||'—',tasks:d.tasks||'',note:d.note||'',raw:d.raw||{}}}
+function dedupeDays(days){let map=new Map();for(const src of days){let d=compactDay(src);if(!d.date||!isWork(d.date))continue;let key=d.date;let old=map.get(key);if(!old){map.set(key,{...d});continue}old.type=[old.type,d.type].filter(v=>v&&v!=='—').filter((v,i,a)=>a.indexOf(v)===i).join(' / ')||old.type||d.type;old.loc=[old.loc,d.loc].filter(v=>v&&v!=='—').filter((v,i,a)=>a.indexOf(v)===i).join(' / ')||old.loc||d.loc;old.tasks=[old.tasks,d.tasks].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' / ');old.note=[old.note,d.note].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date))}
+function groupWeeks(days,monthFilter=''){let map=new Map();for(const d of dedupeDays(days).filter(x=>sameMonth(x,monthFilter))){let mon=mondayOf(d.date), key=mon;if(!map.has(key))map.set(key,{seq:0,monthSeq:0,start:mon,end:addDays(mon,4),days:[]});map.get(key).days.push(d)}let arr=[...map.values()].sort((a,b)=>a.start.localeCompare(b.start));let perMonth={};arr.forEach((g,i)=>{g.seq=i+1;let mm=(g.days[0]?.date||g.start).slice(5,7);perMonth[mm]=(perMonth[mm]||0)+1;g.monthSeq=perMonth[mm];g.week=g.monthSeq;g.days=dedupeDays(g.days).filter(d=>d.date>=g.start&&d.date<=g.end&&isWork(d.date));});return arr.filter(g=>g.days.length)}
+function selectDaysByPeriod(allDays,s){let days=dedupeDays(allDays);if(s.day)return days.filter(d=>d.date===s.day);if(s.from||s.to)return days.filter(d=>(!s.from||d.date>=s.from)&&(!s.to||d.date<=s.to));if(s.weekFrom||s.weekTo){let a=s.weekFrom||mondayOf(s.weekTo), b=s.weekTo||(a?addDays(a,4):'');return days.filter(d=>(!a||d.date>=a)&&(!b||d.date<=b)&&isWork(d.date))}if(s.month)return dedupeDays(days.filter(d=>d.month===s.month));return []}
+function filterAll(evals,days,s){let ev=evals.filter(e=>schoolMatch(e.school,e.sid,s.schools));let ds=selectDaysByPeriod(days,s);return{evals:ev,days:ds}}
+function libraryItems(evals){let map=new Map();for(const e of evals){let main=e.data.library_name||e.data.librarian||e.data.main_library_type||'المكتبة الرئيسية';map.set((e.sid||e.school)+'|main|'+main,{label:e.school+' / '+main,score:e.score,pct:e.score/6*100});let libs=Array.isArray(e.data.libraries)?e.data.libraries:[];libs.forEach((l,i)=>{let name=l.type||l.library_type||l.name||('مكتبة إضافية '+(i+1));let sc=Number(l.score||l.rating_score||0)||e.score;map.set((e.sid||e.school)+'|extra|'+name,{label:e.school+' / '+name,score:sc,pct:sc/6*100})})}return [...map.values()]}
+function metrics(evals,days){let schools=new Set(evals.map(e=>e.sid||e.school));let libs=libraryItems(evals).length||evals.length;let avg=evals.length?evals.reduce((a,e)=>a+Number(e.score||0),0)/evals.length:0;let visits=days.filter(d=>/زيارة|مدرسة|ميدانية/.test((d.type+' '+d.loc+' '+d.tasks+' '+d.note))).length;let best=[...evals].sort((a,b)=>b.score-a.score)[0];let worst=[...evals].filter(e=>e.score>0).sort((a,b)=>a.score-b.score)[0];return{schools:schools.size,libs,weeks:groupWeeks(days).length,visits,avg:Math.round(avg*10)/10,best,worst,evalPct:Math.round((schools.size/6)*100)}}
+function scopeText(s){let a=[];if(s.type)a.push(({all:'تقرير شامل',evaluation:'تقييم المكتبات',work:'الدوام والزيارات',school:'مدرسة محددة',special:'موضوع خاص'})[s.type]||s.type);if(s.schools.length)a.push('المدارس: '+schoolScopeText(s.schools));if(s.day)a.push('اليوم: '+dmy(s.day));if(s.from||s.to)a.push('الفترة: '+(s.from?dmy(s.from):'البداية')+' إلى '+(s.to?dmy(s.to):'النهاية'));if(s.weekFrom||s.weekTo)a.push('أسبوع العمل: '+(s.weekFrom?dmy(s.weekFrom):'البداية')+' إلى '+(s.weekTo?dmy(s.weekTo):'النهاية'));if(s.month)a.push('الشهر: '+(MONTHS[s.month]||s.month));return a.join(' — ')||'لم يتم تقييد النطاق'}
+function kpis(m){return `<div class="grid4"><div class="kpi"><strong>${m.schools}</strong><span>مدارس مقيّمة</span></div><div class="kpi"><strong>${m.libs}</strong><span>مكتبات</span></div><div class="kpi"><strong>${m.weeks}</strong><span>أسابيع عمل</span></div><div class="kpi"><strong>${m.visits}</strong><span>زيارات</span></div></div>`}
+function bars(title,items){return `<div class="chart"><h3>${title}</h3>${items.length?items.map(x=>`<div class="bar-row"><b>${esc(x.label)}</b><div class="bar"><div class="fill" style="width:${Math.max(0,Math.min(100,x.pct||0))}%"></div></div><b>${esc(x.value)}</b></div>`).join(''):'<div class="empty">لا توجد بيانات كافية للرسم.</div>'}</div>`}
+function evalCharts(evals){let by={};evals.forEach(e=>{(by[e.school]??=[]).push(e.score)});let schools=Object.entries(by).map(([k,a])=>{let v=a.reduce((x,y)=>x+y,0)/a.length;return{label:k,value:v.toFixed(1),pct:v/6*100}});let libs=libraryItems(evals).map(x=>({label:x.label,value:x.score?Number(x.score).toFixed(1):'—',pct:x.pct||0}));return `<div class="grid">${bars('مقارنة المدارس بالنسب',schools)}${bars('تفصيل المكتبات الحالية فقط',libs.slice(0,14))}</div>`}
+function donut(m){let p=Math.max(0,Math.min(100,m.evalPct||0));return `<div class="chart"><h3>الرسم العام للأداء</h3><div class="donut" style="--p:${p}%" data-label="${p}%"></div><div class="legend"><span><b style="background:var(--teal)"></b>إنجاز التقييم</span><span><b style="background:var(--pink)"></b>المتابعة</span><span><b style="background:var(--amber)"></b>الفجوة</span></div></div>`}
+function dayHTML(d){let hasAction=(d.tasks&&d.tasks!=='—')||(d.note&&d.note!=='—');return `<div class="day-card"><b>${esc(d.name)} — ${dmy(d.date)}</b><br><b>نوع اليوم:</b> ${esc(d.type||'—')}<br><b>الموقع/الزيارة:</b> ${esc(d.loc||'—')}<br><b>الأعمال التي تمت:</b> ${esc(d.tasks||'لا توجد مهام مكتوبة لهذا اليوم.')}<br><b>ملاحظة:</b> ${esc(d.note||'—')}${hasAction?'':'<div class="muted">هذا اليوم موجود في السجل ولكن لا يحتوي وصف أعمال مفصل.</div>'}</div>`}
+function details(days,s){days=dedupeDays(days);if(!days.length)return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';if(s.day)return `<h2>تفاصيل اليوم المختار</h2>${days.map(dayHTML).join('')}`;let groups=groupWeeks(days,'');let head=s.month?'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع':((s.weekFrom||s.weekTo)?'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة':'تحليل الدوام والزيارات حسب الفترة');return `<h2>${head}</h2>${groups.map((g,idx)=>`<div class="week-box"><div class="week-title">الأسبوع ${s.month?g.monthSeq:g.seq} — ${dmy(g.start)} إلى ${dmy(g.end)}</div>${g.days.map(dayHTML).join('')}</div>`).join('')}`}
+
+function levelName(score){if(!score)return 'غير متاح'; if(score>=5.2)return 'متميز'; if(score>=4.3)return 'جيد جداً'; if(score>=3.4)return 'مقبول'; if(score>=2.5)return 'يحتاج تطوير'; return 'تدخل عاجل'}
+function levelClass(score){if(!score)return ''; if(score>=4.3)return ''; if(score>=3.4)return 'warn'; return 'risk'}
+function axisScores(evals){
+  let totals={}; let counts={};
+  evals.forEach(e=>{let d=e.data||{}; let src=d._axisScores||{}; Object.entries(src).forEach(([k,v])=>{let n=Number(v); if(n>0){totals[k]=(totals[k]||0)+n; counts[k]=(counts[k]||0)+1;}})});
+  return Object.keys(totals).map(k=>({label:k,score:Math.round((totals[k]/counts[k])*10)/10,pct:(totals[k]/counts[k])/6*100})).sort((a,b)=>b.score-a.score);
 }
-async function renderReport(){let b=$('reportBody')||$('briefBody'); if(!b)return; b.innerHTML='<div class="empty">جاري تحميل البيانات من قاعدة البيانات...</div>'; b.innerHTML=await buildReportHTML((val('level')||'full'))}
-function copyReportText(){let b=$('reportBody')||$('briefBody');let t=b?b.innerText:'';navigator.clipboard?.writeText(t);alert('تم نسخ نص التقرير')}
-function paramsFromSelected(){let s=selected();let p=new URLSearchParams();Object.entries(s).forEach(([k,v])=>{if(Array.isArray(v)){if(v.length)p.set(k,v.join(','))}else if(v)p.set(k,v)});p.set('director','1');return p}
-function applyParams(){let p=new URLSearchParams(location.search);if(!p.size)return;['type','month','weekFrom','weekTo','day','from','to','level','title','note'].forEach(k=>{if(p.get(k)&&$(k))$(k).value=p.get(k)});let schools=(p.get('schools')||'').split(',').filter(Boolean);if(schools.length){getSchoolChecks().forEach(c=>c.checked=schools.includes(c.value));updateSchoolPicker()}if(p.get('director')){document.body.classList.add('director-mode');renderReport()}}
-function makeLink(){let u=location.origin+location.pathname+'?'+paramsFromSelected().toString();let box=$('linkBox');if(box)box.value=u;let g=$('gmail'),w=$('wa');if(g)g.href='mailto:?subject='+encodeURIComponent('ملخص تنفيذي')+'&body='+encodeURIComponent(u);if(w)w.href='https://wa.me/?text='+encodeURIComponent(u);return u}
-function copyLink(){let u=($('linkBox')&&$('linkBox').value&&$('linkBox').value!=='—')?$('linkBox').value:makeLink();navigator.clipboard?.writeText(u);alert('تم نسخ الرابط')}
-function openLink(){let u=($('linkBox')&&$('linkBox').value&&$('linkBox').value!=='—')?$('linkBox').value:makeLink();window.open(u,'_blank')}
-function sendFeedback(){let msg=`${val('decision')} - ${val('priority')}\n${val('comment')}`;let st=$('fbStatus');if(st)st.textContent='تم تجهيز الرد: '+msg}
-document.addEventListener('DOMContentLoaded',applyParams);
+function textFirst(evals,keys,limit=2){let arr=[]; evals.forEach(e=>{let d=e.data||{}; keys.forEach(k=>{let v=d[k]; if(v&&String(v).trim()) arr.push(String(v).trim());});}); return arr.slice(0,limit);}
+function storyKpis(m,evals,days){return `<div class="story-kpis"><div class="story-kpi"><div class="n">${m.schools}</div><div class="l">مدارس داخل التقرير</div><div class="ex">وفق الفلاتر المختارة فقط.</div></div><div class="story-kpi"><div class="n">${m.libs}</div><div class="l">مكتبات/تقييمات</div><div class="ex">عدد السجلات التي دخلت في التحليل.</div></div><div class="story-kpi"><div class="n">${m.avg?m.avg+'/6':'—'}</div><div class="l">متوسط الأداء</div><div class="ex">${levelName(m.avg)} حسب المقياس الحالي.</div></div><div class="story-kpi"><div class="n">${days.length}</div><div class="l">أيام عمل مختارة</div><div class="ex">تتغير حسب اليوم أو الأسبوع أو الشهر أو الفترة.</div></div></div>`}
+function axisPanel(evals){let axes=axisScores(evals); if(!axes.length)return '<div class="story-card"><h3>تحليل المحاور</h3><div class="empty">لا توجد محاور رقمية كافية لهذا الاختيار.</div></div>'; return `<div class="story-card"><h3>تحليل المحاور</h3><p class="muted">كل شريط يوضح مستوى المحور من 6 درجات، مع قراءة مبسطة.</p>${axes.map(a=>`<div class="axis-row"><div class="axis-label">${esc(a.label)}</div><div class="axis-bar"><div class="axis-fill" style="width:${Math.max(0,Math.min(100,a.pct))}%"></div></div><div class="axis-score">${a.score}/6</div></div>`).join('')}<div class="mini-legend"><span>أقل من 3: يحتاج تدخل</span><span>3 إلى 4.2: مقبول يحتاج متابعة</span><span>أعلى من 4.3: جيد</span></div></div>`}
+function narrativePanel(evals,m){let strengths=textFirst(evals,['f-str','str'],3);let weaknesses=textFirst(evals,['f-wk','wk'],3);let recs=textFirst(evals,['f-rec','rec'],3);return `<div class="story-card"><h3>قراءة تنفيذية مبسطة</h3><div class="insight-list"><div class="insight"><b>الصورة العامة</b><span>متوسط الأداء ${m.avg?m.avg+'/6':'غير متاح'}، وهذا يعني: ${levelName(m.avg)}. لا يُقرأ الرقم وحده، بل مع نقاط القوة والضعف وخطة التطوير.</span></div><div class="insight warn"><b>ما يحتاج انتباهًا</b><span>${esc((weaknesses[0]||'تحتاج بعض المحاور إلى متابعة تفصيلية حسب نتائج التقييم.')).replace(/\n/g,'<br>')}</span></div><div class="insight"><b>توصية عملية</b><span>${esc((recs[0]||'اعتماد متابعة شهرية مختصرة وربطها بخطة تطوير واضحة.')).replace(/\n/g,'<br>')}</span></div></div></div>`}
+function evalStoryDetails(evals){if(!evals.length)return '<div class="story-card"><h3>التقييمات</h3><div class="empty">لا توجد تقييمات مطابقة للاختيار.</div></div>';return `<div class="story-card"><h3>تفاصيل التقييمات المختارة</h3>${evals.map(e=>{let d=e.data||{};return `<div class="day-card"><b>${esc(e.school)}${e.visit_date?' — '+dmy(e.visit_date):''}</b><br><b>النتيجة:</b> ${e.score?e.score+'/6 — '+levelName(e.score):'—'}<br><b>نقاط القوة:</b><br>${esc(d['f-str']||d.str||'—').replace(/\n/g,'<br>')}<br><b>نقاط الضعف:</b><br>${esc(d['f-wk']||d.wk||'—').replace(/\n/g,'<br>')}<br><b>التوصيات:</b><br>${esc(d['f-rec']||d.rec||'—').replace(/\n/g,'<br>')}</div>`}).join('')}</div>`}
+function daysStory(days,s){
+  days=dedupeDays(days);
+  if(!days.length)return '<div class="story-card"><h3>سجل العمل والزيارات</h3><div class="empty">لا توجد أيام عمل مطابقة لهذا الاختيار.</div></div>';
+  let title=s.day?'تفاصيل اليوم المختار':(s.weekFrom||s.weekTo?'تفاصيل أسبوع العمل':(s.month?'تفاصيل الشهر حسب الأيام':'تفاصيل الفترة المختارة'));
+  return `<div class="story-card"><h3>${title}</h3><div class="day-timeline">${days.map(d=>`<div class="time-item"><div class="time-date">${esc(d.name||arDay(d.date))}<br>${dmy(d.date)}</div><div><b>${esc(d.type||'دوام رسمي')}</b><br><span>${esc(d.loc||'—')}</span><br><span>${esc(d.tasks||d.note||'لا توجد مهام مكتوبة لهذا اليوم.')}</span></div></div>`).join('')}</div></div>`;
+}
+function reportIntro(s,m,kind){let badge=levelName(m.avg);return `<div class="story-hero"><div><div class="story-eyebrow">${esc(scopeText(s))}</div><div class="story-title">تقرير تحليلي سردي</div><div class="story-lead">تقرير مبني على الاختيارات الحالية. يحوّل البيانات إلى قراءة إدارية مختصرة: ماذا حدث؟ ما المستوى؟ أين الأولوية؟ وما الإجراء التالي؟</div></div><div class="status-pill">${esc(badge)}</div></div>`}
 
 
-/* === STORY REPORT OVERRIDE — preserves the original filters/options UI === */
-function storyGrade(score){
-  score=Number(score||0);
-  if(score>=5.2) return {label:'متميز', cls:'excellent', note:'الأداء قوي ويمكن البناء عليه كنموذج للمدارس الأخرى.'};
-  if(score>=4.4) return {label:'جيد جداً', cls:'verygood', note:'الأداء مستقر مع فرص تطوير محددة.'};
-  if(score>=3.6) return {label:'مقبول', cls:'acceptable', note:'الوضع قابل للتطوير ويحتاج متابعة منظمة.'};
-  if(score>=2.8) return {label:'يحتاج تحسين', cls:'warning', note:'هناك فجوات واضحة تحتاج خطة علاجية قصيرة المدى.'};
-  if(score>0) return {label:'تدخل عاجل', cls:'danger', note:'المؤشرات منخفضة وتحتاج تدخلاً إدارياً مباشراً.'};
-  return {label:'لا توجد بيانات', cls:'neutral', note:'لم تصل بيانات كافية للتحليل.'};
-}
-function axisFromEval(e){
-  const d=e.data||{};
-  const a=d._axisScores||{};
-  const fallback={
-    'المجموعات والمصادر': ['r_cd','r_cc','r_cco','r_sh','r_cr'],
-    'مجموعات الإمارات': ['r_uae'],
-    'التنظيم الفني': ['r_sp','r_se','r_at','r_in','r_rch'],
-    'البيئة والخدمات': ['r_tu','r_cu','r_ri'],
-    'الأنشطة والشراكات': ['r_pa','r_co','r_ts'],
-    'الكادر والمؤهلات': ['r_ss','r_sb','r_sc','r_sst','r_si','r_ste','r_scol'],
-    'التقنية والابتكار': ['r_marc','r_ils','r_dg','r_te','r_un']
-  };
-  let out={};
-  Object.keys(a).forEach(k=>{let n=Number(a[k]); if(n>0) out[k]=Math.round(n*10)/10;});
-  if(Object.keys(out).length) return out;
-  Object.entries(fallback).forEach(([name,keys])=>{
-    let vals=keys.map(k=>Number(d[k]||d[k.replace('_','-')]||0)).filter(n=>n>0);
-    if(vals.length) out[name]=Math.round(vals.reduce((x,y)=>x+y,0)/vals.length*10)/10;
-  });
-  return out;
-}
-function allAxisAverage(evals){
-  const bucket={};
-  evals.forEach(e=>{let ax=axisFromEval(e); Object.entries(ax).forEach(([k,v])=>{(bucket[k]||(bucket[k]=[])).push(Number(v)||0);});});
-  return Object.entries(bucket).map(([label,arr])=>({label,value:Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*10)/10,pct:Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)/6*100)})).sort((a,b)=>b.value-a.value);
-}
-function topAndBottomAxes(evals){
-  const axes=allAxisAverage(evals);
-  return {top:axes[0], low:axes[axes.length-1], axes};
-}
-function lineList(txt, max=3){
-  return String(txt||'').split(/\n|•|-/).map(x=>x.trim()).filter(Boolean).slice(0,max);
-}
-function collectText(evals, keys, max=4){
-  const out=[];
-  evals.forEach(e=>{const d=e.data||{}; keys.forEach(k=>lineList(d[k],2).forEach(x=>out.push(x)));});
-  return [...new Set(out)].slice(0,max);
-}
-function pct(score){ return Math.max(0,Math.min(100,Math.round((Number(score||0)/6)*100))); }
-function storyPill(label,score){let g=storyGrade(score);return `<span class="story-pill ${g.cls}">${esc(label)}: ${score?score+'/6':'—'} — ${g.label}</span>`}
-function storyKpis(m,evals){
-  const tb=topAndBottomAxes(evals); const g=storyGrade(m.avg);
-  return `<div class="story-kpis">
-    <div class="story-kpi"><div class="ico">🏫</div><strong>${m.schools||0}</strong><span>مدارس ضمن التقرير</span><small>من أصل 6 مدارس في الخطة</small></div>
-    <div class="story-kpi"><div class="ico">📚</div><strong>${m.libs||0}</strong><span>تقييمات/مكتبات</span><small>تقييمات محفوظة قابلة للتحليل</small></div>
-    <div class="story-kpi highlight"><div class="ico">⭐</div><strong>${m.avg?m.avg+'/6':'—'}</strong><span>متوسط الأداء العام</span><small>${g.label} — ${g.note}</small></div>
-    <div class="story-kpi"><div class="ico">🎯</div><strong>${tb.low?tb.low.label:'—'}</strong><span>أولوية المتابعة</span><small>${tb.low?tb.low.value+'/6':'لا توجد محاور كافية'}</small></div>
-  </div>`;
-}
-function axisBars(evals){
-  const axes=allAxisAverage(evals);
-  return `<div class="story-card"><div class="story-head"><h3>قراءة المحاور الرئيسية</h3><p>هذه القراءة تترجم درجات التقييم إلى محاور عمل واضحة للإدارة.</p></div>
-  ${axes.length?axes.map(a=>{let g=storyGrade(a.value);return `<div class="axis-row"><div class="axis-label"><b>${esc(a.label)}</b><span>${a.value}/6 — ${g.label}</span></div><div class="axis-bar"><i class="${g.cls}" style="width:${a.pct}%"></i></div><div class="axis-note">${esc(g.note)}</div></div>`}).join(''):'<div class="soft-empty">لا توجد محاور كافية بعد. عند اكتمال التقييم ستظهر هنا قراءة المحاور.</div>'}
-  <div class="chart-explain"><b>كيف يقرأ المدير هذا الرسم؟</b> كل شريط يمثل محوراً من 6 درجات؛ كلما اقترب الشريط من النهاية زادت جاهزية المكتبة في هذا المحور، والمحور الأقل هو نقطة البداية في خطة التطوير.</div></div>`;
-}
-function schoolCards(evals){
-  return `<div class="story-card"><div class="story-head"><h3>ملخص المدارس والمكتبات</h3><p>يعرض كل تقييم كقصة مختصرة: الدرجة، المستوى، وأهم ما يجب الانتباه إليه.</p></div><div class="school-story-grid">
-  ${evals.length?evals.map(e=>{let g=storyGrade(e.score);let d=e.data||{};let weak=lineList(d['f-wk']||d.wk,1)[0]||'تحتاج المحاور الأقل نتيجة إلى متابعة.';let strong=lineList(d['f-str']||d.str,1)[0]||'توجد نقاط قوة قابلة للبناء عليها.';return `<article class="school-story ${g.cls}"><div class="school-top"><h4>${esc(e.school)}</h4><span>${e.visit_date?dmy(e.visit_date):'—'}</span></div><div class="score-ring" style="--p:${pct(e.score)}%"><b>${e.score||'—'}</b><small>/6</small></div><div class="school-level">${g.label}</div><p><b>نقطة قوة:</b> ${esc(strong)}</p><p><b>أولوية تحسين:</b> ${esc(weak)}</p></article>`}).join(''):'<div class="soft-empty">لا توجد مدارس مطابقة للاختيار الحالي.</div>'}
-  </div></div>`;
-}
-function narrativeBlock(evals,m,mode){
-  const tb=topAndBottomAxes(evals); const g=storyGrade(m.avg);
-  const strengths=collectText(evals,['f-str','str','f-sstr','sstr'],4);
-  const weaknesses=collectText(evals,['f-wk','wk','f-chal','chal'],4);
-  const recs=collectText(evals,['f-rec','rec','f-plan-s','plan_s','f-plan-m','plan_m'],5);
-  return `<div class="story-card narrative"><div class="story-head"><h3>القصة التنفيذية للتقرير</h3><p>صياغة مبسطة تصلح للعرض على الإدارة دون الحاجة لقراءة الجداول التفصيلية.</p></div>
-    <div class="lead-story">يعرض هذا التقرير حالة المكتبات المختارة بناءً على البيانات المحفوظة في النظام. المتوسط العام الحالي هو <b>${m.avg?m.avg+'/6':'—'}</b> بمستوى <b>${g.label}</b>. ${tb.top?`أقوى محور ظاهر هو <b>${esc(tb.top.label)}</b>، بينما محور <b>${esc(tb.low.label)}</b> هو الأكثر احتياجاً للمتابعة.`:'ما زالت البيانات غير كافية لاستخراج ترتيب المحاور.'}</div>
-    <div class="insight-grid">
-      <div class="insight"><h4>ما الذي يعمل جيداً؟</h4><ul>${(strengths.length?strengths:['توجد مؤشرات إيجابية تحتاج توثيقاً أوضح مع اكتمال التقييمات.']).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="insight warn"><h4>أين توجد الفجوة؟</h4><ul>${(weaknesses.length?weaknesses:['الفجوات ستظهر بدقة أكبر بعد إدخال بقية المدارس.']).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="insight action"><h4>ماذا نوصي؟</h4><ul>${(recs.length?recs:['اعتماد متابعة شهرية للمحاور الأقل نتيجة، وربطها بخطة تطوير قصيرة المدى.']).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
-    </div></div>`;
-}
-function roadmap(evals){
-  const tb=topAndBottomAxes(evals);
-  return `<div class="story-card"><div class="story-head"><h3>خطة متابعة مقترحة</h3><p>تحويل نتيجة التقرير إلى خطوات تنفيذية واضحة.</p></div><div class="timeline-story">
-    <div><span>1</span><b>خلال أسبوع</b><p>مراجعة المحور الأقل نتيجة: ${tb.low?esc(tb.low.label):'المحور الأقل أداء'} وتحديد النواقص السريعة.</p></div>
-    <div><span>2</span><b>خلال شهر</b><p>تنفيذ تدخلات عملية: تدريب، توثيق، تنظيم مصادر، أو تفعيل تقني حسب نتيجة المدرسة.</p></div>
-    <div><span>3</span><b>خلال فصل دراسي</b><p>إعادة القياس ومقارنة التحسن بين المدارس وإظهار أثر الزيارات والمتابعة.</p></div>
-  </div></div>`;
-}
-function presentationMode(evals,m){
-  const tb=topAndBottomAxes(evals); const g=storyGrade(m.avg);
-  return `<div class="presentation-strip"><div><b>عرض تقديمي مختصر</b><span>جاهز للعرض أمام الإدارة</span></div><div class="slide-mini"><strong>${m.schools}</strong><small>مدارس</small></div><div class="slide-mini"><strong>${m.avg||'—'}</strong><small>متوسط</small></div><div class="slide-mini"><strong>${tb.low?tb.low.label:'—'}</strong><small>أولوية</small></div><div class="slide-mini"><strong>${g.label}</strong><small>الحالة</small></div></div>`;
-}
 async function buildReportHTML(mode='full'){
   let s=selected();
-  if(!hasSelection(s)) return '<div class="empty">اختر نوع التقرير أو المدرسة أو التاريخ، ثم اضغط تحديث التقرير.</div>';
-  let evals=await loadEvaluations();
-  let allDays=[]; try{ if(typeof loadWorkDays==='function') allDays=await loadWorkDays(); }catch(e){}
-  let f=filterAll(evals,allDays,s); let m=metrics(f.evals,f.days||[]);
-  let title=s.title || (mode==='brief'?'ملخص تنفيذي للإدارة':'تقرير تحليلي سردي');
-  let intro=`<h2>${esc(title)}</h2><div class="story-hero-report"><div><span>النطاق</span><b>${esc(scopeText(s))}</b><p>${s.note?esc(s.note):'تقرير مبني على البيانات الفعلية المحفوظة، مع تحويل الأرقام إلى قراءة إدارية مختصرة.'}</p></div><div class="hero-grade ${storyGrade(m.avg).cls}">${storyGrade(m.avg).label}</div></div>`;
-  if(mode==='brief'){
-    return intro + storyKpis(m,f.evals) + narrativeBlock(f.evals,m,mode) + axisBars(f.evals) + presentationMode(f.evals,m) + `<div class="notice"><b>المطلوب إداريًا:</b> اعتماد الأولويات الظاهرة، وتوجيه المدارس ذات المحاور الأقل نتيجة إلى خطة متابعة محددة.</div>`;
+  if(!hasSelection(s))return '<div class="empty">اختر نوع التقرير أو المدرسة أو التاريخ، ثم اضغط تحديث التقرير.</div>';
+  let evals=await loadEvaluations(), allDays=await loadWorkDays();
+  let f=filterAll(evals,allDays,s);
+  let m=metrics(f.evals,f.days);
+  let kind=(s.type||'all');
+  let brief=(mode==='brief');
+  let html=`<div class="story-report">${reportIntro(s,m,kind)}${storyKpis(m,f.evals,f.days)}<div class="presentation-strip"><div><b>ماذا يقرأ التقرير؟</b><span>يعرض فقط البيانات المطابقة لاختيارك: يوم، أسبوع، شهر، فترة أو مدرسة.</span></div><div><b>كيف تُقرأ النتيجة؟</b><span>الرقم من 6، لكن التفسير النصي يوضح المعنى الإداري وما يحتاج متابعة.</span></div><div><b>ما المخرجات؟</b><span>مؤشرات، محاور، خلاصة، تفاصيل، وتوصيات قابلة للتنفيذ.</span></div></div>`;
+  if(kind==='work'){
+    html+=`<div class="story-grid">${daysStory(f.days,s)}<div class="story-card"><h3>خلاصة العمل</h3><p>عدد أيام العمل المطابقة للاختيار: <b>${f.days.length}</b>.</p><p>يعرض هذا الجزء ما تم في الأيام المختارة دون إدخال تقييمات المكتبات في النتيجة.</p></div></div>`;
+  }else{
+    html+=`<div class="story-grid">${narrativePanel(f.evals,m)}${axisPanel(f.evals)}</div>${brief?'':evalStoryDetails(f.evals)}`;
+    if(f.days.length) html+=daysStory(f.days,s);
   }
-  return intro + storyKpis(m,f.evals) + narrativeBlock(f.evals,m,mode) + axisBars(f.evals) + schoolCards(f.evals) + roadmap(f.evals) + presentationMode(f.evals,m);
+  html+=`<div class="note-box"><b>قراءة ختامية:</b> هذا التقرير لا يغيّر البيانات الأصلية؛ هو يعيد عرضها بصيغة تفسيرية سهلة، مع الحفاظ على جميع فلاتر اليوم والأسبوع والشهر والمدرسة كما هي.</div></div>`;
+  return html;
 }
 
-</script></body></html>
+function copyReportText(){let t=$('reportBody')?.innerText||$('briefBody')?.innerText||'';navigator.clipboard?.writeText(t).then(()=>alert('تم نسخ نص التقرير')).catch(()=>prompt('انسخ النص:',t))}
+</script>
+<script>async function renderReport(){$('reportBody').innerHTML='<div class="notice">جاري إعداد التقرير...</div>';try{$('reportBody').innerHTML=await buildReportHTML('full')}catch(e){console.error(e);$('reportBody').innerHTML='<div class="empty">حدث خطأ أثناء إعداد التقرير: '+esc(e.message||e)+'</div>'}};document.addEventListener('DOMContentLoaded',()=>{updateSchoolPicker();});</script><script>
+/* === FINAL STRICT REPORT LOGIC OVERRIDE — 2026-05-11 === */
+(function(){
+  const SCHOOL_NAMES={khb:'الخبيصي',jmi:'الجيمي',shj:'الشارقة',bny:'بني ياس',mzd:'محمد بن زايد',dan:'الدانة',all:'كل المدارس'};
+  const MONTHS={'04':'أبريل','05':'مايو','06':'يونيو','07':'يوليو','08':'أغسطس','09':'سبتمبر','10':'أكتوبر','11':'نوفمبر','12':'ديسمبر'};
+  const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const WORK_DAYS=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+  window.$=window.$||function(id){return document.getElementById(id)};
+  window.esc=function(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))};
+  window.val=function(id){return ($(id)&&$(id).value)||''};
+  window.loadLS=function(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
+  window.parseObj=function(x){if(!x)return {}; if(typeof x==='object')return x; try{return JSON.parse(x)}catch(e){return {}}};
+  window.sb=function(){return window.alfalahSupabase||window.supabaseClient||(window.AlfalahDBSync&&window.AlfalahDBSync.client&&window.AlfalahDBSync.client())||null};
+  window.iso=function(v){if(!v)return '';let s=String(v).trim();if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);let m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:''};
+  window.dObj=function(s){let d=new Date(String(s)+'T00:00:00');return isNaN(d)?null:d};
+  window.addDays=function(s,n){let d=dObj(s);if(!d)return '';d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+  window.dayNo=function(s){let d=dObj(s);return d?d.getDay():-1};
+  window.isWork=function(s){let g=dayNo(s);return g>=1&&g<=5};
+  window.mondayOf=function(s){let d=dObj(s);if(!d)return '';let g=d.getDay();let diff=(g===0?-6:1-g);d.setDate(d.getDate()+diff);return d.toISOString().slice(0,10)};
+  window.weekOfMonth=function(s){let d=dObj(s);if(!d)return 0;let first=new Date(d.getFullYear(),d.getMonth(),1);let firstG=first.getDay();let offset=(firstG===0?6:firstG-1);return Math.ceil((d.getDate()+offset)/7)};
+  window.dmy=function(s){if(!s)return '—';let p=String(s).slice(0,10).split('-');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s};
+  window.arDay=function(s){let g=dayNo(s);return g>=0?DAY_NAMES[g]:'—'};
+  function pick(o,keys){for(const k of keys){let v=o&&o[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return ''}
+  function textJoin(vals){return vals.map(v=>String(v||'').trim()).filter(v=>v && v!=='—' && v!=='{}').filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}
+  window.getSchoolChecks=function(){return [...document.querySelectorAll('#schoolPanel input[type=checkbox]')]};
+  window.toggleSchoolPicker=function(e){if(e)e.stopPropagation();$('schoolPicker')?.classList.toggle('open')};
+  window.updateSchoolPicker=function(){let selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);if(selected.includes('all'))getSchoolChecks().forEach(c=>{if(c.value!=='all')c.checked=false});selected=getSchoolChecks().filter(c=>c.checked).map(c=>c.value);let t=$('schoolPickerText');if(t)t.textContent=selected.length?selected.map(x=>SCHOOL_NAMES[x]||x).join('، '):'— بدون تحديد —'};
+  document.addEventListener('click',e=>{if(!e.target.closest('.multi'))document.querySelectorAll('.multi.open').forEach(x=>x.classList.remove('open'))});
+  window.selected=function(){return{type:val('type'),schools:getSchoolChecks().filter(c=>c.checked).map(c=>c.value),month:val('month'),weekFrom:val('weekFrom'),weekTo:val('weekTo'),day:val('day'),from:val('from'),to:val('to'),level:val('level')||'full',title:val('title'),note:val('note')}};
+  window.hasSelection=function(s){return !!(s.type||s.schools.length||s.month||s.weekFrom||s.weekTo||s.day||s.from||s.to||s.title||s.note)};
+  function reportKind(s){if(s.type==='all')return 'all'; if(s.type==='evaluation'||s.type==='school')return 'evaluation'; if(s.type==='work')return 'work'; if(s.type==='special')return (s.day||s.from||s.to||s.weekFrom||s.weekTo||s.month)?'work':'special'; if(s.day||s.from||s.to||s.weekFrom||s.weekTo||s.month)return 'work'; if(s.schools.length)return 'evaluation'; return ''}
+  window.schoolScopeText=function(arr){if(!arr||!arr.length)return 'غير محدد';if(arr.includes('all'))return 'كل المدارس';return arr.map(x=>SCHOOL_NAMES[x]||x).join('، ')};
+  window.schoolMatch=function(name,sid,filters){if(!filters.length||filters.includes('all'))return true;let t=(String(sid||'')+' '+String(name||'')).toLowerCase();return filters.some(f=>t.includes(f)||t.includes(String(SCHOOL_NAMES[f]||'').toLowerCase()))};
+  window.loadEvaluations=async function(){let rows=[];try{let c=sb();if(c){let r=await c.from('library_evaluations').select('*').order('created_at',{ascending:false});if(!r.error&&Array.isArray(r.data))rows=r.data}}catch(e){console.warn('eval db',e)}if(!rows.length){
+    let ev=loadLS('falah_lib_v6',{ev:{}}).ev||{};
+    rows=Object.entries(ev)
+      .filter(([k,v])=>Boolean(v))
+      .map(([k,v])=>{
+        // نحقن school_code من الـ key مباشرة
+        let obj=Object.assign({},v);
+        if(!obj.school_code) obj.school_code=k;
+        if(!obj.school_id)   obj.school_id=k;
+        if(!obj.school_name) obj.school_name=SCHOOL_NAMES[k]||k;
+        return obj;
+      });
+  }let out=[];for(const r of rows){let d=parseObj(r.full_data||r.data||r);let sid=String(r.school_id||r.school_code||d.school_id||d.school_code||d.branch_code||'');let school=r.school_name||d.school_name||d.branch||d.school||SCHOOL_NAMES[sid]||sid||'غير محدد';let nums=[];['score','average','avg','total_score','rating_score','final_score'].forEach(k=>{let n=Number(r[k]||d[k]||0);if(n>0)nums.push(n)});if(!nums.length){for(const v of Object.values(d)){let n=Number(v);if(n>=1&&n<=6)nums.push(n)}}let score=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0;out.push({sid,school,score:Math.round(score*10)/10,data:d,created_at:r.created_at||d.created_at||''})}let latest=new Map();out.forEach(e=>{let k=e.sid||e.school;if(!latest.has(k))latest.set(k,e)});return [...latest.values()]};
+  function dayFromWeekData(d,i,row={}){let base=iso(d.wstart||d.week_start||d.start_date||row.work_date||row.date||row.day_date);let monday=base?mondayOf(base):'';let date=iso(d['date'+i]||d['day_date'+i]||d['work_date'+i])||(monday?addDays(monday,i):'');let tasks=textJoin([d['task'+i],d['tasks'+i],d['dtasks'+i],d['daily_tasks'+i],d['anote'+i],d['story'+i],d['action'+i],d['work'+i]]);let note=textJoin([d['note'+i],d['dnote'+i],d['remarks'+i],d['comment'+i]]);return{date,name:WORK_DAYS[i]||arDay(date),week:Number(d.wnum||d.week_number||row.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:d['atype'+i]||d['work_type'+i]||d['type'+i]||d.wstatus||row.work_type||'دوام رسمي',loc:d['dloc'+i]||d['loc'+i]||d['location'+i]||d.location||row.location||'—',tasks,note,raw:d}}
+  function normalizeSingle(row){let d=parseObj(row.full_data||row.data||{});let date=iso(pick(row,['work_date','date','day_date','log_date'])||pick(d,['work_date','date','day_date','log_date','wstart']));let tasks=textJoin([row.tasks,row.task,row.work_done,d.tasks,d.task,d.work_done,d.actions,d.daily_tasks,d.anote,d.anote0]);let note=textJoin([row.notes,row.note,d.notes,d.note,d.dnote,d.dnote0,d.comment]);return{date,name:arDay(date),week:Number(row.week_number||d.wnum||d.week_number||weekOfMonth(date)||0),month:date.slice(5,7),type:row.work_type||d.work_type||d.wstatus||d.atype0||'دوام رسمي',loc:row.location||d.location||d.dloc0||'—',tasks,note,raw:d}}
+  window.loadWorkDays=async function(){let rows=[];try{let c=sb();if(c){let r=await c.from('daily_work_logs').select('*').order('work_date',{ascending:true});if(!r.error&&Array.isArray(r.data))rows=r.data}}catch(e){console.warn('work db',e)}if(!rows.length){for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('falah_week_'))rows.push(parseObj(localStorage.getItem(k)))}}let days=[];for(const row of rows){let d=parseObj(row.full_data||row.data||{});if(!Object.keys(d).length) d=parseObj(row.tasks)||parseObj(row.notes)||parseObj(row);let hasWeekFields=['atype0','anote0','dloc0','atype1','anote1','dloc1','wstart','wnum','week_start'].some(k=>d[k]!==undefined);if(hasWeekFields){for(let i=0;i<5;i++){let dd=dayFromWeekData(d,i,row);if(dd.date)days.push(dd)}}else{let one=normalizeSingle(row);if(one.date)days.push(one)}}return days.filter(x=>x.date&&isWork(x.date))};
+  function compactDay(d){return {date:d.date,name:d.name||arDay(d.date),week:d.week||weekOfMonth(d.date),month:d.month||d.date.slice(5,7),type:d.type||'—',loc:d.loc||'—',tasks:d.tasks||'',note:d.note||'',raw:d.raw||{}}}
+  window.dedupeDays=function(days){let map=new Map();for(const src of days){let d=compactDay(src);if(!d.date||!isWork(d.date))continue;let old=map.get(d.date);if(!old){map.set(d.date,{...d});continue}old.type=textJoin([old.type,d.type])||old.type||d.type;old.loc=textJoin([old.loc,d.loc])||old.loc||d.loc;old.tasks=textJoin([old.tasks,d.tasks]);old.note=textJoin([old.note,d.note])}return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date))};
+  function sameMonth(d,m){return !m||(d.date&&d.date.slice(5,7)===m)}
+  window.groupWeeks=function(days,monthFilter=''){let map=new Map();for(const d of dedupeDays(days).filter(x=>sameMonth(x,monthFilter))){let mon=mondayOf(d.date), key=mon;if(!map.has(key))map.set(key,{seq:0,monthSeq:0,start:mon,end:addDays(mon,4),days:[]});map.get(key).days.push(d)}let arr=[...map.values()].sort((a,b)=>a.start.localeCompare(b.start));let perMonth={};arr.forEach((g,i)=>{g.seq=i+1;let mm=(g.days[0]?.date||g.start).slice(5,7);perMonth[mm]=(perMonth[mm]||0)+1;g.monthSeq=perMonth[mm];g.week=g.monthSeq;g.days=dedupeDays(g.days).filter(d=>d.date>=g.start&&d.date<=g.end&&isWork(d.date));});return arr.filter(g=>g.days.length)};
+  window.selectDaysByPeriod=function(allDays,s){let days=dedupeDays(allDays);if(s.day)return days.filter(d=>d.date===s.day);if(s.from||s.to)return days.filter(d=>(!s.from||d.date>=s.from)&&(!s.to||d.date<=s.to));if(s.weekFrom||s.weekTo){let a=s.weekFrom||mondayOf(s.weekTo), b=s.weekTo||(a?addDays(a,4):'');return days.filter(d=>(!a||d.date>=a)&&(!b||d.date<=b)&&isWork(d.date))}if(s.month)return dedupeDays(days.filter(d=>d.month===s.month));return []};
+  window.filterAll=function(evals,days,s){let kind=reportKind(s);let ev=(kind==='evaluation'||kind==='all')?evals.filter(e=>schoolMatch(e.school,e.sid,s.schools)):[];let ds=(kind==='work'||kind==='all'||kind==='special')?selectDaysByPeriod(days,s):[];return{evals:ev,days:ds,kind}};
+  window.libraryItems=function(evals){let map=new Map();for(const e of evals){let main=e.data.library_name||e.data.main_library_type||'المكتبة الرئيسية';map.set((e.sid||e.school)+'|main|'+main,{label:e.school+' / '+main,score:e.score,pct:e.score/6*100});let libs=Array.isArray(e.data.libraries)?e.data.libraries:[];libs.forEach((l,i)=>{let name=l.type||l.library_type||l.name||('مكتبة إضافية '+(i+1));let sc=Number(l.score||l.rating_score||0)||e.score;map.set((e.sid||e.school)+'|extra|'+name,{label:e.school+' / '+name,score:sc,pct:sc/6*100})})}return [...map.values()]};
+  window.metrics=function(evals,days){let schools=new Set(evals.map(e=>e.sid||e.school));let libs=libraryItems(evals).length||evals.length;let avg=evals.length?evals.reduce((a,e)=>a+Number(e.score||0),0)/evals.length:0;let visits=days.filter(d=>/زيارة|مدرسة|ميدانية/.test((d.type+' '+d.loc+' '+d.tasks+' '+d.note))).length;let best=[...evals].sort((a,b)=>b.score-a.score)[0];let worst=[...evals].filter(e=>e.score>0).sort((a,b)=>a.score-b.score)[0];return{schools:schools.size,libs,weeks:groupWeeks(days).length,days:dedupeDays(days).length,visits,avg:Math.round(avg*10)/10,best,worst,evalPct:Math.round((schools.size/6)*100)}};
+  window.scopeText=function(s){let a=[];if(s.type)a.push(({all:'تقرير شامل',evaluation:'تقييم المكتبات',work:'الدوام والزيارات',school:'مدرسة محددة',special:'موضوع خاص'})[s.type]||s.type);if(s.schools.length)a.push('المدارس: '+schoolScopeText(s.schools));if(s.day)a.push('اليوم: '+dmy(s.day));if(s.from||s.to)a.push('الفترة: '+(s.from?dmy(s.from):'البداية')+' إلى '+(s.to?dmy(s.to):'النهاية'));if(s.weekFrom||s.weekTo)a.push('أسبوع العمل: '+(s.weekFrom?dmy(s.weekFrom):'البداية')+' إلى '+(s.weekTo?dmy(s.weekTo):'النهاية'));if(s.month)a.push('الشهر: '+(MONTHS[s.month]||s.month));return a.join(' — ')||'لم يتم تقييد النطاق'};
+  window.kpis=function(m,kind){let arr=[];if(kind==='evaluation'||kind==='all')arr.push(['مدارس مقيّمة',m.schools],['مكتبات',m.libs],['متوسط الأداء',m.avg?m.avg+'/6':'—']);if(kind==='work'||kind==='all'||kind==='special')arr.push(['أيام عمل',m.days],['أسابيع عمل',m.weeks],['زيارات',m.visits]);if(!arr.length)arr.push(['نتائج',0]);return `<div class="grid4">${arr.map(x=>`<div class="kpi"><strong>${esc(x[1])}</strong><span>${esc(x[0])}</span></div>`).join('')}</div>`};
+  window.bars=function(title,items){return `<div class="chart"><h3>${esc(title)}</h3>${items.length?items.map(x=>`<div class="bar-row"><b>${esc(x.label)}</b><div class="bar"><div class="fill" style="width:${Math.max(0,Math.min(100,x.pct||0))}%"></div></div><b>${esc(x.value)}</b></div>`).join(''):'<div class="empty">لا توجد بيانات كافية للرسم.</div>'}</div>`};
+  window.evalCharts=function(evals){let by={};evals.forEach(e=>{(by[e.school]??=[]).push(e.score)});let schools=Object.entries(by).map(([k,a])=>{let v=a.reduce((x,y)=>x+y,0)/a.length;return{label:k,value:v.toFixed(1),pct:v/6*100}});let libs=libraryItems(evals).map(x=>({label:x.label,value:x.score?Number(x.score).toFixed(1):'—',pct:x.pct||0}));return `<div class="grid">${bars('مقارنة المدارس بالنسب',schools)}${bars('تفصيل المكتبات الحالية فقط',libs.slice(0,14))}</div>`};
+  window.donut=function(m,kind){let p=kind==='work'?Math.min(100,Math.round((m.days/5)*100)):Math.max(0,Math.min(100,m.evalPct||0));let label=kind==='work'?'تغطية الفترة':'إنجاز التقييم';return `<div class="chart"><h3>${label}</h3><div class="donut" style="--p:${p}%" data-label="${p}%"></div><div class="legend"><span><b style="background:var(--teal)"></b>منجز</span><span><b style="background:var(--pink)"></b>متابعة</span><span><b style="background:var(--amber)"></b>فجوة</span></div></div>`};
+  window.dayHTML=function(d){let action=textJoin([d.tasks,d.note]);return `<div class="day-card"><b>${esc(d.name)} — ${dmy(d.date)}</b><br><b>نوع اليوم:</b> ${esc(d.type||'—')}<br><b>الموقع/الزيارة:</b> ${esc(d.loc||'—')}<br><b>الأعمال التي تمت:</b> ${esc(action||'لا توجد مهام مكتوبة لهذا اليوم.')}</div>`};
+  window.details=function(days,s){days=dedupeDays(days);if(!days.length)return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';if(s.day)return `<h2>تفاصيل اليوم المختار</h2>${days.map(dayHTML).join('')}`;let groups=groupWeeks(days,s.month||'');let head=s.month?'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع':((s.weekFrom||s.weekTo)?'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة':'تفاصيل الفترة المختارة');return `<h2>${head}</h2>${groups.map(g=>`<div class="week-box"><div class="week-title">الأسبوع ${s.month?g.monthSeq:g.seq} — ${dmy(g.start)} إلى ${dmy(g.end)}</div>${g.days.map(dayHTML).join('')}</div>`).join('')}`};
+  window.workCharts=function(days){let ds=dedupeDays(days);let byType={};let byVisit={};ds.forEach(d=>{byType[d.type||'غير محدد']=(byType[d.type||'غير محدد']||0)+1;let isVisit=/زيارة|مدرسة|ميدانية/.test((d.type+' '+d.loc+' '+d.tasks+' '+d.note));byVisit[isVisit?'زيارات/ميداني':'عمل مكتبي/إداري']=(byVisit[isVisit?'زيارات/ميداني':'عمل مكتبي/إداري']||0)+1});let total=Math.max(1,ds.length);let typeItems=Object.entries(byType).map(([k,v])=>({label:k,value:v,pct:v/total*100}));let visitItems=Object.entries(byVisit).map(([k,v])=>({label:k,value:v,pct:v/total*100}));return `<div class="grid">${bars('توزيع نوع العمل',typeItems)}${bars('مؤشرات الزيارات والعمل اليومي',visitItems)}</div>`};
+  window.buildReportHTML=async function(mode='full'){let s=selected();if(!hasSelection(s))return '<div class="empty">اختر نوع التقرير أو المدرسة أو التاريخ، ثم اضغط تحديث التقرير.</div>';let evals=await loadEvaluations(), allDays=await loadWorkDays();let f=filterAll(evals,allDays,s);let m=metrics(f.evals,f.days);let kind=f.kind;let title=s.title||((mode==='brief')?'ملخص تنفيذي':'تقرير تحليلي');let html=`<h2>${esc(title)}</h2><div class="smart"><b>النطاق:</b> ${esc(scopeText(s))}<br>${s.note?'<b>ملاحظة:</b> '+esc(s.note):'يعرض هذا التقرير البيانات الفعلية حسب الاختيارات المحددة فقط.'}</div>${kpis(m,kind)}`;if(kind==='evaluation'){html+=`${evalCharts(f.evals)}${donut(m,'evaluation')}`}else if(kind==='work'||kind==='special'){html+=`${details(f.days,s)}${workCharts(f.days)}${donut(m,'work')}`}else if(kind==='all'){html+=`${details(f.days,s)}${workCharts(f.days)}${evalCharts(f.evals)}${donut(m,'evaluation')}`}else{html+='<div class="empty">لم يتم تحديد نوع تقرير واضح.</div>'}if(mode==='brief')html+=`<div class="notice"><b>المطلوب إداريًا:</b> مراجعة المؤشرات، واعتماد التوجيهات، وإرسال ملاحظة مختصرة عبر نموذج الرد أسفل الصفحة.</div>`;return html};
+})();
+</script>
+<script>
+/* FINAL PERIOD PATCH: build reports from the exact selected calendar range and show every workday in that range. */
+(function(){
+  const PATCH_DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  function pEsc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function pISO(v){
+    if(!v) return '';
+    const s=String(v).trim();
+    let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/); if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    return '';
+  }
+  function pDate(s){s=pISO(s); if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d);}
+  function pFmt(d){const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;}
+  function pAdd(s,n){const d=pDate(s); if(!d) return ''; d.setDate(d.getDate()+n); return pFmt(d);}
+  function pDayNo(s){const d=pDate(s); return d?d.getDay():-1;}
+  function pIsWork(s){const g=pDayNo(s); return g>=1 && g<=5;}
+  function pDayName(s){const g=pDayNo(s); return g>=0?PATCH_DAY_NAMES[g]:'—';}
+  function pMonday(s){const d=pDate(s); if(!d) return ''; const g=d.getDay(); const diff=(g===0?-6:1-g); d.setDate(d.getDate()+diff); return pFmt(d);}
+  function pDmy(s){s=pISO(s); if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}-${m}-${y}`;}
+  function pBetween(a,b){
+    a=pISO(a); b=pISO(b); if(!a&&!b) return [];
+    if(a&&!b) b=a; if(!a&&b) a=b; if(a>b){const t=a; a=b; b=t;}
+    const out=[]; let cur=a; let guard=0;
+    while(cur && cur<=b && guard++<370){ if(pIsWork(cur)) out.push(cur); cur=pAdd(cur,1); }
+    return out;
+  }
+  function pMonthBounds(mm){
+    const year=2026; // mission year in this project
+    const m=Number(mm); if(!m) return ['', ''];
+    return [`${year}-${String(m).padStart(2,'0')}-01`, pFmt(new Date(year,m,0))];
+  }
+  function pCompact(d){
+    return {date:pISO(d.date),name:pDayName(d.date),week:(typeof weekOfMonth==='function'?weekOfMonth(pISO(d.date)):0),month:pISO(d.date).slice(5,7),type:d.type||'—',loc:d.loc||'—',tasks:d.tasks||'',note:d.note||'',missing:!!d.missing,raw:d.raw||{}};
+  }
+  function pDedupe(days){
+    const map=new Map();
+    (days||[]).forEach(src=>{
+      const d=pCompact(src); if(!d.date||!pIsWork(d.date)) return;
+      const old=map.get(d.date);
+      if(!old){map.set(d.date,d); return;}
+      old.type=(old.type&&old.type!=='—'?old.type:'') || d.type || '—';
+      old.loc=(old.loc&&old.loc!=='—'?old.loc:'') || d.loc || '—';
+      old.tasks=[old.tasks,d.tasks].filter(Boolean).join('، ');
+      old.note=[old.note,d.note].filter(Boolean).join('، ');
+      old.missing=old.missing && d.missing;
+    });
+    return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  function pCompleteRange(allDays,a,b){
+    const actual=pDedupe(allDays); const byDate=new Map(actual.map(d=>[d.date,d]));
+    return pBetween(a,b).map(date=>byDate.get(date)||{date,name:pDayName(date),week:(typeof weekOfMonth==='function'?weekOfMonth(date):0),month:date.slice(5,7),type:'—',loc:'—',tasks:'',note:'لا يوجد سجل محفوظ لهذا اليوم في قاعدة البيانات.',missing:true,raw:{}});
+  }
+  window.dedupeDays=pDedupe;
+  window.selectDaysByPeriod=function(allDays,s){
+    if(s.day) return pCompleteRange(allDays,s.day,s.day);
+    if(s.from||s.to) return pCompleteRange(allDays,s.from,s.to);
+    if(s.weekFrom||s.weekTo){
+      let a=pISO(s.weekFrom)||pMonday(s.weekTo), b=pISO(s.weekTo)||(a?pAdd(a,4):'');
+      return pCompleteRange(allDays,a,b);
+    }
+    if(s.month){const [a,b]=pMonthBounds(s.month); return pCompleteRange(allDays,a,b);}
+    return [];
+  };
+  window.groupWeeks=function(days,monthFilter=''){
+    const map=new Map();
+    pDedupe(days).filter(d=>!monthFilter||d.date.slice(5,7)===monthFilter).forEach(d=>{
+      const mon=pMonday(d.date); if(!map.has(mon)) map.set(mon,{seq:0,monthSeq:0,start:mon,end:pAdd(mon,4),days:[]});
+      map.get(mon).days.push(d);
+    });
+    const arr=[...map.values()].sort((a,b)=>a.start.localeCompare(b.start)); const perMonth={};
+    arr.forEach((g,i)=>{g.seq=i+1; const mm=(g.days[0]?.date||g.start).slice(5,7); perMonth[mm]=(perMonth[mm]||0)+1; g.monthSeq=perMonth[mm]; g.days=pDedupe(g.days).filter(d=>d.date>=g.start&&d.date<=g.end);});
+    return arr;
+  };
+  window.dayHTML=function(d){
+    const action=[d.tasks,d.note].filter(Boolean).join(' — ');
+    return `<div class="day-card"><b>${pEsc(pDayName(d.date))} — ${pDmy(d.date)}</b><br><b>نوع اليوم:</b> ${pEsc(d.type||'—')}<br><b>الموقع/الزيارة:</b> ${pEsc(d.loc||'—')}<br><b>الأعمال التي تمت:</b> ${pEsc(action||'لا توجد مهام مكتوبة لهذا اليوم.')}</div>`;
+  };
+  window.details=function(days,s){
+    days=pDedupe(days);
+    if(!days.length) return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';
+    if(s.day) return `<h2>تفاصيل اليوم المختار</h2>${days.map(dayHTML).join('')}`;
+    const groups=groupWeeks(days,s.month||'');
+    const head=s.month?'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع':((s.weekFrom||s.weekTo)?'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة':'تفاصيل الفترة المختارة');
+    return `<h2>${head}</h2>${groups.map(g=>`<div class="week-box"><div class="week-title">الأسبوع ${s.month?g.monthSeq:g.seq} — ${pDmy(g.start)} إلى ${pDmy(g.end)}</div>${g.days.map(dayHTML).join('')}</div>`).join('')}`;
+  };
+})();
+</script>
+
+
+<script>
+/* === FINAL DATE / WEEKDAY / WEEK-RANGE FIX — stable local calendar === */
+(function(){
+  const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+  function cleanISO(v){
+    if(!v) return '';
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    return '';
+  }
+  function localDate(iso){
+    iso = cleanISO(iso);
+    if(!iso) return null;
+    const [y,m,d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d); // local calendar, no UTC shift
+  }
+  function fmtDate(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function addLocal(iso, n){
+    const d = localDate(iso);
+    if(!d) return '';
+    d.setDate(d.getDate() + n);
+    return fmtDate(d);
+  }
+  function dayIndex(iso){
+    const d = localDate(iso);
+    return d ? d.getDay() : -1;
+  }
+  function dayName(iso){
+    const g = dayIndex(iso);
+    return g >= 0 ? AR_DAYS[g] : '—';
+  }
+  function isWorkDay(iso){
+    const g = dayIndex(iso);
+    return g >= 1 && g <= 5; // Monday to Friday
+  }
+  function mondayOfLocal(iso){
+    const d = localDate(iso);
+    if(!d) return '';
+    const g = d.getDay();
+    const diff = (g === 0 ? -6 : 1 - g);
+    d.setDate(d.getDate() + diff);
+    return fmtDate(d);
+  }
+  function dmyLocal(iso){
+    iso = cleanISO(iso);
+    if(!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return `${d}-${m}-${y}`;
+  }
+  function workDatesBetween(a,b){
+    a = cleanISO(a); b = cleanISO(b);
+    if(a && !b) b = a;
+    if(!a && b) a = b;
+    if(!a || !b) return [];
+    if(a > b){ const t=a; a=b; b=t; }
+    const out=[];
+    let cur=a, guard=0;
+    while(cur <= b && guard++ < 370){
+      if(isWorkDay(cur)) out.push(cur);
+      cur = addLocal(cur, 1);
+    }
+    return out;
+  }
+  function textMerge(values){
+    return values.map(v => String(v || '').trim())
+      .filter(v => v && v !== '—' && v !== '{}')
+      .filter((v,i,a)=>a.indexOf(v)===i).join('، ');
+  }
+  function safeWeekOfMonth(iso){
+    if(typeof window.weekOfMonth === 'function') return window.weekOfMonth(iso);
+    const d = localDate(iso); if(!d) return 0;
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    const offset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+    return Math.ceil((d.getDate() + offset) / 7);
+  }
+  function compactDayFixed(src){
+    const date = cleanISO(src && src.date);
+    return {
+      date,
+      name: dayName(date),
+      week: (src && src.week) || safeWeekOfMonth(date),
+      month: date ? date.slice(5,7) : '',
+      type: (src && src.type) || '—',
+      loc: (src && src.loc) || '—',
+      tasks: (src && src.tasks) || '',
+      note: (src && src.note) || '',
+      missing: !!(src && src.missing),
+      raw: (src && src.raw) || {}
+    };
+  }
+  function dedupeFixed(days){
+    const map = new Map();
+    (days || []).forEach(src => {
+      const d = compactDayFixed(src);
+      if(!d.date || !isWorkDay(d.date)) return;
+      const old = map.get(d.date);
+      if(!old){ map.set(d.date, d); return; }
+      old.type = textMerge([old.type, d.type]) || old.type || d.type;
+      old.loc = textMerge([old.loc, d.loc]) || old.loc || d.loc;
+      old.tasks = textMerge([old.tasks, d.tasks]);
+      old.note = textMerge([old.note, d.note]);
+      old.missing = old.missing && d.missing;
+    });
+    return Array.from(map.values()).sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  function completeRange(allDays, a, b){
+    const actual = dedupeFixed(allDays);
+    const byDate = new Map(actual.map(d => [d.date, d]));
+    return workDatesBetween(a,b).map(date => byDate.get(date) || {
+      date,
+      name: dayName(date),
+      week: safeWeekOfMonth(date),
+      month: date.slice(5,7),
+      type: '—',
+      loc: '—',
+      tasks: '',
+      note: 'لا يوجد سجل محفوظ لهذا اليوم في قاعدة البيانات.',
+      missing: true,
+      raw: {}
+    });
+  }
+  function monthBounds(mm){
+    const year = 2026;
+    const m = Number(mm);
+    if(!m) return ['', ''];
+    return [`${year}-${String(m).padStart(2,'0')}-01`, fmtDate(new Date(year, m, 0))];
+  }
+
+  // Replace all date helpers used by reports with one reliable local-calendar logic.
+  window.iso = cleanISO;
+  window.dObj = localDate;
+  window.addDays = addLocal;
+  window.dayNo = dayIndex;
+  window.arDay = dayName;
+  window.isWork = isWorkDay;
+  window.mondayOf = mondayOfLocal;
+  window.dmy = dmyLocal;
+  window.dedupeDays = dedupeFixed;
+
+  window.selectDaysByPeriod = function(allDays, s){
+    if(s.day) return completeRange(allDays, s.day, s.day);
+    if(s.from || s.to) return completeRange(allDays, s.from, s.to);
+    if(s.weekFrom || s.weekTo){
+      const start = cleanISO(s.weekFrom) || mondayOfLocal(s.weekTo);
+      const end = cleanISO(s.weekTo) || (start ? addLocal(start, 4) : '');
+      return completeRange(allDays, start, end);
+    }
+    if(s.month){
+      const [a,b] = monthBounds(s.month);
+      return completeRange(allDays, a, b);
+    }
+    return [];
+  };
+
+  window.groupWeeks = function(days, monthFilter=''){
+    const map = new Map();
+    dedupeFixed(days).filter(d => !monthFilter || d.date.slice(5,7) === monthFilter).forEach(d => {
+      const start = mondayOfLocal(d.date);
+      if(!map.has(start)) map.set(start, {seq:0, monthSeq:0, start, end:addLocal(start,4), days:[]});
+      map.get(start).days.push(d);
+    });
+    const arr = Array.from(map.values()).sort((a,b)=>a.start.localeCompare(b.start));
+    const perMonth = {};
+    arr.forEach((g,i)=>{
+      g.seq = i + 1;
+      const mm = (g.days[0] && g.days[0].date || g.start).slice(5,7);
+      perMonth[mm] = (perMonth[mm] || 0) + 1;
+      g.monthSeq = perMonth[mm];
+      g.days = dedupeFixed(g.days).filter(d => d.date >= g.start && d.date <= g.end && isWorkDay(d.date));
+    });
+    return arr;
+  };
+
+  window.dayHTML = function(d){
+    const action = textMerge([d.tasks, d.note]);
+    return `<div class="day-card"><b>${(window.esc||((x)=>x))(dayName(d.date))} — ${dmyLocal(d.date)}</b><br><b>نوع اليوم:</b> ${(window.esc||((x)=>x))(d.type || '—')}<br><b>الموقع/الزيارة:</b> ${(window.esc||((x)=>x))(d.loc || '—')}<br><b>الأعمال التي تمت:</b> ${(window.esc||((x)=>x))(action || 'لا توجد مهام مكتوبة لهذا اليوم.')}</div>`;
+  };
+
+  window.details = function(days, s){
+    days = dedupeFixed(days);
+    if(!days.length) return '<div class="empty">لا توجد بيانات دوام أو زيارات ضمن هذا الاختيار.</div>';
+    if(s.day) return `<h2>تفاصيل اليوم المختار</h2>${days.map(window.dayHTML).join('')}`;
+    const groups = window.groupWeeks(days, s.month || '');
+    const head = s.month ? 'تفاصيل الشهر المختار: الأسابيع وأيام كل أسبوع' : ((s.weekFrom || s.weekTo) ? 'تفاصيل أسبوع العمل المختار: من الاثنين إلى الجمعة' : 'تفاصيل الفترة المختارة');
+    return `<h2>${head}</h2>${groups.map(g => `<div class="week-box"><div class="week-title">الأسبوع ${s.month ? g.monthSeq : g.seq} — ${dmyLocal(g.start)} إلى ${dmyLocal(g.end)}</div>${g.days.map(window.dayHTML).join('')}</div>`).join('')}`;
+  };
+})();
+</script>
+
+</body></html>
