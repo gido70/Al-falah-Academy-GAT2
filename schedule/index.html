@@ -3084,5 +3084,213 @@ else{setTimeout(WKM.init,600);}
 })();
 </script>
 
+
+<!-- PATCH: robust week_number database save only - 2026-05-15 -->
+<script>
+(function(){
+  if(window.__FALAH_WEEK_SAVE_PATCH_V3__) return;
+  window.__FALAH_WEEK_SAVE_PATCH_V3__ = true;
+
+  function toastSafe(msg, color){
+    try{
+      if(typeof toast === 'function') return toast(msg);
+      var t=document.getElementById('toast');
+      if(t){
+        t.textContent=msg;
+        t.style.background=color || '#0d3b6e';
+        t.style.display='block';
+        clearTimeout(window.__falahToastTimer);
+        window.__falahToastTimer=setTimeout(function(){t.style.display='none';},3200);
+      }else{
+        alert(msg);
+      }
+    }catch(e){ alert(msg); }
+  }
+
+  function cleanNum(v){
+    if(v===null || v===undefined) return '';
+    return String(v)
+      .replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);})
+      .replace(/[۰-۹]/g,function(d){return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d);})
+      .replace(/[^0-9]/g,'');
+  }
+
+  function weekOfMonthFromDate(dateStr){
+    if(!dateStr) return '';
+    var d = new Date(dateStr);
+    if(isNaN(d.getTime())) return '';
+    var day = d.getDate();
+    return String(Math.max(1, Math.ceil(day / 7)));
+  }
+
+  function resolveWeekNumber(d){
+    d = d || {};
+    var candidates = [
+      d.week_number,
+      d.wnum,
+      d.week_no,
+      d.weekNum,
+      d.week,
+      (document.getElementById('wnum')||{}).value,
+      (document.querySelector('[name="wnum"]')||{}).value
+    ];
+    for(var i=0;i<candidates.length;i++){
+      var n = parseInt(cleanNum(candidates[i]),10);
+      if(n && n > 0) return n;
+    }
+    var wstart = d.wstart || d.work_date || ((document.getElementById('wstart')||{}).value) || ((document.querySelector('[name="wstart"]')||{}).value);
+    var calc = parseInt(weekOfMonthFromDate(wstart),10);
+    if(calc && calc > 0){
+      var el = document.getElementById('wnum');
+      if(el) el.value = calc;
+      return calc;
+    }
+    return null;
+  }
+
+  function getClient(){
+    return window.alfalahSupabase ||
+      (window.AlfalahDBSync && typeof window.AlfalahDBSync.client === 'function' && window.AlfalahDBSync.client()) ||
+      window.supabaseClient ||
+      null;
+  }
+
+  var originalGetFormData = (typeof window.getFormData === 'function') ? window.getFormData : null;
+  window.getFormData = function(){
+    var d = originalGetFormData ? (originalGetFormData() || {}) : {};
+    var wn = resolveWeekNumber(d);
+    if(wn){
+      d.wnum = String(wn);
+      d.week_number = wn;
+      var el = document.getElementById('wnum');
+      if(el && !el.value) el.value = String(wn);
+    }
+    if(!d.wstart){
+      var ws = document.getElementById('wstart') || document.querySelector('[name="wstart"]');
+      if(ws) d.wstart = ws.value || '';
+    }
+    if(!d.wend){
+      var we = document.getElementById('wend') || document.querySelector('[name="wend"]');
+      if(we) d.wend = we.value || '';
+    }
+    return d;
+  };
+
+  async function robustSaveToDatabase(raw){
+    var d = raw || (typeof window.getFormData === 'function' ? window.getFormData() : {});
+    if(!d || typeof d !== 'object') throw new Error('لا توجد بيانات صالحة للحفظ.');
+    var wn = resolveWeekNumber(d);
+    if(!wn) throw new Error('رقم الأسبوع غير موجود. اختر بداية الأسبوع أولاً أو تأكد من ظهور رقم الأسبوع.');
+    d.wnum = String(wn);
+    d.week_number = wn;
+
+    var now = new Date().toISOString();
+    var weekStart = d.wstart || d.work_date || ((document.getElementById('wstart')||{}).value) || null;
+    var weekEnd   = d.wend || ((document.getElementById('wend')||{}).value) || null;
+    d.wstart = d.wstart || weekStart || '';
+    d.wend = d.wend || weekEnd || '';
+    d.work_date = weekStart || d.work_date || null;
+    d.week_title = d.week_title || ('الأسبوع رقم ' + wn);
+    d.updated_at = now;
+    d._savedAt = now;
+    d._savedAtAr = new Date(now).toLocaleString('ar-AE');
+
+    var payload = {
+      week_number: wn,
+      week_title: d.week_title,
+      work_date: d.work_date,
+      work_type: d.wstatus || d.work_type || 'دوام كامل',
+      tasks: JSON.stringify(d),
+      notes: JSON.stringify(d),
+      full_data: d,
+      updated_at: now
+    };
+
+    var client = getClient();
+    if(!client) throw new Error('لم يتم الاتصال بقاعدة البيانات Supabase.');
+
+    // لا نعتمد على upsert فقط، لأن بعض الجداول لا يكون عليها unique constraint.
+    var existing = await client.from('daily_work_logs')
+      .select('id')
+      .eq('week_number', wn)
+      .maybeSingle();
+
+    if(existing.error && existing.error.code !== 'PGRST116') throw existing.error;
+
+    var res;
+    if(existing.data && existing.data.id){
+      res = await client.from('daily_work_logs')
+        .update(payload)
+        .eq('id', existing.data.id)
+        .select();
+    }else{
+      res = await client.from('daily_work_logs')
+        .insert(payload)
+        .select();
+    }
+
+    if(res.error){
+      // محاولة أخيرة: تحديث بالرقم مباشرة إذا رفض الإدخال لأي سبب.
+      var upd = await client.from('daily_work_logs')
+        .update(payload)
+        .eq('week_number', wn)
+        .select();
+      if(upd.error) throw res.error;
+      res = upd;
+    }
+
+    if(res.data && res.data[0] && res.data[0].id){
+      d._db_id = res.data[0].id;
+    }
+    try{
+      localStorage.setItem('falah_week_' + wn, JSON.stringify(d));
+      localStorage.setItem('falah_wp_final', JSON.stringify(d));
+    }catch(e){}
+    return res.data && res.data[0];
+  }
+
+  window.falahRobustWeekSave = robustSaveToDatabase;
+
+  if(window.ScheduleImportPreview){
+    window.ScheduleImportPreview._saveDataToDatabase = robustSaveToDatabase;
+    window.ScheduleImportPreview.saveCurrentToDatabase = async function(){
+      var d = window.getFormData ? window.getFormData() : {};
+      await robustSaveToDatabase(d);
+      toastSafe('💾 تم حفظ الأسبوع في قاعدة البيانات بنجاح', '#0e7f70');
+    };
+  }
+
+  async function saveCurrentFromButton(){
+    try{
+      if(typeof alignWeekRange === 'function') alignWeekRange();
+      var d = window.getFormData ? window.getFormData() : {};
+      var wn = resolveWeekNumber(d);
+      if(!wn){
+        toastSafe('⚠️ اختر بداية الأسبوع أولاً حتى يظهر رقم الأسبوع', '#b8860b');
+        return;
+      }
+      await robustSaveToDatabase(d);
+      toastSafe('💾 تم حفظ الأسبوع رقم ' + wn + ' في قاعدة البيانات', '#0e7f70');
+    }catch(err){
+      console.error('Robust week save failed:', err);
+      toastSafe('❌ فشل الحفظ: ' + (err.message || err), '#991b1b');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('btn-save');
+    if(btn){
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        saveCurrentFromButton();
+        return false;
+      }, true);
+    }
+  });
+
+})();
+</script>
+
 </body>
 </html>
