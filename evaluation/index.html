@@ -2890,5 +2890,248 @@ document.addEventListener('DOMContentLoaded',()=>{try{bindLibraryUnitsAutoSummar
 })();
 </script>
 
+
+<script>
+/* === Alfalah Final Evaluation Save Guard — school_id NOT NULL fix only ===
+   يثبت قيمة school_id قبل أي حفظ إلى library_evaluations.
+   لا يغير التصميم أو الحقول أو منطق التقرير.
+*/
+(function(){
+  window.__alfalahFinalEvaluationSaveGuard = true;
+
+  var SCHOOL_DB_ID_FINAL = {dan:1,mzd:2,bny:3,khb:4,jmi:5,shj:6};
+  var DB_ID_TO_CODE_FINAL = {1:'dan',2:'mzd',3:'bny',4:'khb',5:'jmi',6:'shj'};
+
+  function byId(id){ return document.getElementById(id); }
+  function val(id){ var el=byId(id); return el ? String(el.value || '').trim() : ''; }
+  function cleanText(v){ return String(v || '').replace(/\s+/g,' ').trim(); }
+
+  function showSaveMsg(msg, bg){
+    var t = byId('alfalah-final-save-toast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = 'alfalah-final-save-toast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:1000000;color:#fff;padding:13px 22px;border-radius:22px;font-family:Cairo,Tahoma,Arial,sans-serif;font-weight:900;box-shadow:0 8px 28px rgba(0,0,0,.28);max-width:94%;text-align:center';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = bg || '#0c447c';
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.style.display='none'; }, 3800);
+  }
+
+  function getClientFinal(){
+    if(window.alfalahSupabase) return window.alfalahSupabase;
+    if(window.supabaseClient) return window.supabaseClient;
+    if(window.AlfalahDBSync && typeof window.AlfalahDBSync.client === 'function'){
+      try{ return window.AlfalahDBSync.client(); }catch(e){}
+    }
+    if(window.supabase && window.ALFALAH_SUPABASE_URL && window.ALFALAH_SUPABASE_KEY){
+      try{
+        window.alfalahSupabase = window.supabase.createClient(window.ALFALAH_SUPABASE_URL, window.ALFALAH_SUPABASE_KEY);
+        return window.alfalahSupabase;
+      }catch(e){}
+    }
+    return null;
+  }
+
+  function schoolsFinal(){
+    try{ if(Array.isArray(window.SCH)) return window.SCH; }catch(e){}
+    return [
+      {id:'khb',name:'أكاديمية الفلاح فرع الخبيصي',short:'الخبيصي',city:'العين',date:'2026-04-28'},
+      {id:'jmi',name:'أكاديمية الفلاح فرع الجيمي',short:'الجيمي',city:'العين',date:'2026-04-29'},
+      {id:'shj',name:'مدرسة الفلاح الخاصة - الدخيلات',short:'الشارقة',city:'الشارقة',date:'2026-05-12'},
+      {id:'bny',name:'أكاديمية الفلاح فرع بني ياس',short:'بني ياس',city:'أبوظبي',date:'2026-05-14'},
+      {id:'mzd',name:'أكاديمية الفلاح فرع محمد بن زايد',short:'محمد بن زايد',city:'أبوظبي',date:'2026-05-18'},
+      {id:'dan',name:'أكاديمية الفلاح فرع الدانة',short:'الدانة',city:'أبوظبي',date:'2026-05-19'}
+    ];
+  }
+
+  function schoolByCodeFinal(code){
+    code = String(code || '').trim();
+    var list = schoolsFinal();
+    for(var i=0;i<list.length;i++){ if(list[i].id === code) return list[i]; }
+    return null;
+  }
+
+  function codeFromAnyFinal(v){
+    var x = cleanText(v);
+    if(!x) return '';
+    if(SCHOOL_DB_ID_FINAL[x]) return x;
+    if(DB_ID_TO_CODE_FINAL[x]) return DB_ID_TO_CODE_FINAL[x];
+    var list = schoolsFinal();
+    for(var i=0;i<list.length;i++){
+      var s=list[i];
+      if(x === s.id || x === String(SCHOOL_DB_ID_FINAL[s.id]) || x === s.name || x === s.short) return s.id;
+      if(x.indexOf(s.name) !== -1 || x.indexOf(s.short) !== -1 || s.name.indexOf(x) !== -1) return s.id;
+    }
+    return '';
+  }
+
+  function detectSchoolCodeFinal(d){
+    var sid = codeFromAnyFinal(val('esch'));
+    if(sid) return sid;
+
+    if(d){
+      sid = codeFromAnyFinal(d.school_code || d.school_id || d.school_db_id || d.esch || d.sid || d.school);
+      if(sid) return sid;
+      sid = codeFromAnyFinal(d.school_name || d.sname || d['f-sname'] || d.name);
+      if(sid) return sid;
+    }
+
+    sid = codeFromAnyFinal(val('f-sname')) || codeFromAnyFinal(cleanText((byId('current-school-name')||{}).textContent));
+    if(sid) return sid;
+
+    try{
+      if(window.DB && DB.ev){
+        var keys = Object.keys(DB.ev);
+        for(var k=0;k<keys.length;k++){
+          if(DB.ev[keys[k]] && DB.ev[keys[k]].saved && SCHOOL_DB_ID_FINAL[keys[k]]) return keys[k];
+        }
+      }
+    }catch(e){}
+
+    return '';
+  }
+
+  function detectVisitDateFinal(d, sid){
+    var dt = cleanText((d && (d.date || d.visit_date || d['f-date'])) || val('f-date')).slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dt)){
+      var s = schoolByCodeFinal(sid);
+      if(s && /^\d{4}-\d{2}-\d{2}$/.test(String(s.date||''))) dt = s.date;
+    }
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dt)){
+      dt = new Date().toISOString().slice(0,10);
+    }
+    return dt;
+  }
+
+  function getDataFinal(){
+    var d = {};
+    try{
+      if(typeof window.getEv === 'function') d = window.getEv() || {};
+      else if(typeof getEv === 'function') d = getEv() || {};
+    }catch(e){ d = {}; }
+
+    /* احتياط: اقرأ كل حقول النموذج التي تبدأ بـ f- حتى لا تضيع الخانات اليدوية */
+    try{
+      document.querySelectorAll('#eform [id^="f-"]').forEach(function(el){
+        if(!el || !el.id) return;
+        if(el.type === 'checkbox') d[el.id] = !!el.checked;
+        else d[el.id] = el.value;
+      });
+    }catch(e){}
+    return d;
+  }
+
+  function saveLocalFinal(sid,d){
+    try{
+      if(typeof window.DB === 'undefined') window.DB = {ev:{}};
+      if(!DB.ev) DB.ev = {};
+      DB.ev[sid] = d;
+      var key = (typeof window.LSK !== 'undefined') ? window.LSK : 'falah_lib_v6';
+      localStorage.setItem(key, JSON.stringify(DB));
+    }catch(e){ console.warn('local save failed', e); }
+  }
+
+  function totalScoreFinal(d){
+    try{
+      if(typeof window.calcSc === 'function' && typeof window.tot === 'function') return window.tot(window.calcSc(d));
+      if(typeof calcSc === 'function' && typeof tot === 'function') return tot(calcSc(d));
+    }catch(e){}
+    var n = Number(d.total_score || d.total || 0);
+    return isFinite(n) ? n : 0;
+  }
+
+  function levelFinal(d){
+    return cleanText(d.overall || d['f-ovr'] || d.final_level || '').replace(/🔴|🟠|🔵|🟢/g,'').trim();
+  }
+
+  async function saveEvaluationFinal(){
+    var d = getDataFinal();
+    var sid = detectSchoolCodeFinal(d);
+    if(!sid || !SCHOOL_DB_ID_FINAL[sid]){
+      alert('اختر المدرسة من جدول الزيارات أو البطاقة قبل الحفظ.');
+      return;
+    }
+
+    var s = schoolByCodeFinal(sid);
+    var visitDate = detectVisitDateFinal(d, sid);
+    var now = new Date().toISOString();
+
+    if(byId('esch')) byId('esch').value = sid;
+    if(s){
+      if(byId('f-sname')) byId('f-sname').value = s.name;
+      if(byId('f-city')) byId('f-city').value = s.city || '';
+    }
+    if(byId('f-date') && !byId('f-date').value) byId('f-date').value = visitDate;
+
+    d.school_code = sid;
+    d.school_id = SCHOOL_DB_ID_FINAL[sid];      /* مهم: رقم لا يترك فارغاً */
+    d.school_db_id = SCHOOL_DB_ID_FINAL[sid];
+    d.school_name = s ? s.name : (d.school_name || d['f-sname'] || '');
+    d.city = s ? s.city : (d.city || d['f-city'] || '');
+    d.date = visitDate;
+    d.visit_date = visitDate;
+    d['f-date'] = visitDate;
+    d.saved = true;
+    d.savedAt = now;
+    d.form_version = 'final-school-id-save-guard-2026-05-15';
+
+    saveLocalFinal(sid,d);
+    try{ if(typeof window.refresh === 'function') window.refresh(); }catch(e){}
+    try{ if(typeof window.uHome === 'function') window.uHome(); }catch(e){}
+    try{ if(typeof window.uSch === 'function') window.uSch(); }catch(e){}
+    try{ if(typeof window.uDat === 'function') window.uDat(); }catch(e){}
+
+    var sb = getClientFinal();
+    if(!sb){
+      showSaveMsg('✅ تم الحفظ محلياً — لم يتم العثور على اتصال Supabase', '#ba7517');
+      return;
+    }
+
+    var total = totalScoreFinal(d);
+    var row = {
+      school_id: SCHOOL_DB_ID_FINAL[sid],
+      school_code: sid,
+      visit_date: visitDate,
+      librarian_name: cleanText(d.lib || d['f-lib']),
+      total_score: total,
+      final_level: levelFinal(d),
+      strengths: cleanText(d.str || d['f-str']),
+      weaknesses: cleanText(d.wk || d.chal || d['f-wk'] || d['f-chal']),
+      recommendations: cleanText(d.rec || d['f-rec']),
+      full_data: d,
+      updated_at: now
+    };
+
+    if(!row.school_id){
+      alert('تعذر تحديد رقم المدرسة قبل الحفظ.');
+      return;
+    }
+
+    showSaveMsg('💾 جاري الحفظ في قاعدة البيانات...', '#0c447c');
+    var res = await sb.from('library_evaluations')
+      .upsert(row, {onConflict:'school_id,visit_date'})
+      .select('id')
+      .single();
+
+    if(res && res.error){
+      console.error('library_evaluations save error', res.error, row);
+      showSaveMsg('❌ فشل الحفظ في القاعدة: ' + (res.error.message || res.error), '#c0392b');
+      return;
+    }
+
+    if(res && res.data && res.data.id) d._dbRowId = res.data.id;
+    saveLocalFinal(sid,d);
+    showSaveMsg('✅ تم حفظ التقييم في قاعدة البيانات', '#0f6e56');
+  }
+
+  window.saveEval = saveEvaluationFinal;
+  window.saveAll = saveEvaluationFinal;
+})();
+</script>
+
 </body>
 </html>
