@@ -66,25 +66,89 @@ async function uploadFiles(inputId,bucket){
 function filePreview(f){
   const url=f.file_url || '';
   const isImg=(f.file_type||'').startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.file_name||f.file_path||'');
-  if(isImg && url) return `<img src="${url}" alt="${(f.file_name||'صورة').replace(/"/g,'')}">`;
+  if(isImg && url) return `<img src="${url}" alt="${(f.file_name||'صورة').replace(/"/g,'')}" onerror="this.outerHTML='<div style=&quot;font-size:46px&quot;>🖼️</div>'">`;
   return '<div style="font-size:46px">📄</div>';
 }
 
 function escJs(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ')}
+function storageBucketCandidates(bucket){
+  const c=fileCategoryKey(bucket);
+  const map={
+    'library-images':['library-images','photos'],
+    'library-documents':['library-documents','documents'],
+    'specialist-certificates':['specialist-certificates','certificates']
+  };
+  return [...new Set([bucket,c,...(map[c]||[])].filter(Boolean))];
+}
+function storagePathCandidates(path,bucket){
+  const raw=String(path||'').trim();
+  const arr=[];
+  if(raw) arr.push(raw);
+  try{
+    if(raw.startsWith('http')){
+      const u=new URL(raw);
+      const marker='/storage/v1/object/public/';
+      const idx=u.pathname.indexOf(marker);
+      if(idx>=0){
+        const rest=decodeURIComponent(u.pathname.slice(idx+marker.length));
+        const parts=rest.split('/');
+        parts.shift();
+        arr.push(parts.join('/'));
+      }
+    }
+  }catch(e){}
+  storageBucketCandidates(bucket).forEach(b=>{
+    if(raw.startsWith(b+'/')) arr.push(raw.slice(b.length+1));
+  });
+  return [...new Set(arr.filter(Boolean))];
+}
+async function removeFromStorageBestEffort(sb,bucket,path,url){
+  const buckets=storageBucketCandidates(bucket);
+  const paths=[...storagePathCandidates(path,bucket),...storagePathCandidates(url,bucket)];
+  for(const b of buckets){
+    if(!paths.length) continue;
+    try{
+      const st=await sb.storage.from(b).remove(paths);
+      if(st.error) console.warn('Storage delete warning for '+b+':',st.error.message);
+    }catch(e){console.warn('Storage delete exception for '+b,e)}
+  }
+}
 async function deleteFile(id,path,bucket){
-  if(!id){showMsg('msg','لا يمكن حذف الملف: رقم السجل غير موجود.','err');return}
+  if(!id && !path){showMsg('msg','لا يمكن حذف الملف: رقم السجل أو مسار الملف غير موجود.','err');return}
   if(!confirm('هل تريد حذف هذا الملف نهائياً من القاعدة والصفحة؟')) return;
   const sb=SB(); if(!sb){showMsg('msg','لم يتم الاتصال بـ Supabase.','err');return}
+  const row=(currentSchoolFiles||[]).find(f=>String(f.id)===String(id) || String(f.file_path||'')===String(path||'')) || {};
   try{
-    if(bucket && path){
-      const st=await sb.storage.from(bucket).remove([path]);
-      if(st.error){console.warn('Storage delete warning:',st.error.message)}
+    // احذف من الواجهة مؤقتاً حتى لا يبقى الملف ظاهراً بعد الضغط
+    currentSchoolFiles=(currentSchoolFiles||[]).filter(f=>String(f.id)!==String(id) && String(f.file_path||'')!==String(path||''));
+    renderGallery();
+
+    // حذف الملف من Storage كأفضل محاولة، ولا نوقف حذف سجل القاعدة إذا فشل التخزين
+    await removeFromStorageBestEffort(sb,bucket || row.file_category,path || row.file_path,row.file_url);
+
+    // حذف سجل القاعدة بعدة مفاتيح احتياطية لأن بعض السجلات القديمة قد لا تحمل id مضبوطاً
+    let deleted=false;
+    if(id){
+      const del=await sb.from('school_files').delete().eq('id',id);
+      if(del.error){console.warn('Delete by id failed:',del.error.message)} else deleted=true;
     }
-    const del=await sb.from('school_files').delete().eq('id',id);
-    if(del.error){showMsg('msg','فشل حذف سجل الملف: '+del.error.message,'err');return}
-    showMsg('msg','تم حذف الملف من Supabase ومن الصفحة.','ok');
-    await loadFiles();
-  }catch(e){console.error(e);showMsg('msg','حدث خطأ أثناء الحذف: '+(e.message||e),'err')}
+    if(path){
+      const del2=await sb.from('school_files').delete().eq('file_path',path);
+      if(del2.error){console.warn('Delete by path failed:',del2.error.message)} else deleted=true;
+    }
+    if(row.file_url){
+      const del3=await sb.from('school_files').delete().eq('file_url',row.file_url);
+      if(del3.error){console.warn('Delete by url failed:',del3.error.message)} else deleted=true;
+    }
+
+    if(!deleted){
+      await loadFiles();
+      showMsg('msg','لم يكتمل حذف سجل الملف من قاعدة البيانات. راجع صلاحيات الحذف RLS في جدول school_files.','err');
+      return;
+    }
+    showMsg('msg','تم حذف الملف من الصفحة وقاعدة البيانات. إذا بقيت صورة قديمة فاعمل تحديثاً قسرياً للمتصفح.','ok');
+    setTimeout(loadFiles,400);
+  }catch(e){console.error(e);await loadFiles();showMsg('msg','حدث خطأ أثناء الحذف: '+(e.message||e),'err')}
 }
 async function deleteAllSchoolFiles(){
   const sid=q('school').value; const s=schoolById(sid);
@@ -127,7 +191,7 @@ function fileCategoryTitle(cat){
   }[cat] || bucketLabel(cat);
 }
 function renderFileCard(f){
-  return `<div class="thumb">${filePreview(f)}<b>${bucketLabel(f.file_category)}</b><div class="muted" style="font-size:12px">${f.file_name||''}</div><div class="file-actions"><a class="btn outline" href="${f.file_url||'#'}" target="_blank">فتح</a><button type="button" class="btn danger" onclick="deleteFile('${escJs(f.id)}','${escJs(f.file_path)}','${escJs(f.file_category)}')">حذف</button></div></div>`;
+  return `<div class="thumb" data-file-id="${String(f.id||'').replace(/"/g,'')}">${filePreview(f)}<b>${bucketLabel(f.file_category)}</b><div class="muted" style="font-size:12px">${f.file_name||''}</div><div class="file-actions"><a class="btn outline" href="${f.file_url||'#'}" target="_blank">فتح</a><button type="button" class="btn danger" onclick="deleteFile('${escJs(f.id)}','${escJs(f.file_path)}','${escJs(f.file_category)}')">حذف</button></div></div>`;
 }
 function renderFileGroup(title,rows){
   return `<section class="file-group"><div class="file-group-head"><div class="file-group-title">${title}</div><div class="file-group-count">${rows.length} ملف</div></div><div class="gallery">${rows.map(renderFileCard).join('')}</div></section>`;
