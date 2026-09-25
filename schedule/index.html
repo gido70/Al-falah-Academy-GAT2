@@ -405,6 +405,18 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
 .import-preview-warn{background:#fffbeb;border:1px solid #fbbf24;color:#78350f;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;margin-top:10px;text-align:center}
 .save-db-strong{background:linear-gradient(135deg,#0d3b6e,#0e7f70)!important;color:#fff!important;border:2px solid rgba(255,255,255,.3)!important;font-weight:900!important}
 
+
+/* === WEEKLY WORD ONLY — independent read-only report === */
+.weekly-word-only{background:linear-gradient(135deg,#fff,#f7fbff);border:2px solid var(--teal);border-right:8px solid var(--teal);border-radius:20px;padding:18px;margin:0 0 16px;box-shadow:0 8px 24px rgba(13,59,110,.10)}
+.weekly-word-only h2{margin:0 0 5px;color:var(--navy);font-size:20px;font-weight:900}
+.weekly-word-only p{margin:0 0 12px;color:var(--muted);font-size:12px}
+.weekly-word-row{display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:10px;align-items:end}
+.weekly-word-row label{display:block;font-size:13px;font-weight:900;color:var(--navy);margin-bottom:5px}
+.weekly-word-row select{min-width:260px}
+.weekly-word-status{margin-top:9px;font-size:12px;font-weight:700;color:var(--muted)}
+@media(max-width:700px){.weekly-word-row{grid-template-columns:1fr}.weekly-word-row select{min-width:0}.weekly-word-row .btn{width:100%;justify-content:center}}
+@media print{.weekly-word-only{display:none!important}}
+
 </style>
 </head>
 <body><a class="alfalah-fixed-home" href="../index.html">🏠 الرئيسية</a>
@@ -469,6 +481,21 @@ textarea.manager-letter:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba
     <button class="ha ha-red" id="ha-reset">🔄 تصفير</button>
   </div>
 </header>
+
+<!-- WEEKLY WORD ONLY -->
+<section class="weekly-word-only" id="weeklyWordOnly">
+  <h2>📄 التقرير الأسبوعي فقط</h2>
+  <p>اختر أسبوعاً محفوظاً ثم أنشئ ملف Word عربي منسقاً. هذه الأداة للقراءة والتصدير فقط ولا تغيّر البيانات.</p>
+  <div class="weekly-word-row">
+    <div>
+      <label for="weeklyWordSelect">الأسبوع</label>
+      <select id="weeklyWordSelect"><option value="">جارٍ تحميل الأسابيع المحفوظة...</option></select>
+    </div>
+    <button type="button" class="btn btn-word" id="weeklyWordDownload">📄 إنشاء التقرير الأسبوعي Word</button>
+  </div>
+  <div class="weekly-word-status" id="weeklyWordStatus">يتم جلب الأسابيع من قاعدة البيانات، مع الرجوع للنسخة المحلية عند الحاجة.</div>
+</section>
+
 
 <form id="wForm">
 
@@ -3289,6 +3316,148 @@ else{setTimeout(WKM.init,600);}
     }
   });
 
+})();
+</script>
+
+
+<script>
+/* === WEEKLY WORD ONLY — read-only exporter; no database writes === */
+(function(){
+  var weeklyWordRows=[];
+
+  function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c;});}
+  function safeJson(v){if(!v)return null;if(typeof v==='object')return v;try{return JSON.parse(v);}catch(e){return null;}}
+  function rowData(row){
+    var d=safeJson(row.full_data)||safeJson(row.tasks)||safeJson(row.notes)||{};
+    if(!d||typeof d!=='object'||Array.isArray(d))d={};
+    if(!d.wnum&&row.week_number!=null)d.wnum=String(row.week_number);
+    if(!d.wstart&&row.work_date)d.wstart=row.work_date;
+    if(!d.wstatus&&row.work_type)d.wstatus=row.work_type;
+    d._db_id=row.id; d._source='db';
+    return d;
+  }
+  function arDate(v){
+    if(!v)return '—';
+    try{var x=new Date(v+'T12:00:00');return x.toLocaleDateString('ar-AE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch(e){return v;}
+  }
+  function weekLabel(d){
+    var s=d.wstart||d.work_date||'', e=d.wend||'';
+    return (s&&e)?('من '+arDate(s)+' إلى '+arDate(e)):('الأسبوع '+(d.wnum||d.week_number||'—'));
+  }
+  function signature(d){return [d.wstart||d.work_date||'',d.wend||'',d.wnum||d.week_number||''].join('|');}
+  function localWeeks(){
+    var a=[];
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        if(k&&k.indexOf('falah_week_')===0){var d=safeJson(localStorage.getItem(k));if(d){d._source='local';a.push(d);}}
+      }
+      var cur=safeJson(localStorage.getItem('falah_wp_final'));if(cur){cur._source='local';a.push(cur);}
+    }catch(e){}
+    return a;
+  }
+  function client(){
+    return window.alfalahSupabase||window.supabaseClient||(window.AlfalahDBSync&&window.AlfalahDBSync.client&&window.AlfalahDBSync.client())||null;
+  }
+  async function refreshWeeks(){
+    var sel=document.getElementById('weeklyWordSelect'), st=document.getElementById('weeklyWordStatus');
+    if(!sel)return;
+    var all=[], c=client();
+    if(c){
+      try{
+        var r=await c.from('daily_work_logs').select('*').order('work_date',{ascending:false}).limit(150);
+        if(!r.error)all=(r.data||[]).map(rowData);
+      }catch(e){}
+    }
+    all=all.concat(localWeeks());
+    var seen={};
+    weeklyWordRows=all.filter(function(d){var s=signature(d);if(!s||seen[s])return false;seen[s]=1;return true;})
+      .sort(function(a,b){return String(b.wstart||b.work_date||'').localeCompare(String(a.wstart||a.work_date||''));});
+    sel.innerHTML='<option value="">— اختر الأسبوع —</option>'+weeklyWordRows.map(function(d,i){
+      return '<option value="'+i+'">'+esc(weekLabel(d))+'</option>';
+    }).join('');
+    if(st)st.textContent=weeklyWordRows.length?('تم العثور على '+weeklyWordRows.length+' أسبوعاً محفوظاً.'):'لا توجد أسابيع محفوظة حالياً.';
+  }
+  function v(d,k){var x=d[k];return x==null?'':String(x).trim();}
+  function addSection(parts,title,body){
+    if(!body||!String(body).trim())return;
+    parts.push('<h2>'+esc(title)+'</h2><div class="block">'+body+'</div>');
+  }
+  function plainLines(items){
+    return items.filter(Boolean).map(function(x){return '<p>'+esc(x)+'</p>';}).join('');
+  }
+  function makeWord(d){
+    var days=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+    var rows=days.map(function(day,i){
+      var typ=v(d,'atype'+i)||'—', ain=v(d,'ain'+i)||'—', aout=v(d,'aout'+i)||'—';
+      var note=v(d,'anote'+i), loc=v(d,'dloc'+i), tasks=v(d,'dtasks'+i), story=v(d,'dstory'+i)||v(d,'day_story'+i);
+      var details=[loc&&('الموقع: '+loc),tasks&&('الأعمال: '+tasks),story&&('ملاحظات: '+story),note&&('الدوام: '+note)].filter(Boolean).join(' — ')||'—';
+      return '<tr><td><b>'+day+'</b></td><td>'+esc(typ)+'</td><td>'+esc(ain)+'</td><td>'+esc(aout)+'</td><td>'+esc(details)+'</td></tr>';
+    }).join('');
+
+    var parts=[];
+    var pills=Array.isArray(d._pills)?d._pills:[];
+    var work=[pills.length?pills.join('، '):'',v(d,'other_work')].filter(Boolean).join('\n');
+    addSection(parts,'أبرز الأعمال والإنجازات',plainLines([work,v(d,'achievements')]));
+    addSection(parts,'التواصل والاجتماعات',plainLines([
+      v(d,'contacts_count')&&('عدد الاتصالات الرسمية: '+v(d,'contacts_count')),
+      v(d,'meetings_count')&&('عدد الاجتماعات: '+v(d,'meetings_count')),
+      v(d,'comm_parties')&&('الجهات الرئيسية: '+v(d,'comm_parties')),
+      v(d,'comm_detail')
+    ]));
+    addSection(parts,'الزيارات والمتابعة الميدانية',plainLines([
+      v(d,'approved_visit'),v(d,'visits_count')&&('عدد الزيارات: '+v(d,'visits_count')),
+      v(d,'visits_type'),v(d,'field_obs'),v(d,'follow_up')
+    ]));
+    addSection(parts,'الأنشطة الخارجية والتدريبية',plainLines([
+      v(d,'company_name')&&('الشركة / المورد: '+v(d,'company_name')),
+      v(d,'company_meeting_type'),v(d,'company_result'),v(d,'company_detail'),
+      v(d,'ext_visit_place')&&('زيارة خارجية: '+v(d,'ext_visit_place')),v(d,'ext_visit_goal'),v(d,'ext_visit_benefit'),
+      v(d,'official_entity')&&('زيارة رسمية: '+v(d,'official_entity')),v(d,'official_purpose'),v(d,'official_result'),
+      v(d,'training_name')&&('التدريب: '+v(d,'training_name')),v(d,'training_type'),v(d,'training_org'),v(d,'training_status'),v(d,'training_outcome'),
+      v(d,'virtual_platform')&&('اجتماع افتراضي عبر: '+v(d,'virtual_platform')),v(d,'virtual_count')&&('العدد: '+v(d,'virtual_count')),v(d,'virtual_goal'),v(d,'virtual_summary')
+    ]));
+    addSection(parts,'التحليل والتخطيط',plainLines([
+      v(d,'analysis_summary'),
+      v(d,'system_status')&&('نظام المكتبات الموحد: '+v(d,'system_status')),
+      v(d,'collections_status')&&('خطة تطوير المجموعات: '+v(d,'collections_status')),
+      v(d,'staff_status')&&('تقييم الكادر المهني: '+v(d,'staff_status'))
+    ]));
+    addSection(parts,'التحديات وما لم يكتمل',plainLines([v(d,'challenges'),v(d,'pending')]));
+    var req=(v(d,'week_request_type')&&v(d,'week_request_type')!=='لا توجد طلبات خاصة')?v(d,'week_request_type'):'';
+    addSection(parts,'طلبات واحتياجات للمتابعة',plainLines([req,v(d,'week_requests')]));
+    addSection(parts,'خطة الأسبوع القادم',plainLines([v(d,'next_week')]));
+
+    var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'+
+      '<style>@page{size:A4;margin:1.8cm}html,body{direction:rtl}body{font-family:Amiri,"Traditional Arabic","Arial",sans-serif;font-size:12pt;line-height:1.8;text-align:right;color:#1f2937}'+
+      'h1{font-family:Amiri,"Traditional Arabic",serif;font-size:18pt;text-align:center;color:#0d3b6e;margin:0 0 6pt;font-weight:bold}'+
+      '.period{text-align:center;font-size:12pt;margin-bottom:16pt;color:#475569}.meta{border-right:4pt solid #b8860b;padding:6pt 10pt;background:#f8fafc;margin-bottom:12pt}'+
+      'h2{font-family:Amiri,"Traditional Arabic",serif;font-size:14pt;font-weight:bold;color:#0d3b6e;border-bottom:1pt solid #dbe5ef;padding-bottom:4pt;margin:14pt 0 7pt;text-align:right}'+
+      'p{font-size:12pt;margin:3pt 0;text-align:right}.block{font-size:12pt;text-align:right}table{width:100%;border-collapse:collapse;direction:rtl;margin:8pt 0 14pt}th,td{border:1pt solid #cbd5e1;padding:6pt;text-align:right;vertical-align:top;font-size:11.5pt}th{background:#0d3b6e;color:#fff;font-weight:bold}.footer{margin-top:18pt;border-top:1pt solid #cbd5e1;padding-top:7pt;text-align:center;font-size:10pt;color:#64748b}</style></head><body>'+
+      '<h1>التقرير الأسبوعي</h1><div class="period">'+esc(weekLabel(d))+'</div>'+
+      '<div class="meta"><b>حالة الأسبوع:</b> '+esc(v(d,'wstatus')||'—')+'</div>'+
+      '<h2>الدوام والأعمال اليومية</h2><table><thead><tr><th>اليوم</th><th>نوع الدوام</th><th>الحضور</th><th>الانصراف</th><th>تفاصيل اليوم</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      parts.join('')+
+      '<div class="footer">أكاديمية الفلاح — مراكز مصادر التعلم | 2026</div></body></html>';
+    var blob=new Blob(['\ufeff',html],{type:'application/msword;charset=utf-8'});
+    var a=document.createElement('a');
+    var start=(d.wstart||d.work_date||'').replace(/-/g,'_');
+    a.href=URL.createObjectURL(blob);a.download='التقرير_الأسبوعي_'+(start||d.wnum||'')+'.doc';a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1200);
+  }
+  function download(){
+    var sel=document.getElementById('weeklyWordSelect'),st=document.getElementById('weeklyWordStatus');
+    if(!sel||sel.value===''){if(st)st.textContent='اختر أسبوعاً أولاً.';return;}
+    var d=weeklyWordRows[Number(sel.value)];
+    if(!d){if(st)st.textContent='تعذر قراءة بيانات الأسبوع المحدد.';return;}
+    makeWord(d);if(st)st.textContent='تم إنشاء ملف Word للتقرير الأسبوعي المحدد.';
+  }
+  function init(){
+    var b=document.getElementById('weeklyWordDownload');if(b)b.addEventListener('click',download);
+    refreshWeeks();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(init,900);});
+  else setTimeout(init,900);
 })();
 </script>
 
